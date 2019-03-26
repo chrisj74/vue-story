@@ -1,7 +1,7 @@
 <template>
   <q-layout view="lHh Lpr lFf" v-if="!loading">
     <q-layout-header>
-      <q-toolbar color="primary" shrink>
+      <q-toolbar color="primary">
         <q-btn
           flat
           dense
@@ -13,6 +13,7 @@
 
         <q-toolbar-title>
           Quasar + Firebase Auth
+          <div slot="subtitle">Quasar Framework 0.15.6 + Firebase Auth</div>
         </q-toolbar-title>
       </q-toolbar>
     </q-layout-header>
@@ -55,10 +56,10 @@
 
 <script>
 export default {
-  name: 'LayoutDefault',
+  name: 'CanvasDefault',
   data () {
     return {
-      leftDrawerOpen: this.$q.platform.is.desktop,
+      leftDrawerOpen: false,
       storiesSet: false
     }
   },
@@ -77,18 +78,18 @@ export default {
     }
   },
   mounted () {
-    if (this.user) {
+    /* if (this.user) {
       this.$store.dispatch('setStories', this.user.id);
       this.storiesSet = true;
-    }
+    } */
   },
   watch: {
-    user(newUser) {
+    /* user(newUser) {
       if (!this.storiesSet) {
         this.$store.dispatch('setStories', this.user.id);
         this.storiesSet = true;
       }
-    }
+    } */
   }
 }
 </script>

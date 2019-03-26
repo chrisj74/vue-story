@@ -1,26 +1,32 @@
-import Vue from 'vue'
-import VueRouter from 'vue-router'
-import routes from './routes'
-import { AUTH } from '../plugins/firebase'
+import Vue from "vue";
+import VueRouter from "vue-router";
+import routes from "./routes";
 
-Vue.use(VueRouter)
-const Router = new VueRouter({
-  mode: process.env.VUE_ROUTER_MODE,
-  base: process.env.VUE_ROUTER_BASE,
-  scrollBehavior: () => ({ y: 0 }),
-  routes
-})
+Vue.use(VueRouter);
 
-Router.beforeEach((to, from, next) => {
-  const currentUser = AUTH.currentUser
-  const requiresAuth = to.matched.some(record => record.meta.requiresAuth)
+export default function({ store }) {
+  const Router = new VueRouter({
+    scrollBehavior: () => ({ y: 0 }),
+    routes,
+    mode: process.env.VUE_ROUTER_MODE,
+    base: process.env.VUE_ROUTER_BASE
+  });
 
-  if (requiresAuth && !currentUser) next('/login')
-  else if (!requiresAuth && currentUser) next('/')
-  else next()
-})
-
-export default Router
-
-
-
+  Router.beforeEach((to, from, next) => {
+    if (to.matched.some(record => record.meta.requiresAuth)) {
+      // this route requires auth, check if logged in
+      // if not, redirect to login page.
+      if (store.getters.user) {
+        next();
+      } else {
+        next({
+          path: "/login",
+          query: { redirect: to.fullPath }
+        });
+      }
+    } else {
+      next(); // make sure to always call next()!
+    }
+  });
+  return Router;
+}

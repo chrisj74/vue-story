@@ -4,17 +4,21 @@ module.exports = function (ctx) {
   return {
     // app plugins (/src/plugins)
     plugins: [
-      'firebase'
+      'firebase',
+      'shortkey',
+      'axios',
+      'ckeditor',
+      'uploader',
     ],
     css: [
       'app.styl'
     ],
     extras: [
       ctx.theme.mat ? 'roboto-font' : null,
-      'material-icons'
+      'material-icons',
       // 'ionicons',
       // 'mdi',
-      // 'fontawesome'
+      'fontawesome',
     ],
     supportIE: false,
     vendor: {
@@ -51,17 +55,26 @@ module.exports = function (ctx) {
         'QList',
         'QListHeader',
         'QInput',
+        'QField',
         'QItem',
         'QItemMain',
         'QItemSide',
+        'QColor',
+        'QPopover',
+        'QModal',
+        'QModalLayout',
+        'QSearch',
+        'QSlider',
       ],
       directives: [
-        'Ripple'
+        'Ripple',
+        'CloseOverlay',
       ],
       // Quasar plugins
       plugins: [
         'Notify',
-        'Dialog'
+        'Dialog',
+        'Loading'
       ]
     },
     // animations: 'all' --- includes all animations

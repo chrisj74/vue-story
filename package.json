@@ -10,7 +10,17 @@
     "test": "echo \"No test specified\" && exit 0"
   },
   "dependencies": {
-    "firebase": "^5.8.0"
+    "@ckeditor/ckeditor5-build-classic": "^12.0.0",
+    "@ckeditor/ckeditor5-vue": "^1.0.0-beta.1",
+    "axios": "^0.18.0",
+    "axois": "^1.0.0",
+    "b64-to-blob": "^1.2.19",
+    "fabric": "^2.7.0",
+    "firebase": "^5.8.0",
+    "lodash": "^4.17.11",
+    "vue-image-upload-resize": "^2.0.4",
+    "vue-shortkey": "^3.1.6",
+    "vue-swatches": "^1.0.3"
   },
   "devDependencies": {
     "quasar-cli": "^0.17.23",
