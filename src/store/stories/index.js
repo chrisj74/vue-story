@@ -9,14 +9,16 @@ export default {
     ],
     story: {},
     pages: [],
-    page: null,
-    imageSearchResults: null,
+    page: {},
+    imageSearchResults: {
+      page: 0,
+      totalHits: 0,
+      hits: [],
+    },
+    searchSize: 50,
     insertImage: null,
   },
   mutations: {
-    // clearError (state) {
-    //   state.error = null;
-    // }
     addStory(state, payload) {
       const newStory = payload;
       state.stories.push(newStory);
@@ -34,7 +36,14 @@ export default {
       state.page = payload;
     },
     setImageSearchResults(state, payload) {
-      state.imageSearchResults = payload;
+      state.imageSearchResults.totalHits = 0;
+      state.imageSearchResults.hits = [];
+      state.imageSearchResults.page = 0;
+    },
+    clearImageSearchResults(state) {
+      state.imageSearchResults.totalHits = payload.data.totalHits;
+      state.imageSearchResults.hits = state.imageSearchResults.hits.concat(payload.data.hits);
+      state.imageSearchResults.page += 1;
     },
     setInsertImage(state,payload) {
       state.insertImage = payload;
@@ -49,7 +58,6 @@ export default {
         const userStories = firebase
           .firestore()
           .collection("users/").doc(payload.user.id);
-
         userStories.set({
           lastUpdated: new Date(),
         });
@@ -73,14 +81,6 @@ export default {
 
     updatePage( {commit }, payload) {
       return new Promise((resolve, reject) => {
-        /* var updates = {};
-        updates["/stories/" + payload.storyKey] = payload.story;
-        updates["/user-stories/" + payload.user.id + "/" + payload.storyKey] = payload.story;
-
-        firebase
-          .database()
-          .ref()
-          .update(updates); */
         const userStory = firebase
           .firestore()
           .collection('users/' + payload.user.id + '/stories/' + payload.storyKey + '/pages/').doc(payload.pageKey);
@@ -90,28 +90,24 @@ export default {
         resolve();
       });
     },
+
     addPage( {commit }, payload) {
       return new Promise((resolve, reject) => {
-        /* var updates = {};
-        updates["/stories/" + payload.storyKey] = payload.story;
-        updates["/user-stories/" + payload.user.id + "/" + payload.storyKey] = payload.story;
-
-        firebase
-          .database()
-          .ref()
-          .update(updates); */
         let newId = null;
+        const newOrder = payload.order;
         const userStory = firebase
           .firestore()
           .collection('users/' + payload.user.id + '/stories/' + payload.storyKey + '/pages/');
           userStory.add({
-            pageJson: payload.page
+            pageJson: {},
+            order: newOrder,
           }).then(function(docRef) {
             newId = docRef.id;
+            resolve(newId);
           });
-        resolve(newId);
       });
     },
+
     deleteStory( {commit }, payload) {
       return new Promise((resolve, reject) => {
         const storyPages = firebase
@@ -130,37 +126,39 @@ export default {
       });
     },
 
-    setStories({ commit }, payload) {
-      /* const stories = firebase.database().ref('user-stories/' + payload);
-      stories.on('value', function(snapshot) {
-        commit('setStories', snapshot.val());
-      }); */
-      console.log('setstories payload:', payload);
-      firebase
-          .firestore()
-          .collection('users/' + payload + '/stories/')
-          .onSnapshot(function(querySnapshot) {
-            const stories = [];
-            querySnapshot.forEach(function(doc) {
+    setStories({ commit, dispatch }, payload) {
+      return new Promise((resolve, reject) => {
+        firebase
+            .firestore()
+            .collection('users/' + payload + '/stories/')
+            .onSnapshot(function(querySnapshot) {
+              const stories = [];
+              querySnapshot.forEach(function(doc) {
                 stories.push({
                   id: doc.id,
-                  title: doc.data().title
+                  title: doc.data().title,
+                  thumbs: doc.data().thumbs,
                 });
 
-            });
-            console.log('stories=',stories);
-            commit('setStories', stories);
-
-        });
-    },
-    setStory({ commit }, payload) {
-      firebase
-        .firestore()
-        .collection('users/' + payload.user.id + '/stories/').doc(payload.storyKey)
-        .onSnapshot(function(querySnapshot) {
-          commit('setStory', querySnapshot.data());
+              });
+              commit('setStories', stories);
+          });
+        resolve();
       });
     },
+
+    setStory({ commit }, payload) {
+      return new Promise((resolve, reject) => {
+        firebase
+          .firestore()
+          .collection('users/' + payload.user.id + '/stories/').doc(payload.storyKey)
+          .onSnapshot(function(querySnapshot) {
+            commit('setStory', querySnapshot.data());
+        });
+        resolve();
+      });
+    },
+
     setPages({ commit}, payload) {
       firebase
         .firestore()
@@ -170,40 +168,93 @@ export default {
           querySnapshot.forEach(function(doc) {
               pages.push({
                 id: doc.id,
-                order: doc.data().order
+                order: doc.data().order,
+                thumb: doc.data().thumb
               });
 
           });
-          console.log('pages=',pages);
           commit('setPages', pages);
         });
     },
+
     setPage({ commit }, payload) {
       firebase
         .firestore()
         .collection('users/' + payload.user.id + '/stories/' + payload.storyKey + '/pages').orderBy('order', 'asc')
         .onSnapshot(function(querySnapshot) {
-          console.log('querySnapshot=', querySnapshot);
           let page;
-          console.log('pageKey=', payload.pageKey);
           if (payload.pageKey) {
-            page = {
-              pageJson: querySnapshot.docs[payload.pageKey].data().pageJson,
-              id: querySnapshot.docs[payload].id
-            };
+            querySnapshot.docs.forEach(doc => {
+              if (doc.id === payload.pageKey)
+                page = {
+                  pageJson: doc.data().pageJson,
+                  id: doc.id,
+                  thumb: doc.data().thumb,
+                };
+            });
           } else {
             page = {
               pageJson : querySnapshot.docs[0].data().pageJson,
-              id: querySnapshot.docs[0].id
+              id: querySnapshot.docs[0].id,
+              thumb: querySnapshot.docs[0].data().thumb,
             };
           }
-          console.log('page=',page);
           commit('setPage', page);
       });
     },
 
+    setThumb({ commit, dispatch }, payload) {
+      return new Promise((resolve, reject) => {
+        const ref = firebase.storage().ref();
+        const path = 'images/' + payload.user.id + '/thumbs/' + payload.storyKey + '/' + payload.pageKey;
+        const metadata = {
+          contentType: payload.image.type
+        };
+        const task = ref.child(path).put(payload.image.dataUrl, metadata);
+        task
+          .then(snapshot => snapshot.ref.getDownloadURL())
+          .then((url) => {
+            // commit('setInsertImage', imgObj);
+            resolve(url);
+            const newPayload = payload;
+            newPayload.thumbUrl = url;
+            dispatch('updateThumbData', newPayload);
+            // Also update the story with the thumb ref
+            /* const userStory = firebase
+              .firestore()
+              .collection('users/' + payload.user.id + '/stories/').doc(payload.storyKey);
+              userStory.get().then(doc => {
+                if(!doc.data().) {
+                  console.log('thumb missing');
+                  userStory.update({
+                    thumb: payloadRef.thumbUrl
+                  });
+                }
+              }); */
+          })
+          .catch(console.error);
+
+      });
+    },
+
+    updateThumbData({ commit }, payload) {
+      const payloadRef = payload;
+      const userStory = firebase
+        .firestore()
+        .collection('users/' + payload.user.id + '/stories/' + payload.storyKey + '/pages/').doc(payload.pageKey);
+        userStory.get().then(doc => {
+          if(!doc.data().thumb) {
+            console.log('thumb missing');
+            userStory.update({
+              thumb: payloadRef.thumbUrl
+            });
+          }
+        });
+
+
+    },
+
     addImage({ commit }, payload) {
-      console.log('payload=', payload);
       const ref = firebase.storage().ref();
       const path = 'images/' + payload.user.id + '/' + (+new Date()) + '-' + payload.image.name;
       const metadata = {
@@ -218,20 +269,19 @@ export default {
             webformatWidth: payload.image.dimensions.w,
             webformatHeight: payload.image.dimensions.h,
           };
-          console.log('actoion imgObj=', imgObj);
           commit('setInsertImage', imgObj);
         })
         .catch(console.error);
     },
 
-    searchImages({ commit }, payload) {
-      console.log('payload=', payload);
-      const path = 'https://pixabay.com/api/?key=11945260-36d09543fa5ee7da289366856&image_type=photo&safesearch=true&q=';
-      const query = encodeURIComponent(payload);
-      const fullPath = path + query;
+    searchImages({ commit, state }, payload) {
+      const pageStr = '&page=' + (state.imageSearchResults.page +1);
+      let path = 'https://pixabay.com/api/?key=11945260-36d09543fa5ee7da289366856&image_type=all&per_page='
+      path += state.searchSize + '&safesearch=true&q=';
+      const query = encodeURIComponent(payload.str);
+      const fullPath = path + query + pageStr;
       axios.get(fullPath)
       .then((response) => {
-        console.log('response=', response);
         commit('setImageSearchResults', response);
       })
       .catch(() => {

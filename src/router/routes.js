@@ -38,22 +38,29 @@ const routes = [
   {
     path: "/story/:id",
     name: "Story",
-    component: () => import("layouts/canvas"),
+    component: () => import("layouts/story"),
     meta: { requiresAuth: true },
     children: [
       {
         path: "/",
         name: "Story",
         component: () => import("pages/stories/story"),
-        meta: { requiresAuth: true }
+        meta: { requiresAuth: true },
+        children: [
+          {
+            path: "",
+            name: "PageDefault",
+            component: () => import("components/story/page"),
+            meta: { requiresAuth: true }
+          },
+          {
+            path: ":pageId",
+            name: "Page",
+            component: () => import("components/story/page"),
+            meta: { requiresAuth: true }
+          },
+        ],
       },
-      {
-        path: ":pageId",
-        name: "Page",
-        component: () => import("pages/stories/story"),
-        meta: { requiresAuth: true }
-      }
-
     ]
   },
   {

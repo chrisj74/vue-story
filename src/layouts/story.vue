@@ -48,7 +48,9 @@
     </q-layout-drawer>
 
     <q-page-container>
-      <router-view />
+      <transition appear>
+        <router-view />
+      </transition>
     </q-page-container>
     <q-spinner-bars color="primary" :size="50" v-if="loading" />
   </q-layout>
@@ -56,7 +58,7 @@
 
 <script>
 export default {
-  name: 'CanvasDefault',
+  name: 'Story',
   data () {
     return {
       leftDrawerOpen: false,

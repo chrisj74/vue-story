@@ -50,6 +50,8 @@ export default {
       this.submitting = true;
       const newStory = {
         title: this.newStory.title,
+        plan: "",
+        thumbs: []
       };
       const payload = {
         user: this.user,
