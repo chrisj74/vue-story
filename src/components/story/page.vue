@@ -2,41 +2,42 @@
     <div class="main-content-wrapper">
       <!-- Main tools -->
         <div class="tools">
-            <q-btn icon="undo" round @click="undo()" :disable="!canUndo" />
-            <q-btn icon="redo" round @click="redo()" :disable="!canRedo" />
-            <swatches v-model="color" colors="text-advanced" popover-to="right"></swatches>
-            <q-btn icon="add_a_photo" :color="mode === 'addPhoto' ? 'primary' : 'dark'" round @click="addPhoto()" />
-            <q-btn icon="text_fields" :color="mode === 'text' ? 'primary' : 'dark'" round @click="addText()" />
-            <q-btn icon="open_with" :color="mode === 'select' ? 'primary' : 'dark'" round @click="setSelect()" />
-            <q-btn icon="format_color_fill" :color="mode === 'fill' ? 'primary' : 'dark'" round @click="fillColor()" />
-            <q-btn icon="straighten" :color="mode === 'line' ? 'primary' : 'dark'" round @click="line()" />
-            <q-btn icon="edit" :color="mode === 'brush' ? 'primary' : 'dark'" round @click="draw()" />
-            <q-btn icon="clear" round @click="clearCanvas()" />
+            <q-btn icon="mdi-undo" round @click="undo()" :disable="!canUndo" />
+            <q-btn icon="mdi-redo" round @click="redo()" :disable="!canRedo" />
+
+            <q-btn icon="mdi-camera" :color="mode === 'addPhoto' ? 'primary' : 'dark'" round @click="addPhoto()" />
+            <q-btn icon="mdi-format-text" :color="mode === 'text' ? 'primary' : 'dark'" round @click="addText()" />
+            <q-btn icon="mdi-cursor-move" :color="mode === 'select' ? 'primary' : 'dark'" round @click="setSelect()" />
+            <q-btn icon="mdi-cursor-move" :color="mode === 'select' ? 'primary' : 'dark'" round @click="setSelect()" />
+            <q-btn icon="mdi-file-image" :color="mode === 'background' ? 'primary' : 'dark'" round @click="setBackground()" />
+            <q-btn icon="mdi-ruler" :color="mode === 'line' ? 'primary' : 'dark'" round @click="line()" />
+            <q-btn icon="mdi-pencil" :color="mode === 'brush' ? 'primary' : 'dark'" round @click="draw()" />
+            <q-btn icon="mdi-close" round @click="clearCanvas()" />
         </div>
       <div class="main-content">
           <!-- Canvas -->
           <div class="canvas-ref" ref="page">
             <div class="canvas-wrapper">
-              <canvas id="storyCanvas" ref="canvas">
+              <canvas id="storyCanvas" ref="canvas" :style="{backgroundColor: background.color, backgroundImage: background.image? 'url('+background.image+')' : 'none'}">
 
               </canvas>
-                <div class="zoom-controls" v-if="!brush.active && !isDown">
-                    <i @click="zoomIn()" class="q-icon material-icons zoom-in">zoom_in</i>
-                    <i @click="resetZoom()" class="q-icon material-icons reset-canvas">center_focus_weak</i>
-                    <i @click="zoomOut()" class="q-icon material-icons zoom-out">zoom_out</i>
+                <div class="zoom-controls" v-if="canvas && !brush.active && !isDown">
+                    <i @click="zoomIn()" class="q-icon mdi mdi-magnify-plus zoom-in"></i>
+                    <i @click="resetZoom()" class="q-icon mdi mdi-adjust reset-canvas" :class="{disabled: canvas.getZoom() === page.zoom}"></i>
+                    <i @click="zoomOut()" class="q-icon  mdi mdi-magnify-minus zoom-out" :class="{disabled: canvas.getZoom() === page.zoom}"></i>
                 </div>
 
-                <div class="pan-controls" v-if="!brush.active && !isDown">
+                <div class="pan-controls" v-if="canvas && !brush.active && !isDown && canvas.getZoom() > page.zoom" :style="{bottom: ((page.height - canvas.height) + 10) + 'px'}">
                     <div>
-                        <i @mouseup="stopPanning()" @mouseout="stopPanning()" @mousedown="panCanvas('up')" class="q-icon material-icons pan-up">keyboard_arrow_up</i>
+                        <i @mouseup="stopPanning()" @mouseout="stopPanning()" @mousedown="panCanvas('up')" class="q-icon mdi mdi-chevron-up pan-up"></i>
                     </div>
                     <div>
-                        <i @mouseup="stopPanning()" @mouseout="stopPanning()" @mousedown="panCanvas('left')" class="q-icon material-icons pan-left">keyboard_arrow_left</i>
-                        <i @click="panCenter()" class="q-icon material-icons reset-canvas">adjust</i>
-                        <i @mouseup="stopPanning()" @mouseout="stopPanning()" @mousedown="panCanvas('right')" class="q-icon material-icons pan-right">keyboard_arrow_right</i>
+                        <i @mouseup="stopPanning()" @mouseout="stopPanning()" @mousedown="panCanvas('left')" class="q-icon mdi mdi-chevron-left pan-left"></i>
+                        <i @click="panCenter()" class="q-icon mdi mdi-adjust reset-canvas"></i>
+                        <i @mouseup="stopPanning()" @mouseout="stopPanning()" @mousedown="panCanvas('right')" class="q-icon mdi mdi-chevron-right pan-right"></i>
                     </div>
                     <div>
-                        <i @mouseup="stopPanning()" @mouseout="stopPanning()" @mousedown="panCanvas('down')" class="q-icon material-icons pan-down">keyboard_arrow_down</i>
+                        <i @mouseup="stopPanning()" @mouseout="stopPanning()" @mousedown="panCanvas('down')" class="q-icon mdi mdi-chevron-down pan-down"></i>
                     </div>
                 </div>
             </div>
@@ -44,9 +45,13 @@
 
           <!-- Extra context tools -->
           <div class="extra-tools" v-if="canvas">
-              <q-btn v-if="mode === 'select'" size="sm" color="primary" icon="delete" round @click="deleteObj()" :disabled="!isSelected" />
+              <swatches v-model="color" colors="text-advanced" popover-to="left" :trigger-style="{ width: '30px', height: '30px', borderRadius: '50%' }"></swatches>
+              <q-btn v-if="mode === 'background'" icon="mdi-camera" size="sm" :color="'dark'" round @click="addBgPhoto()" />
+              <q-btn v-if="isSelected" size="sm" color="negative" icon="mdi-delete" round @click="deleteObj()" :disabled="!isSelected" />
+              <q-btn v-if="mode === 'brush'" icon="mdi-pencil" size="sm" :color="mode === 'brush' && !isEraser ? 'primary' : 'dark'" round @click="draw()" />
+              <q-btn v-if="mode === 'brush'" size="sm" :color="isEraser ? 'primary' : 'dark'" icon="mdi-eraser" round @click="erase()" />
               <div class="tool-slider" v-if="mode === 'text'">
-                  <q-btn size="sm" color="primary" icon="format_size" round @click="toggleTextSize()" />
+                  <q-btn size="sm" color="primary" icon="mdi-format-size" round @click="toggleTextSize()" />
                   <div class="q-slider-wrap" v-if="showTextSize">
                       <q-slider
                       v-model="text.size"
@@ -59,7 +64,7 @@
                   </div>
               </div>
               <div class="tool-slider" v-if="mode === 'brush'">
-                  <q-btn size="sm" color="primary" icon="format_size" round @click="toggleBrushWidth()" />
+                  <q-btn size="sm" icon="mdi-signal" round :color="showBrushWidth ? 'primary' : 'dark'" @click="toggleBrushWidth()" />
                   <div class="q-slider-wrap" v-if="showBrushWidth">
                       <q-slider
                       v-model="brush.width"
@@ -72,7 +77,7 @@
                   </div>
               </div>
               <div class="tool-slider" v-if="mode === 'line'">
-                  <q-btn size="sm" color="primary" icon="format_size" round @click="toggleLineWidth()" />
+                  <q-btn size="sm" icon="mdi-signal" round :color="showLineWidth ? 'primary' : 'dark'" @click="toggleLineWidth()" />
                   <div class="q-slider-wrap" v-if="showLineWidth">
                       <q-slider
                       v-model="lineObj.width"
@@ -84,10 +89,11 @@
                       />
                   </div>
               </div>
+
           </div>
       </div>
-      <q-modal v-if="canvas" v-model="imageModal" :content-css="{minWidth: '600px', minHeight: '600px', maxWidth: canvas.width+'px', width: canvas.width+'px', maxHeight: canvas.height+'px'}">
-          <add-image v-if="mode === 'photo'"></add-image>
+      <q-modal v-if="canvas" v-model="imageModal" :content-css="{minWidth: '600px', height: '90vh', maxWidth: canvas.width+'px', width: canvas.width+'px'}">
+          <add-image v-if="mode === 'photo' || mode === 'background'"></add-image>
       </q-modal>
       <span v-if="mode != 'text'" v-shortkey="{undoWin:['ctrl', 'z'], undoMac:['meta', 'z'], deleteKey:['del'], backspaceKey:['backspace']}" @shortkey="shortKeys($event)"></span>
     </div>
@@ -108,7 +114,12 @@ export default {
                 height: 0,
                 zoom: 1,
             },
+            background: {
+                color: null,
+                image: false
+            },
             mode: 'brush',
+            isEraser: false,
             isSelected: false,
             isDown: false,
             brush: {
@@ -160,9 +171,32 @@ export default {
         },
     },
     mounted() {
-        /** Trigger canvas resize on browser resize */
+        console.log('page mounted');
         const _this = this;
+        if (this.activePage && !this.canvas){
+            if (this.activePage.background) {
+                this.background.color = this.activePage.background.color;
+                this.background.image = this.activePage.background.image;
+            }
+
+
+
+            if (this.activePage.pageJson) {
+                this.canvasInit();
+                this.canvas.loadFromJSON(
+                    this.activePage.pageJson,
+                    function() {
+                        _this.canvas.renderAll.bind(_this.canvas);
+                        _this.setDefaultZoom();
+                        _this.addHistory();
+                    }
+                );
+            }
+        }
+        /** Trigger canvas resize on browser resize */
+
         window.addEventListener('resize', function(event) {
+            console.log('resize');
             _this.setDefaultZoom();
         });
 
@@ -174,25 +208,44 @@ export default {
             const _this = this;
             const canvas = this.canvas;
 
-            this.canvas.backgroundColor = '#ffffff';
             this.canvas.targetFindTolerance = 4;
+            this.canvas.preserveObjectStacking = true;
+            canvas.renderAll.bind(canvas)
 
             /** Canvas events */
             let line;
+            const ctx = canvas.getContext("2d");
             this.canvas.on('path:created', function(e) {
+                console.log('path:created');
+                if (_this.isEraser) {
+                    console.log('eraser');
+                    e.path.globalCompositeOperation = 'destination-out';
+                    canvas.renderAll();
+                }
                 _this.addHistory();
             });
             this.canvas.on('object:moved', () => {
+                console.log('object:moved');
+                canvas.renderAll.bind(canvas);
                 _this.addHistory();
             });
+            this.canvas.on('selection:created', function(o) {
+                _this.isSelected = true;
+            });
+            this.canvas.on('selection:cleared', function(o) {
+                _this.isSelected = false;
+            });
+            /** MOUSE DOWN */
             this.canvas.on('mouse:down', (o) => {
                 _this.isDown = true;
                 _this.showtextSize = false;
                 _this.showBrushWidth = false;
                 _this.showLineWidth = false;
+                /** BRUSH */
                 if (_this.mode === 'brush') {
                     _this.brush.active = true;
                 }
+                /** SELECT */
                 if (_this.mode === 'select') {
                     if (canvas.getActiveObject()) {
                       _this.isSelected = true;
@@ -200,6 +253,7 @@ export default {
                       _this.isSelected = false;
                     }
                 }
+                /** LINE */
                 if (_this.mode === 'line') {
                     canvas.selection = false;
                     const pointer = canvas.getPointer(o.e);
@@ -213,6 +267,7 @@ export default {
                     });
                     canvas.add(line);
                 }
+                /** TEXT */
                 if (_this.mode === 'text') {
                   if (!canvas.getActiveObject() || !canvas.getActiveObject().isEditing) {
                     const pointer = canvas.getPointer(o.e);
@@ -232,28 +287,24 @@ export default {
                     canvas.add(text).setActiveObject(text);
                     text.enterEditing();
                     text.selectAll();
+                    _this.mode = 'select';
                     _this.addHistory();
                   } else {
 
                   }
                 }
+                /** FILL */
                 if (_this.mode === 'fill') {
-                    console.log('fill click');
                     const activeObject = canvas.getActiveObject();
-                    console.log(activeObject);
                     if (activeObject) {
                         if (activeObject.stroke) {
-                            console.log('stroke');
                             activeObject.set('fill', _this.color);
                             activeObject.set('stroke', activeObject.stroke);
                         } else if (activeObject.stroke && activeObject.fill) {
                             activeObject.set('fill', _this.color);
                             activeObject.set('stroke', _this.color);
                         }
-                        canvas.renderAll();
-                    } else {
-                        canvas.set('backgroundColor', _this.color);
-                        canvas.renderAll();
+                        canvas.renderAll.bind(canvas);
                     }
                     _this.addHistory();
                 }
@@ -322,7 +373,7 @@ export default {
             const activeObject = this.canvas.getActiveObject();
             if (activeObject && !activeObject.isEditing) {
                 this.canvas.remove(activeObject);
-                this.canvas.renderAll();
+                this.canvas.renderAll.bind(this.canvas);
             }
             this.addHistory();
         },
@@ -376,6 +427,7 @@ export default {
                 object.selectable = true;
             });
         },
+
         addText() {
           this.mode = 'text';
             this.canvas.isDrawingMode = false;
@@ -383,6 +435,7 @@ export default {
                 object.selectable = true;
             });
         },
+
         canvasInsertImage(imageObj) {
             this.imageModal = false;
             this.$store.commit('clearInsertImage');
@@ -398,38 +451,79 @@ export default {
             },  { crossOrigin: 'Anonymous' });
 
         },
+
+        backgroundAddImage(imageObj) {
+            this.imageModal = false;
+            this.$store.commit('clearInsertImage');
+            this.$store.commit('clearImageSearchResults');
+            this.background.image = imageObj.webformatURL;
+            this.addHistory();
+        },
+
         draw() {
+            this.isEraser = false;
             this.canvas.forEachObject(function(object) {
                 object.selectable = true;
             });
             this.mode = 'brush';
             this.setFreeBrush();
         },
+
+        erase() {
+            this.isEraser = true;
+            this.canvas.freeDrawingBrush.color = 'rgba(255,255,255,.25)';
+        },
+
         setFreeBrush() {
             this.canvas.isDrawingMode = true;
             this.canvas.freeDrawingBrush.color = this.color;
             this.canvas.freeDrawingBrush.width = this.brush.width;
         },
-        saveStory() {
-            const jsonObj = this.canvas.toJSON();
 
-            const payload = {
-                user: this.user,
-                storyKey: this.$route.params.id,
-                pageKey: this.activePage.id,
-                page: {
-                  json: JSON.stringify(jsonObj),
-                }
+        setBackground() {
+            this.mode = 'background';
+            this.canvas.isDrawingMode = false;
+        },
+
+        addBgPhoto() {
+            this.imageModal = true;
+            this.canvas.forEachObject(function(object) {
+                object.selectable = true;
+            });
+        },
+
+        saveStory() {
+            const jsonObj = this.canvas.toJSON(['globalCompositeOperation']);
+            if (this.activePage) {
+              const payload = {
+                  user: this.user,
+                  storyKey: this.$route.params.id,
+                  pageKey: this.activePage.id,
+                  page: {
+                    json: JSON.stringify(jsonObj),
+                    background: {
+                        color: this.background.color,
+                        image: this.background.image
+                    }
+                  }
+              }
+              this.$store.dispatch('updatePage', payload);
             }
-            this.$store.dispatch('updatePage', payload);
         },
         addHistory() {
+            const snapshot = {
+                json: this.canvas.toJSON(['globalCompositeOperation']),
+                background: {
+                    color: this.background.color,
+                    image: this.background.image
+                },
+            }
             if (this.restoreIndex === (this.history.length - 1)) {
-                this.history.push(this.canvas.toJSON());
+                this.history.push(snapshot);
                 this.restoreIndex++;
             } else {
                 this.history = this.history.slice(0, this.restoreIndex + 1);
-                this.history.push(JSON.stringify(this.canvas));
+                this.history.push(snapshot);
                 this.restoreIndex = (this.history.length - 1);
             }
             this.canUndo = this.history.length > 1;
@@ -439,8 +533,12 @@ export default {
         undo() {
             if (this.restoreIndex > 0) {
                 this.restoreIndex--;
-                this.canvas.loadFromJSON(this.history[this.restoreIndex]);
+                this.canvas.loadFromJSON(this.history[this.restoreIndex].json);
                 this.canvas.renderAll.bind(this.canvas);
+                this.background =  {
+                    color: this.history[this.restoreIndex].background.color,
+                    image: this.history[this.restoreIndex].background.image
+                };
                 this.saveStory();
                 if (this.history.length === (this.restoreIndex + 1)) {
                     this.canredo = false;
@@ -455,8 +553,12 @@ export default {
         redo() {
             if (this.restoreIndex < (this.history.length - 1)) {
                 this.restoreIndex++;
-                this.canvas.loadFromJSON(this.history[this.restoreIndex]);
+                this.canvas.loadFromJSON(this.history[this.restoreIndex].json);
                 this.canvas.renderAll.bind(this.canvas);
+                this.background =  {
+                    color: this.history[this.restoreIndex].background.color,
+                    image: this.history[this.restoreIndex].background.image
+                };
                 this.saveStory();
                 if (this.history.length === (this.restoreIndex + 1)) {
                     this.canRedo = false;
@@ -537,57 +639,79 @@ export default {
     watch: {
       $route: {
         handler: function(from, to){
-          console.log('route watcher, from=', from);
-          if(from.params.id === to.params.id && from.params.pageId != to.params.pageId) {
+          console.log('page.vue route watcher, from=', from);
+          if(from.params.id === to.params.id
+             && (from.params.pageId != to.params.pageId) || !to.params.pageId) {
             // same story new page
             // detroy canvas
-            this.canvas.dispose();
-            this.canvas = null;
+            if (this.canvas) {
+              this.canvas.dispose();
+              this.canvas = null;
+              this.background = {
+                  color: null,
+                  image: 'none'
+              }
+            }
             // reset history
-            this.history = [];
+              this.history = [];
             // set activePage
             const payload = {
                 user: this.user,
                 storyKey: this.$route.params.id,
                 pageKey: this.$route.params.pageId ? this.$route.params.pageId : null
             }
+            console.log('payload for setPage=', payload);
             this.$store.dispatch('setPage', payload);
           }
-        }
+        },
+        deep: true
       },
         brush: {
             handler: function(newBrush, oldVal) {
-                this.canvas.freeDrawingBrush.width = newBrush.width;
-                this.canvas.freeDrawingBrush.color = this.color;
+                if (this.canvas.freeDrawingBrush.width !== newBrush.width) {
+                    this.canvas.freeDrawingBrush.width = newBrush.width;
+                }
             },
             deep: true
         },
         color: {
             handler: function(newColor, oldColor) {
+                console.log('color watcher')
                 this.canvas.freeDrawingBrush.color = newColor;
+                if (this.mode === 'background') {
+                    this.background.color = newColor;
+                    this.addHistory();
+                }
             }
         },
         insertImage: {
             handler: function(newImage, oldImage) {
-                if (newImage) {
+                if (newImage && this.mode === 'photo') {
                     this.canvasInsertImage(newImage);
+                } else if (newImage && this.mode === 'background') {
+                    this.backgroundAddImage(newImage);
                 }
             }
         },
         activePage: {
             handler: function(newPage, oldPage) {
-                if (!this.canvas && newPage.pageJson) {
+                if (!this.canvas && newPage && newPage.pageJson) {
+                    this.background.color = this.activePage.background.color;
+                    this.background.image = this.activePage.background.image;
                     this.canvasInit();
                     const _this = this;
                     this.canvas.loadFromJSON(
-                      this.activePage.pageJson,
-                      function() {
+                        this.activePage.pageJson,
+                        function() {
                             _this.canvas.renderAll.bind(_this.canvas);
                             _this.setDefaultZoom();
                             _this.addHistory();
-                      });
+                        }
+                    );
 
                 } else if (!this.canvas) {
+                    this.background.color = this.activePage.background.color;
+                    this.background.image = this.activePage.background.image;
                     this.canvasInit();
                     this.setDefaultZoom();
                     this.addHistory();
@@ -614,7 +738,10 @@ export default {
 <style>
 .main-content-wrapper {
   flex-grow: 1;
-
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: stretch;
 }
 .main-content {
   width: 100%;
@@ -622,12 +749,11 @@ export default {
   flex-wrap: nowrap;
   justify-content: flex-start;
   align-items: flex-start;
+  flex-grow: 1
 }
 
 .canvas-ref{
   padding-left: 10px;
-  flex-grow: 1;
-  align-self: stretch;
   display: flex;
   max-height: calc(100vh - 120px);
   overflow: hidden;
@@ -643,6 +769,9 @@ export default {
     height: 595px;
     width: 842px;
     background: #fff;
+    background-repeat: no-repeat;
+    background-size: cover;
+    background-position: center center;
 }
 
 .color-picker-input {
@@ -650,8 +779,6 @@ export default {
 }
 
 .tools {
-  flex-basis: 100%;
-  padding-left: 40px;
   display: flex;
   justify-content: center;
 }
@@ -691,6 +818,9 @@ export default {
     flex-direction: column;
     align-items: center;
     background: rgba(255, 255, 255, 0.8);
+}
+.zoom-controls .disabled {
+  color: #bbb;
 }
 
 .color-btn {

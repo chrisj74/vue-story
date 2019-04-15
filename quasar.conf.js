@@ -15,10 +15,10 @@ module.exports = function (ctx) {
     ],
     extras: [
       ctx.theme.mat ? 'roboto-font' : null,
-      'material-icons',
+      // 'material-icons',
       // 'ionicons',
-      // 'mdi',
-      'fontawesome',
+      'mdi',
+      // 'fontawesome',
     ],
     supportIE: false,
     vendor: {
@@ -42,6 +42,9 @@ module.exports = function (ctx) {
     },
     // framework: 'all' --- includes everything; for dev only!
     framework: {
+      brand: {
+        primary: '#0273d4',
+      },
       components: [
         'QLayout',
         'QLayoutHeader',
@@ -65,6 +68,12 @@ module.exports = function (ctx) {
         'QModalLayout',
         'QSearch',
         'QSlider',
+        'QCard',
+        'QCardTitle',
+        'QCardMain',
+        'QCardMedia',
+        'QCardSeparator',
+        'QCardActions'
       ],
       directives: [
         'Ripple',

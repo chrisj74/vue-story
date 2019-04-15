@@ -232,7 +232,6 @@ export default {
   },
   getters: {
     user (state) {
-      console.log('user getter', state.user);
       return state.user;
     },
     profile (state) {

@@ -1,13 +1,13 @@
 <template>
-  <div>
+  <div class="search-container">
     <div class="search-header">
       <div class="flex row q-pa-md" v-shortkey="['enter']" @shortkey="searchImages()">
         <q-input v-model="searchString" float-label="Search for images" class="col-8"  />
-        <q-btn color="primary" icon="image_search" @click="searchImages()" class="col-1" />
+        <q-btn color="primary" icon="mdi-image-search" @click="searchImages()" class="col-1" />
         <div class="col-3">
           <image-uploader :debug="1" :maxWidth="512" :quality="0.7" :autoRotate=true outputFormat="verbose" :preview=false capture="environment" accept="video/*,image/*" doNotResize="['gif', 'svg']" @input="setImage" ref="imageUploader">
             <label for="fileInput" slot="upload-label">
-              <q-icon color="primary" icon="cloud_upload" label="Upload" />
+              <q-icon color="primary" name="mdi-cloud-upload" label="Upload" />
               <!-- <figure>
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
@@ -37,7 +37,7 @@
         </div>
 
         <!-- Load More -->
-        <q-btn @click="loadMore()">Load More</q-btn>
+        <q-btn class="load-more" @click="loadMore()" v-if="results">Load More</q-btn>
       </div>
     </div>
   </div>
@@ -152,6 +152,10 @@ export default {
 #fileInput {
   display: none;
 }
+.search-container {
+  display: flex;
+  flex-direction: column;
+}
 .search-header {
   position: absolute;
   top: 0;
@@ -165,6 +169,7 @@ export default {
   position: relative;
   margin-top: 80px;
   z-index: 1;
+  overflow: hidden;
 }
 .results-grid {
   display: flex;
@@ -180,6 +185,9 @@ export default {
 .results-thumb img {
   max-width: 100%;
   cursor: pointer;
+}
+.load-more {
+  flex-basis: 100%;
 }
 
 </style>

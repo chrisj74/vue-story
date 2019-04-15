@@ -1,26 +1,37 @@
 <template>
   <q-page class="">
     <h1>Stories</h1>
-    <div v-if="stories">
-      <div v-for="(story) in stories" :key="story.id">
-        <router-link :to="'/story/'+story.id">
-          <a>{{ story.title }} {{ story.id }}</a>
-        </router-link>
-        <q-btn icon="" @click="deleteStory(story.id)" label="delete"></q-btn>
-      </div>
+    <div v-if="stories" class="story-wrapper">
+      <q-card v-for="(story) in stories" :key="story.id" class="story">
+        <q-card-media>
+          <!-- <img src="~assets/donuts.png"> -->
+        </q-card-media>
+        <q-card-title>
+          <router-link :to="'/story/'+story.id">
+            <a>{{ story.title }}</a>
+          </router-link>
+        </q-card-title>
+        <q-card-main>
+          <p>Info about the story</p>
+        </q-card-main>
+        <q-card-separator />
+        <q-card-actions align="between">
+          <q-btn icon="mdi-delete" @click="deleteStory(story.id)" round color="negative" size="sm"></q-btn>
+          <router-link :to="'/story/'+story.id">
+            <q-btn round type="a" icon="mdi-edit" size="sm" color="positive" />
+          </router-link>
+        </q-card-actions>
+      </q-card>
     </div>
     <div>
-      <q-btn icon="create" label="New Story" @click="showAddStory = true" />
+      <q-btn icon="mdi-add-circle" round label="New Story" @click="showAddStory = true" />
     </div>
     <div v-if="showAddStory">
       <q-input type="text" v-model="newStory.title" float-label="Float Label" placeholder="Story Name" />
-      <q-btn icon="create" label="Add" @click="addStory" />
+      <q-btn icon="mdi-create" label="Add" @click="addStory" />
     </div>
   </q-page>
 </template>
-
-<style>
-</style>
 
 <script>
 export default {
@@ -50,7 +61,7 @@ export default {
       this.submitting = true;
       const newStory = {
         title: this.newStory.title,
-        plan: "",
+        plan: "<p>Plan from db</p>",
         thumbs: []
       };
       const payload = {
@@ -79,3 +90,18 @@ export default {
   }
 }
 </script>
+
+<style>
+.story-wrapper {
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
+  flex-wrap: wrap;
+  flex-direction: row;
+}
+.story {
+  flex-basis: 23%;
+  margin: 1%;
+}
+</style>
+

@@ -8,7 +8,7 @@
           round
           @click="leftDrawerOpen = !leftDrawerOpen"
         >
-          <q-icon name="menu" />
+          <q-icon name="mdi-menu" />
         </q-btn>
 
         <q-toolbar-title>
@@ -29,19 +29,19 @@
       >
         <q-list-header>Essential Links</q-list-header>
         <q-item :link="true" to="/">
-          <q-item-side icon="home"/>
+          <q-item-side icon="mdi-home"/>
           <q-item-main label="HOME" />
         </q-item>
         <q-item :link="true" to="/stories">
-          <q-item-side icon="book"/>
+          <q-item-side icon="mdi-book"/>
           <q-item-main label="STORIES" />
         </q-item>
         <q-item @click.native="onLogout" v-if="user">
-          <q-item-side icon="power settings new" />
+          <q-item-side icon="mdi-power" />
           <q-item-main label="EXIT" />
         </q-item>
         <q-item :link="true" to="/login" v-else>
-          <q-item-side icon="fas fa-user" />
+          <q-item-side icon="mdi-account" />
           <q-item-main label="Login" />
         </q-item>
       </q-list>

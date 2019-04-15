@@ -11,6 +11,7 @@ export default {
     pages: [],
     page: {},
     imageSearchResults: {
+      str: '',
       page: 0,
       totalHits: 0,
       hits: [],
@@ -35,14 +36,16 @@ export default {
     setPage (state, payload) {
       state.page = payload;
     },
-    setImageSearchResults(state, payload) {
+    clearImageSearchResults(state) {
+      state.imageSearchResults.str = '';
       state.imageSearchResults.totalHits = 0;
       state.imageSearchResults.hits = [];
       state.imageSearchResults.page = 0;
     },
-    clearImageSearchResults(state) {
-      state.imageSearchResults.totalHits = payload.data.totalHits;
-      state.imageSearchResults.hits = state.imageSearchResults.hits.concat(payload.data.hits);
+    setImageSearchResults(state, payload) {
+      state.imageSearchResults.str = payload.str;
+      state.imageSearchResults.totalHits = payload.response.data.totalHits;
+      state.imageSearchResults.hits = state.imageSearchResults.hits.concat(payload.response.data.hits);
       state.imageSearchResults.page += 1;
     },
     setInsertImage(state,payload) {
@@ -69,6 +72,10 @@ export default {
                 .collection('pages').add({
                   order: 0,
                   pageJson: '{}',
+                  background: {
+                    color: '#ffffff',
+                    image: false,
+                  }
                 });
 
           })
@@ -79,13 +86,32 @@ export default {
       });
     },
 
+    updateStory({ commit }, payload) {
+      const payloadRef = payload;
+      const userStory = firebase
+      .firestore()
+      .collection('users/' + payload.user.id + '/stories/').doc(payload.storyKey);
+      if (payloadRef.thumbUrl) {
+        userStory.update({
+          thumb: payloadRef.thumbUrl
+        });
+      }
+      if (payloadRef.plan) {
+        userStory.update({
+          plan: payloadRef.plan
+        });
+      }
+    },
+
     updatePage( {commit }, payload) {
+      console.log('updatePage', payload);
       return new Promise((resolve, reject) => {
         const userStory = firebase
           .firestore()
           .collection('users/' + payload.user.id + '/stories/' + payload.storyKey + '/pages/').doc(payload.pageKey);
           userStory.update({
-            pageJson: payload.page.json
+            pageJson: payload.page.json,
+            background: payload.page.background
           });
         resolve();
       });
@@ -99,12 +125,45 @@ export default {
           .firestore()
           .collection('users/' + payload.user.id + '/stories/' + payload.storyKey + '/pages/');
           userStory.add({
-            pageJson: {},
+            pageJson: null,
+            background: {
+              color: '#ffffff',
+              image: false,
+            },
             order: newOrder,
           }).then(function(docRef) {
             newId = docRef.id;
             resolve(newId);
           });
+      });
+    },
+
+    deletePage( { commit }, payload) {
+      const payloadRef = payload;
+      return new Promise((resolve, reject) => {
+        const userStory = firebase
+          .firestore()
+          .collection('users/' + payloadRef.user.id + '/stories/' + payloadRef.storyKey + '/pages/');
+          userStory.orderBy('order', 'asc')
+          .onSnapshot(function(querySnapshot) {
+            console.log('querySnapshot=', querySnapshot);
+            let index = 0;
+            querySnapshot.forEach(function(doc) {
+              console.log('doc.id=', doc.id);
+              console.log('delete', payloadRef.pageKey);
+              if (doc.id === payloadRef.pageKey) {
+                userStory.doc(doc.id).delete();
+              } else {
+                console.log('index = ', index);
+                userStory.doc(doc.id).update({
+                  order: index
+                });
+                index++;
+              }
+            });
+
+          });
+        resolve();
       });
     },
 
@@ -169,7 +228,8 @@ export default {
               pages.push({
                 id: doc.id,
                 order: doc.data().order,
-                thumb: doc.data().thumb
+                thumb: doc.data().thumb,
+                background: doc.data().background,
               });
 
           });
@@ -190,13 +250,16 @@ export default {
                   pageJson: doc.data().pageJson,
                   id: doc.id,
                   thumb: doc.data().thumb,
+                  background: doc.data().background,
                 };
             });
           } else {
+            /** cater for index without id */
             page = {
               pageJson : querySnapshot.docs[0].data().pageJson,
               id: querySnapshot.docs[0].id,
               thumb: querySnapshot.docs[0].data().thumb,
+              background: querySnapshot.docs[0].data().background,
             };
           }
           commit('setPage', page);
@@ -214,23 +277,12 @@ export default {
         task
           .then(snapshot => snapshot.ref.getDownloadURL())
           .then((url) => {
-            // commit('setInsertImage', imgObj);
             resolve(url);
             const newPayload = payload;
             newPayload.thumbUrl = url;
             dispatch('updateThumbData', newPayload);
             // Also update the story with the thumb ref
-            /* const userStory = firebase
-              .firestore()
-              .collection('users/' + payload.user.id + '/stories/').doc(payload.storyKey);
-              userStory.get().then(doc => {
-                if(!doc.data().) {
-                  console.log('thumb missing');
-                  userStory.update({
-                    thumb: payloadRef.thumbUrl
-                  });
-                }
-              }); */
+            /*  */
           })
           .catch(console.error);
 
@@ -244,7 +296,7 @@ export default {
         .collection('users/' + payload.user.id + '/stories/' + payload.storyKey + '/pages/').doc(payload.pageKey);
         userStory.get().then(doc => {
           if(!doc.data().thumb) {
-            console.log('thumb missing');
+            console.log('thumb missing', payloadRef.thumbUrl);
             userStory.update({
               thumb: payloadRef.thumbUrl
             });
@@ -275,6 +327,9 @@ export default {
     },
 
     searchImages({ commit, state }, payload) {
+      if (state.imageSearchResults.str !== payload.str) {
+        commit('clearImageSearchResults');
+      }
       const pageStr = '&page=' + (state.imageSearchResults.page +1);
       let path = 'https://pixabay.com/api/?key=11945260-36d09543fa5ee7da289366856&image_type=all&per_page='
       path += state.searchSize + '&safesearch=true&q=';
@@ -282,7 +337,11 @@ export default {
       const fullPath = path + query + pageStr;
       axios.get(fullPath)
       .then((response) => {
-        commit('setImageSearchResults', response);
+        const newPayload = {
+          str: payload.str,
+          response: response
+        };
+        commit('setImageSearchResults', newPayload);
       })
       .catch(() => {
         this.$q.notify({
@@ -300,6 +359,9 @@ export default {
     },
     getStory(state) {
       return state.story;
+    },
+    getStoryPlan(state) {
+      return state.story.plan;
     },
     getPages(state) {
       return state.pages;
