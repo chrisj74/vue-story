@@ -103,6 +103,24 @@ export default {
       }
     },
 
+    updatePageOrder({ commit }, payload) {
+      return new Promise((resolve, reject) => {
+        const userStory = firebase
+          .firestore()
+          .collection('users/' + payload.user.id + '/stories/' + payload.storyKey + '/pages/');
+        let index = 0;
+        payload.pages.forEach(page => {
+          userStory.doc(page.id)
+          .update({
+            order: index
+          });
+          console.log('page.id=', page.id);
+          index++;
+        });
+      });
+      resolve();
+    },
+
     updatePage( {commit }, payload) {
       return new Promise((resolve, reject) => {
         const userStory = firebase

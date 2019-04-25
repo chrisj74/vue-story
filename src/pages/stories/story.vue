@@ -5,12 +5,14 @@
             <div class="thumbs">
                 <!-- List thumbs -->
                 <div id="thumb-wrapper" v-if="isActiveRoute()">
-                    <div class="thumb" v-for="(page, index) of pages" :key="page.id" :id="'thumb'+page.id" :style="{backgroundColor: thumbBgColor(page)}" :class="{'active-thumb': activePage && page.id === activePage.id}">
-                        <router-link :to="'/story/'+$route.params.id+'/'+page.id">
-                            <img :src="getThumb(page)" style="max-width: 100%" />
-                        </router-link>
-                        <div class="delete-page" @click="deletePage(page.id, pages[index-1].id)"><q-icon v-if="index !== 0" size="sm" color="negative" name="mdi-delete" /></div>
-                    </div>
+                    <draggable v-model="pages">
+                        <div class="thumb" v-for="(page, index) of pages" :key="page.id" :id="'thumb'+page.id" :style="{backgroundColor: thumbBgColor(page)}" :class="{'active-thumb': activePage && page.id === activePage.id}">
+                            <router-link :to="'/story/'+$route.params.id+'/'+page.id">
+                                <img :src="getThumb(page)" style="max-width: 100%" />
+                            </router-link>
+                            <div class="delete-page" @click="deletePage(page.id, pages[index-1].id)"><q-icon v-if="index !== 0" size="sm" color="negative" name="mdi-delete" /></div>
+                        </div>
+                    </draggable>
                 </div>
                 <!-- Add page -->
                 <div class="add-page">
@@ -43,9 +45,13 @@ import { fabric } from 'fabric';
 import ClassicEditor from '@ckeditor/ckeditor5-build-classic';
 import * as b64toBlob from 'b64-to-blob';
 import * as _ from 'lodash';
+import draggable from 'vuedraggable';
 
 export default {
     name: 'Story',
+    components: {
+        draggable,
+    },
     data() {
         return {
             thumbCanvas: null,
@@ -84,8 +90,21 @@ export default {
                 }
             }, 500)
         },
-        pages() {
-            return this.$store.getters.getPages;
+        pages: {
+            get() {
+                return this.$store.getters.getPages;
+            },
+            set(value) {
+                console.log('set value=', value);
+                const payload = {
+                    user: this.user,
+                    storyKey: this.$route.params.id,
+                    pageKey: this.$route.params.pageId ? this.$route.params.pageId : null,
+                    pages: value
+                }
+                this.$store.dispatch('updatePageOrder', payload);
+            }
+
         },
         activePage() {
             return this.$store.getters.getPage;
