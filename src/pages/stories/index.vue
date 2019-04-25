@@ -18,7 +18,7 @@
         <q-card-actions align="between">
           <q-btn icon="mdi-delete" @click="deleteStory(story.id)" round color="negative" size="sm"></q-btn>
           <router-link :to="'/story/'+story.id">
-            <q-btn round type="a" icon="mdi-edit" size="sm" color="positive" />
+            <q-btn round type="a" icon="mdi-pencil" size="sm" color="positive" />
           </router-link>
         </q-card-actions>
       </q-card>
@@ -28,7 +28,7 @@
     </div>
     <div v-if="showAddStory">
       <q-input type="text" v-model="newStory.title" float-label="Float Label" placeholder="Story Name" />
-      <q-btn icon="mdi-create" label="Add" @click="addStory" />
+      <q-btn icon="mdi-pencil" label="Add" @click="addStory" />
     </div>
   </q-page>
 </template>

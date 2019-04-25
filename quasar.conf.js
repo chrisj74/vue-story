@@ -9,6 +9,7 @@ module.exports = function (ctx) {
       'axios',
       'ckeditor',
       'uploader',
+      'scrollto',
     ],
     css: [
       'app.styl'
@@ -73,7 +74,9 @@ module.exports = function (ctx) {
         'QCardMain',
         'QCardMedia',
         'QCardSeparator',
-        'QCardActions'
+        'QCardActions',
+        'QSpinner',
+        'QSpinnerBars',
       ],
       directives: [
         'Ripple',
@@ -83,7 +86,8 @@ module.exports = function (ctx) {
       plugins: [
         'Notify',
         'Dialog',
-        'Loading'
+        'Loading',
+        'Screen',
       ]
     },
     // animations: 'all' --- includes all animations

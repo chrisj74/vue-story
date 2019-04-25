@@ -4,8 +4,8 @@
             <!-- Thumbs -->
             <div class="thumbs">
                 <!-- List thumbs -->
-                <div class="thumb-wrapper" v-if="isActiveRoute()">
-                    <div class="thumb" v-for="(page, index) of pages" :key="page.id" :style="{backgroundColor: thumbBgColor(page)}" :class="{'active-thumb': activePage && page.id === activePage.id}">
+                <div id="thumb-wrapper" v-if="isActiveRoute()">
+                    <div class="thumb" v-for="(page, index) of pages" :key="page.id" :id="'thumb'+page.id" :style="{backgroundColor: thumbBgColor(page)}" :class="{'active-thumb': activePage && page.id === activePage.id}">
                         <router-link :to="'/story/'+$route.params.id+'/'+page.id">
                             <img :src="getThumb(page)" style="max-width: 100%" />
                         </router-link>
@@ -14,7 +14,7 @@
                 </div>
                 <!-- Add page -->
                 <div class="add-page">
-                    <q-btn color="primary" icon="mdi-add-circle" size="lg" round @click="addPage()" />
+                    <q-btn color="primary" icon="mdi-plus-circle" :size="$q.screen.lt.sm ? 'md' : 'lg'" round @click="addPage()" />
                 </div>
                 <!-- Thumb canvas -->
                 <div class="thumb-generator">
@@ -28,10 +28,12 @@
             </transition>
 
             <!-- Plan -->
-            <div class="side-bar">
-                <p>Plan</p>
-                <ckeditor :editor="editor" v-model="editorContent" :config="editorConfig" class="editor"></ckeditor>
-            </div>
+            <transition appear>
+                <div class="side-bar" v-if="showPlan">
+                    <p>Plan</p>
+                    <ckeditor :editor="editor" v-model="editorContent" :config="editorConfig" class="editor"></ckeditor>
+                </div>
+            </transition>
         </q-page>
     </div>
 </template>
@@ -52,7 +54,9 @@ export default {
             editorConfig: {
                 // The configuration of the editor.
             },
-            imageKey: 0
+            imageKey: 0,
+            showPlan: false,
+            scrollTop: -1,
         }
     },
     computed: {
@@ -89,7 +93,6 @@ export default {
 
     },
     mounted() {
-        console.log('story vue mounted, activePge=', this.activePage);
         this.imageKey = Math.random();
         if(this.activePage && this.activePage.pageJson) {
             this.canvasInit();
@@ -119,6 +122,12 @@ export default {
                 storyKey: this.$route.params.id,
             }
             this.$store.dispatch('setPages', payload);
+        }
+        /** Media queries */
+        if (this.$q.screen.lt.md) {
+            this.showPlan = false
+        } else {
+            this.showPlan = true;
         }
     },
     methods: {
@@ -258,7 +267,6 @@ export default {
         },
 
         setThumb(thumbImg) {
-            console.log('setThumb=', thumbImg);
             const payload = {
                 user: this.user,
                 storyKey: this.$route.params.id,
@@ -271,7 +279,6 @@ export default {
             };
             this.$store.dispatch('setThumb', payload)
                 .then(imgUrl => {
-                    console.log('image returned from action=', imgUrl);
                      this.activeThumb = imgUrl;
                 });
         },
@@ -292,6 +299,7 @@ export default {
         },
         activePage: {
             handler: function(newPage, oldPage) {
+                console.log('newPage Joson');
                 if (!this.thumbCanvas) {
                     this.canvasInit();
                     this.generateThumb();
@@ -301,22 +309,54 @@ export default {
                     && newPage.pageJson
                     && (newPage.pageJson != oldPage.pageJson || newPage.id !== oldPage.id)
                     && (newPage.id === this.$route.params.pageId || !this.$route.params.pageId)) {
-                    console.log('story.vue activePage watcher gen thumb');
                     this.generateThumb();
+
+                    /** Scroll active thumb into view */
+                    const _this = this;
+                    console.log('scrollTop=', this.scrollTop);
+
+                    this.$nextTick()
+                        .then(function () {
+                            // DOM updated
+                            const thumbWrapper = document.getElementById('thumb-wrapper');
+                            console.log('then', _this.scrollTop );
+                            if (_this.scrollTop === -1) {
+                                _this.$scrollTo('#thumb'+_this.activePage.id, 0, {
+                                    container: '#thumb-wrapper',
+                                    force: false,
+                                    duration: 10,
+                                    onStart: function(element) {
+                                    // scrolling started
+                                    console.log('start scroll');
+                                    },
+                                    onDone: function(element) {
+                                        _this.scrollTop = thumbWrapper.scrollTop;
+                                        console.log('onDone', _this.scrollTop );
+                                    }
+                                });
+                            } else {
+                                thumbWrapper.scrollTop = _this.scrollTop;
+                            }
+                        })
                 }
             },
             deep: true
         },
         $route: {
             handler: function(from, to){
-                console.log('story vue route watcher, from=', from);
                 if(from.params.id === to.params.id && from.params.pageId != to.params.pageId) {
                     /** key to force refresh of thumbs and keep them fresh after page navigation */
                     this.imageKey = Math.random();
+                    this.scrollTop = -1;
                 }
             },
             deep: true
         },
+        pages: {
+            handler: function(newPages, oldPages) {
+
+            }
+        }
     },
 }
 </script>
@@ -345,7 +385,7 @@ export default {
     width: 96px;
     align-self: flex-start;
 }
-.thumb-wrapper {
+#thumb-wrapper {
     max-height: calc(100vh - 130px);
     overflow: auto;
 }
@@ -395,5 +435,31 @@ export default {
     z-index: 999;
     border: solid 1px #999;
     background: #fff;
+}
+@media(max-width: $breakpoint-md) {
+    .story-page {
+        flex-direction: column
+    }
+    .thumbs {
+        display: flex;
+        flex-wrap: nowrap;
+        flex-direction: row;
+        justify-content: flex-start;
+        align-items: center;
+        order: 2;
+        width: 100%;
+    }
+    #thumb-wrapper {
+        max-height: 45px;
+        overflow: auto;
+        display: flex;
+        flex-direction: row;
+        justify-content: flex-end;
+        .thumb {
+            width: 60px;
+            height: 45px;
+            flex-basis: 60px;
+        }
+    }
 }
 </style>

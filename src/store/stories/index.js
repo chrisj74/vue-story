@@ -104,7 +104,6 @@ export default {
     },
 
     updatePage( {commit }, payload) {
-      console.log('updatePage', payload);
       return new Promise((resolve, reject) => {
         const userStory = firebase
           .firestore()
@@ -146,15 +145,11 @@ export default {
           .collection('users/' + payloadRef.user.id + '/stories/' + payloadRef.storyKey + '/pages/');
           userStory.orderBy('order', 'asc')
           .onSnapshot(function(querySnapshot) {
-            console.log('querySnapshot=', querySnapshot);
             let index = 0;
             querySnapshot.forEach(function(doc) {
-              console.log('doc.id=', doc.id);
-              console.log('delete', payloadRef.pageKey);
               if (doc.id === payloadRef.pageKey) {
                 userStory.doc(doc.id).delete();
               } else {
-                console.log('index = ', index);
                 userStory.doc(doc.id).update({
                   order: index
                 });
@@ -296,7 +291,6 @@ export default {
         .collection('users/' + payload.user.id + '/stories/' + payload.storyKey + '/pages/').doc(payload.pageKey);
         userStory.get().then(doc => {
           if(!doc.data().thumb) {
-            console.log('thumb missing', payloadRef.thumbUrl);
             userStory.update({
               thumb: payloadRef.thumbUrl
             });

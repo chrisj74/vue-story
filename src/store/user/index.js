@@ -20,7 +20,6 @@ export default {
   },
   actions: {
     setAuth ({ commit }, payload) {
-      console.log('setAuth', payload);
       commit('setAuth', payload);
     },
     setUserNull ({commit}) {
@@ -181,7 +180,6 @@ export default {
         );
     },
     autoSignIn ({commit}, payload) {
-      console.log('auto signin, payload=', payload);
       commit('setUser', {
         id: payload.user.uid,
         name: payload.user.displayName,
@@ -201,7 +199,6 @@ export default {
     },
     setProfile ({commit}, payload) {
       if (payload.val()) {
-        console.log('setProfile', payload.val());
         const newProfile = {
           age: payload.val().age
         };
