@@ -1,11 +1,22 @@
 <template>
   <q-layout view="lHh Lpr lFf">
-    <q-layout-header>
+    <q-btn
+      v-if="$q.screen.lt.md"
+      class="drawer-btn"
+      flat
+      dense
+      round
+      @click="leftDrawerOpen = !leftDrawerOpen"
+    >
+      <q-icon name="mdi-menu" />
+    </q-btn>
+    <q-layout-header v-if="$q.screen.gt.md">
       <q-toolbar color="primary">
         <q-btn
           flat
           dense
           round
+          size="lg"
           @click="leftDrawerOpen = !leftDrawerOpen"
         >
           <q-icon name="mdi-menu" />
@@ -100,6 +111,12 @@ export default {
 </script>
 
 <style>
+.drawer-btn {
+  position: absolute;
+  top: 5px;
+  left: 5px;
+  z-index: 999;
+}
 .loading-box {
   position: fixed;
   top: 0;

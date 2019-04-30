@@ -77,7 +77,6 @@ export default {
                     image: false,
                   }
                 });
-
           })
           .catch(function(error) {
               console.error("Error adding document: ", error);
@@ -117,11 +116,12 @@ export default {
           console.log('page.id=', page.id);
           index++;
         });
+        resolve();
       });
-      resolve();
     },
 
     updatePage( {commit }, payload) {
+      console.log('updatePage payload =', payload);
       return new Promise((resolve, reject) => {
         const userStory = firebase
           .firestore()
@@ -220,6 +220,7 @@ export default {
     },
 
     setStory({ commit }, payload) {
+      console.log('setstory');
       return new Promise((resolve, reject) => {
         firebase
           .firestore()
@@ -232,6 +233,7 @@ export default {
     },
 
     setPages({ commit}, payload) {
+      console.log('setpages payload=', payload);
       firebase
         .firestore()
         .collection('users/' + payload.user.id + '/stories/' + payload.storyKey + '/pages').orderBy('order', 'asc')
@@ -251,6 +253,7 @@ export default {
     },
 
     setPage({ commit }, payload) {
+      console.log('setPage payload=', payload);
       firebase
         .firestore()
         .collection('users/' + payload.user.id + '/stories/' + payload.storyKey + '/pages').orderBy('order', 'asc')
@@ -280,6 +283,7 @@ export default {
     },
 
     setThumb({ commit, dispatch }, payload) {
+      console.log('setThumb payload=', payload);
       return new Promise((resolve, reject) => {
         const ref = firebase.storage().ref();
         const path = 'images/' + payload.user.id + '/thumbs/' + payload.storyKey + '/' + payload.pageKey;
@@ -314,8 +318,6 @@ export default {
             });
           }
         });
-
-
     },
 
     addImage({ commit }, payload) {
@@ -365,6 +367,7 @@ export default {
       });
     },
   },
+
   getters: {
     getStories(state) {
       return state.stories;

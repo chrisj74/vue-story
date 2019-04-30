@@ -296,8 +296,19 @@ export default {
     }
   },
   mounted() {
+    console.log('page Mounted');
+
+    /** Set page from route */
+    if(this.user) {
+        const payload = {
+            user: this.user,
+            storyKey: this.$route.params.id,
+            pageKey: this.$route.params.pageId ? this.$route.params.pageId : null
+        }
+        this.$store.dispatch('setPage', payload);
+    }
     const _this = this;
-    if (this.activePage && !this.canvas) {
+    if (this.activePage && !this.canvas && this.story.id === this.$route.params.id) {
       if (this.activePage.background) {
         this.background.color = this.activePage.background.color;
         this.background.image = this.activePage.background.image;
@@ -798,11 +809,13 @@ export default {
   watch: {
     $route: {
       handler: function(from, to) {
+        console.log('to=', to);
         if (
           (from.params.id === to.params.id &&
             from.params.pageId != to.params.pageId) ||
           !to.params.pageId
         ) {
+          console.log('handle route change');
           // same story new page
           // detroy canvas
           if (this.canvas) {
@@ -1052,7 +1065,7 @@ export default {
 .reset-canvas {
   cursor: crosshair;
 }
-@media(max-width: $breakpoint-md) {
+@media(orientation: portrait) {
   .main-content {
     flex-direction: column;
   }
@@ -1061,6 +1074,11 @@ export default {
   }
   .extra-tools {
     flex-direction: row;
+  }
+}
+@media(max-width: $breakpoint-md) {
+  .canvas-ref {
+    max-height: calc(100vh - 70px);
   }
 }
 </style>

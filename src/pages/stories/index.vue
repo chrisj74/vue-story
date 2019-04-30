@@ -24,7 +24,7 @@
       </q-card>
     </div>
     <div>
-      <q-btn icon="mdi-add-circle" round label="New Story" @click="showAddStory = true" />
+      <q-btn icon="mdi-plus-circle" round label="New Story" @click="showAddStory = true" />
     </div>
     <div v-if="showAddStory">
       <q-input type="text" v-model="newStory.title" float-label="Float Label" placeholder="Story Name" />

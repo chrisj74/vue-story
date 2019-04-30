@@ -102,6 +102,7 @@ export default {
                     pageKey: this.$route.params.pageId ? this.$route.params.pageId : null,
                     pages: value
                 }
+                this.scrollTop = -1;
                 this.$store.dispatch('updatePageOrder', payload);
             }
 
@@ -112,12 +113,13 @@ export default {
 
     },
     mounted() {
+        console.log('story mounted');
         this.imageKey = Math.random();
-        if(this.activePage && this.activePage.pageJson) {
+        /* if(this.activePage && this.activePage.pageJson) {
             this.canvasInit();
-        }
+        } */
         /** Set story from route */
-        if ((!this.story || !this.story.hasOwnProperty('id')) && this.user) {
+        if ((!this.story || !this.story.hasOwnProperty('id') || this.story.id !== this.$route.params.id) && this.user) {
             const payload = {
                 user : this.user,
                 storyKey : this.$route.params.id
@@ -126,7 +128,7 @@ export default {
             this.storiesSet = true;
         }
         /** Set page from route */
-        if((!this.activePage || !this.activePage.hasOwnProperty('pageJson')) && this.user) {
+        if(this.user) {
             const payload = {
                 user: this.user,
                 storyKey: this.$route.params.id,
@@ -134,7 +136,7 @@ export default {
             }
             this.$store.dispatch('setPage', payload);
         }
-        /** Set page from route */
+        /** Set pages from route */
         if(this.user) {
             const payload = {
                 user: this.user,
@@ -151,7 +153,7 @@ export default {
     },
     methods: {
         isActiveRoute() {
-            if (this.$route.params.pageId === this.activePage.id
+            if ((this.activePage && this.$route.params.pageId === this.activePage.id)
                 || !this.$route.params.pageId) {
                     return true;
             } else {
@@ -191,9 +193,10 @@ export default {
                 pageKey: this.$route.params.pageId ? this.$route.params.pageId : null,
                 order: this.pages.length,
             }
+            const storyKey = this.$route.params.id;
             this.$store.dispatch('addPage', payload)
             .then(newPage => {
-                this.$router.push({ path: newPage })
+                this.$router.push({ path: '/story/'+storyKey+'/'+newPage })
             }) ;
         },
 
@@ -455,7 +458,7 @@ export default {
     border: solid 1px #999;
     background: #fff;
 }
-@media(max-width: $breakpoint-md) {
+@media(orientation: portrait) {
     .story-page {
         flex-direction: column
     }
@@ -480,5 +483,11 @@ export default {
             flex-basis: 60px;
         }
     }
+}
+
+@media(max-width: $breakpoint-md) and (orientation: landscape) {
+  .thumbs {
+    margin-top: 50px;
+  }
 }
 </style>
