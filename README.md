@@ -1,3 +1,4 @@
+
 # Quasar App + Firebase Auth
 
 Made under Quasar Framework v0.17.23
@@ -31,5 +32,6 @@ rename it as **env.json**
   projectId: "...",
   storageBucket: "...",
   messagingSenderId: "..."
-  
+
 ```
+

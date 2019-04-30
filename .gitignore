@@ -18,3 +18,8 @@ yarn-error.log*
 *.ntvs*
 *.njsproj
 *.sln
+.firebaserc
+firebase.json
+.firebase/hosting.ZGlzdC9zcGEtbWF0.cache
+eslint.json
+.eslintrc.json
