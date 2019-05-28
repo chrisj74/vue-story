@@ -75,6 +75,10 @@ export default {
                   background: {
                     color: '#ffffff',
                     image: false,
+                  },
+                  pageSize: {
+                    width: 842,
+                    height: 595,
                   }
                 });
           })
@@ -113,7 +117,7 @@ export default {
           .update({
             order: index
           });
-          console.log('page.id=', page.id);
+          // console.log('page.id=', page.id);
           index++;
         });
         resolve();
@@ -121,7 +125,7 @@ export default {
     },
 
     updatePage( {commit }, payload) {
-      console.log('updatePage payload =', payload);
+      // console.log('updatePage payload =', payload);
       return new Promise((resolve, reject) => {
         const userStory = firebase
           .firestore()
@@ -148,6 +152,10 @@ export default {
               image: false,
             },
             order: newOrder,
+            pageSize: {
+              width: 595,
+              height: 842,
+            }
           }).then(function(docRef) {
             newId = docRef.id;
             resolve(newId);
@@ -220,7 +228,7 @@ export default {
     },
 
     setStory({ commit }, payload) {
-      console.log('setstory');
+      // console.log('setstory');
       return new Promise((resolve, reject) => {
         firebase
           .firestore()
@@ -233,7 +241,7 @@ export default {
     },
 
     setPages({ commit}, payload) {
-      console.log('setpages payload=', payload);
+      // console.log('setpages payload=', payload);
       firebase
         .firestore()
         .collection('users/' + payload.user.id + '/stories/' + payload.storyKey + '/pages').orderBy('order', 'asc')
@@ -245,6 +253,7 @@ export default {
                 order: doc.data().order,
                 thumb: doc.data().thumb,
                 background: doc.data().background,
+                pageSize: doc.data().pageSize,
               });
 
           });
@@ -253,7 +262,7 @@ export default {
     },
 
     setPage({ commit }, payload) {
-      console.log('setPage payload=', payload);
+      // console.log('setPage payload=', payload);
       firebase
         .firestore()
         .collection('users/' + payload.user.id + '/stories/' + payload.storyKey + '/pages').orderBy('order', 'asc')
@@ -267,6 +276,7 @@ export default {
                   id: doc.id,
                   thumb: doc.data().thumb,
                   background: doc.data().background,
+                  pageSize: doc.data().pageSize,
                 };
             });
           } else {
@@ -276,6 +286,7 @@ export default {
               id: querySnapshot.docs[0].id,
               thumb: querySnapshot.docs[0].data().thumb,
               background: querySnapshot.docs[0].data().background,
+              pageSize: querySnapshot.docs[0].data().pageSize,
             };
           }
           commit('setPage', page);
@@ -283,7 +294,7 @@ export default {
     },
 
     setThumb({ commit, dispatch }, payload) {
-      console.log('setThumb payload=', payload);
+      // console.log('setThumb payload=', payload);
       return new Promise((resolve, reject) => {
         const ref = firebase.storage().ref();
         const path = 'images/' + payload.user.id + '/thumbs/' + payload.storyKey + '/' + payload.pageKey;

@@ -1,9 +1,7 @@
 <template>
   <div class="main-content-wrapper">
     <!-- Main tools -->
-    <div class="tools">
-      <q-btn icon="mdi-undo" round @click="undo()" :disable="!canUndo" :size="$q.screen.lt.sm ? 'sm' : 'md'"/>
-      <q-btn icon="mdi-redo" round @click="redo()" :disable="!canRedo" :size="$q.screen.lt.sm ? 'sm' : 'md'"/>
+    <div class="tools" :style="{top: toolsPos.top, left: toolsPos.left}">
 
       <q-btn
         icon="mdi-camera"
@@ -11,7 +9,11 @@
         round
         :size="$q.screen.lt.sm ? 'sm' : 'md'"
         @click="addPhoto()"
-      />
+      >
+        <q-tooltip>
+          Add an image
+        </q-tooltip>
+      </q-btn>
       <q-btn
         icon="mdi-format-text"
         :color="mode === 'text' ? 'primary' : 'dark'"
@@ -58,12 +60,12 @@
             </div>
           </div>
 
-
           <canvas
             id="storyCanvas"
             ref="canvas"
             key="canvas"
           ></canvas>
+
           <div class="zoom-controls" key="zooms" v-if="canvas && !brush.active && !isDown">
             <i @click="zoomIn()" class="q-icon mdi mdi-magnify-plus zoom-in"></i>
             <i
@@ -120,13 +122,16 @@
       </div>
 
       <!-- Extra context tools -->
-      <div class="extra-tools" v-if="canvas" key="extra-tools">
+      <div class="extra-tools" v-if="canvas" key="extra-tools" :style="{top: extraToolsPos.top, right: extraToolsPos.right}">
+        <q-btn icon="mdi-undo" round @click="undo()" :disable="!canUndo" size="sm"/>
+        <q-btn icon="mdi-redo" round @click="redo()" :disable="!canRedo" size="sm"/>
         <!-- COLORS -->
         <swatches
           v-model="color"
           colors="text-advanced"
-          popover-to="left"
+          :popover-to="screen.width > screen.height ? 'left' : 'right'"
           :trigger-style="{ width: '30px', height: '30px', borderRadius: '50%' }"
+          :disabled="mode === 'text'"
         ></swatches>
         <!-- BG IMAGE -->
         <q-btn
@@ -140,6 +145,7 @@
         />
         <!-- FILL OBJ -->
         <q-btn
+
           icon="mdi-format-color-fill"
           :color="mode === 'fill' ? 'primary' : 'dark'"
           round
@@ -166,12 +172,12 @@
           round
           @click="erase()"
         />
-        <div class="tool-slider" v-if="mode === 'text'">
+        <!-- <div class="tool-slider" v-if="mode === 'text'">
           <q-btn size="sm" color="primary" icon="mdi-format-size" round @click="toggleTextSize()"/>
           <div class="q-slider-wrap" v-if="showTextSize">
             <q-slider v-model="text.size" :min="5" :max="100" :step="1" label snap/>
           </div>
-        </div>
+        </div> -->
         <div class="tool-slider" v-if="mode === 'brush'">
           <q-btn
             size="sm"
@@ -208,6 +214,8 @@
         />
       </div>
     </div>
+    <text-editor v-if="canvas && activePage" :active="mode === 'text'" :zoom="page.zoom" :pageWidth="activePage.pageSize.width" :pageHeight="activePage.pageSize.height" ></text-editor>
+
     <q-modal
       v-if="canvas"
       v-model="imageModal"
@@ -215,6 +223,10 @@
     >
       <add-image v-if="mode === 'photo' || mode === 'background'"></add-image>
     </q-modal>
+
+
+
+
     <span
       v-if="mode != 'text'"
       v-shortkey="{undoWin:['ctrl', 'z'], undoMac:['meta', 'z'], deleteKey:['del'], backspaceKey:['backspace']}"
@@ -227,10 +239,12 @@
 import { fabric } from "fabric";
 import Swatches from "vue-swatches";
 import "vue-swatches/dist/vue-swatches.min.css";
-import AddImage from "../../components/story/PixabaySearch";
+import AddImage from "./PixabaySearch";
+import TextEditor from "./TextEditor";
+
 export default {
   name: "Page",
-  components: { Swatches, AddImage },
+  components: { Swatches, AddImage, TextEditor },
   data() {
     return {
       page: {
@@ -269,10 +283,12 @@ export default {
       },
       restoreIndex: -1,
       imageModal: false,
+      textModal: false,
 
       showTextSize: false,
       showBrushWidth: false,
-      showLineWidth: false
+      showLineWidth: false,
+      windowWidth: 1024
     };
   },
   computed: {
@@ -293,7 +309,55 @@ export default {
     },
     insertImage() {
       return this.$store.getters.getInsertImage;
-    }
+    },
+    screen() {
+      return this.$store.getters.screen;
+    },
+    toolsPos() {
+      let pos = {
+        top: 0,
+        right: 0
+      };
+      if (this.canvas) {
+        if (this.screen.width < this.screen.height) {
+          // Portrait
+          pos = {
+            top: 0,
+            left: 0,
+          }
+        } else {
+          // landscape
+          pos = {
+            top: '45px',
+            left: this.canvas.width+'px',
+          }
+        }
+      }
+      return pos;
+    },
+    extraToolsPos() {
+      let pos = {
+        top: 0,
+        right: 0
+      };
+      if (this.canvas) {
+        if (this.screen.width < this.screen.height) {
+          // Portrait
+          pos = {
+            top: (this.canvas.height + 10) + 'px',
+            right: 0,
+          }
+        } else {
+          // landscape
+          pos = {
+            top: '50px',
+            right: (this.screen.width - (this.canvas.width + 330)) + 'px',
+          }
+        }
+      }
+      return pos;
+    },
+
   },
   mounted() {
     console.log('page Mounted');
@@ -326,14 +390,16 @@ export default {
     /** Trigger canvas resize on browser resize */
 
     window.addEventListener("resize", function(event) {
+      this.windowWidth = window.innerWidth;
       _this.$nextTick()
           .then(function () {
               // DOM updated
-              _this.canvas.setHeight(595);
-              _this.canvas.setWidth(842);
+              _this.canvas.setHeight(_this.activePage.pageSize.height);
+              _this.canvas.setWidth(_this.activePage.pageSize.width);
               _this.setDefaultZoom();
           })
     });
+    this.windowWidth = window.innerWidth;
   },
   methods: {
     canvasInit() {
@@ -399,7 +465,7 @@ export default {
           canvas.add(line);
         }
         /** TEXT */
-        if (_this.mode === "text") {
+        /* if (_this.mode === "text") {
           if (
             !canvas.getActiveObject() ||
             !canvas.getActiveObject().isEditing
@@ -425,7 +491,7 @@ export default {
             _this.addHistory();
           } else {
           }
-        }
+        } */
         /** FILL */
         if (_this.mode === "fill") {
           const activeObject = canvas.getActiveObject();
@@ -460,8 +526,8 @@ export default {
           _this.brush.active = false;
         }
       });
-      this.canvas.setHeight(595);
-      this.canvas.setWidth(842);
+      this.canvas.setHeight(this.activePage.pageSize.height);
+      this.canvas.setWidth(this.activePage.pageSize.width);
 
       /* this.canvas.on("mouse:wheel", function(opt) {
         if (!_this.brush.active) {
@@ -534,8 +600,6 @@ export default {
       this.setPageSize();
       const maxHeightRatio = this.page.height / this.canvas.height;
       const maxWidthRatio = this.page.width / this.canvas.width;
-      console.log('this.page.width', this.page.width, ' this.canvas.width', this.canvas.width);
-      console.log('maxWidthRatio', maxWidthRatio);
       if (maxHeightRatio < maxWidthRatio) {
         this.page.zoom = maxHeightRatio;
         this.canvas.setHeight(this.canvas.height * maxHeightRatio);
@@ -586,6 +650,7 @@ export default {
       this.canvas.forEachObject(function(object) {
         object.selectable = true;
       });
+      this.textModal = true;
     },
 
     canvasInsertImage(imageObj) {
@@ -804,7 +869,7 @@ export default {
     },
     toggleLineWidth() {
       this.showLineWidth = true;
-    }
+    },
   },
   watch: {
     $route: {
@@ -870,6 +935,7 @@ export default {
     },
     activePage: {
       handler: function(newPage, oldPage) {
+        console.log('activePage=', this.activePage);
         if (!this.canvas && newPage && newPage.pageJson) {
           this.background.color = this.activePage.background.color;
           this.background.image = this.activePage.background.image;
@@ -914,6 +980,9 @@ export default {
   flex-direction: column;
   align-items: stretch;
   justify-content: stretch;
+  margin-right: 90px;
+  width: calc(100vw - 240px);
+  position: relative;
 }
 .main-content {
   width: 100%;
@@ -922,14 +991,15 @@ export default {
   justify-content: flex-start;
   align-items: flex-start;
   flex-grow: 1;
+  position: relative;
 }
 
 .canvas-ref {
-  padding-left: 10px;
   display: flex;
-  max-height: calc(100vh - 120px);
+  height: calc(100vh - 20px);
   overflow: hidden;
-  max-width: 100%;
+  max-width: calc(100vw - 190px);
+  flex-grow: 2;
 }
 
 .canvas-wrapper {
@@ -971,8 +1041,10 @@ export default {
 }
 
 .tools {
+  position: absolute;
+  z-index: 3;
   display: flex;
-  justify-content: center;
+  flex-direction: column;
 }
 
 .tools > * {
@@ -981,12 +1053,16 @@ export default {
 }
 
 .extra-tools {
-  align-self: stretch;
-  min-width: 50px;
+  width: 60px;
   display: flex;
+  position: absolute;
+  z-index: 3;
   flex-direction: column;
   justify-content: center;
-  align-items: center;
+}
+
+.extra-tools > * {
+  margin-bottom: 5px;
 }
 
 .pan-controls {
@@ -1033,7 +1109,7 @@ export default {
 .tool-slider .q-slider-wrap {
   position: absolute;
   width: 200px;
-  right: 50px;
+  right: 60px;
   top: 0;
   z-index: 1000;
 }
@@ -1065,20 +1141,57 @@ export default {
 .reset-canvas {
   cursor: crosshair;
 }
-@media(orientation: portrait) {
+.text-modal {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+@media (orientation: portrait) {
+  .main-content-wrapper {
+    margin-right: 0;
+    width: 100%;
+  }
   .main-content {
-    flex-direction: column;
+    display: block;
   }
   .canvas-ref {
     padding-left: 0;
+    max-width: calc(100vw - 10px);
+        height: calc(100vh - 220px);
+  }
+  .tools {
+    display: flex;
+    justify-content: center;
+    position: relative;
+    flex-direction: row;
   }
   .extra-tools {
     flex-direction: row;
+    width: 100%;
+  }
+  .tool-slider .q-slider-wrap {
+    width: 200px;
+    left: -20px;
+    right: auto;
+    top: -30px;
+    z-index: 1000;
   }
 }
-@media(max-width: $breakpoint-md) {
+@media(max-width: $breakpoint-md) and (orientation: landscape) {
   .canvas-ref {
-    max-height: calc(100vh - 70px);
+    height: calc(100vh - 20px);
+  }
+  .tools {
+    margin-top: -25px;
+  }
+}
+@media(max-width: $breakpoint-md) and (orientation: portrait) {
+  .main-content-wrapper {
+    max-height: calc(100vh - 170px);
+    overflow: hidden;
+  }
+  .canvas-ref {
+    height: calc(100vh - 250px);
   }
 }
 </style>

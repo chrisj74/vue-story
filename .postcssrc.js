@@ -1,8 +1,13 @@
 // https://github.com/michael-ciniawsky/postcss-load-config
+const { styles } = require( '@ckeditor/ckeditor5-dev-utils' );
 
-module.exports = {
-  plugins: [
-    // to edit target browsers: use "browserslist" field in package.json
-    require('autoprefixer')
-  ]
-}
+const config = styles.getPostCssConfig({
+  themeImporter: {
+      themePath: require.resolve('@ckeditor/ckeditor5-theme-lark')
+  },
+  minify: true
+});
+
+config.plugins.push( require('autoprefixer')() );
+
+module.exports = config

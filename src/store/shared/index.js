@@ -1,7 +1,12 @@
 export default {
   state: {
     loading: false,
-    error: null
+    error: null,
+    screen: {
+      width: 1024,
+      height: 768
+    },
+    showPlan: false
   },
   mutations: {
     setLoading (state, payload) {
@@ -12,12 +17,29 @@ export default {
     },
     clearError (state) {
       state.error = null;
-    }
+    },
+    setScreen (state, payload) {
+      state.screen.width = payload.width;
+      state.screen.height = payload.height;
+    },
+    setPlan(state, payload) {
+      state.showPlan = payload;
+    },
   },
   actions: {
     clearError ({commit}) {
       commit('clearError');
-    }
+    },
+    setScreen ({commit}) {
+      const screenSizes = {
+        width: window.innerWidth,
+        height: window.innerHeight
+      };
+      commit('setScreen', screenSizes);
+    },
+    toggleShowPlan({commit, state}) {
+      commit('setPlan', !state.showPlan);
+    },
   },
   getters: {
     loading (state) {
@@ -25,6 +47,12 @@ export default {
     },
     error (state) {
       return state.error;
+    },
+    screen (state) {
+      return state.screen;
+    },
+    showPlan (state) {
+      return state.showPlan;
     }
   }
 };

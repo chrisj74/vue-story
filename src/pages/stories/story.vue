@@ -33,7 +33,6 @@
             <transition appear>
                 <div class="side-bar" v-if="showPlan">
                     <p>Plan</p>
-                    <ckeditor :editor="editor" v-model="editorContent" :config="editorConfig" class="editor"></ckeditor>
                 </div>
             </transition>
         </q-page>
@@ -42,7 +41,6 @@
 
 <script>
 import { fabric } from 'fabric';
-import ClassicEditor from '@ckeditor/ckeditor5-build-classic';
 import * as b64toBlob from 'b64-to-blob';
 import * as _ from 'lodash';
 import draggable from 'vuedraggable';
@@ -55,13 +53,12 @@ export default {
     data() {
         return {
             thumbCanvas: null,
-            editor: ClassicEditor,
+            // editor: InlineEditor,
             activeThumb: {},
             editorConfig: {
                 // The configuration of the editor.
             },
             imageKey: 0,
-            showPlan: false,
             scrollTop: -1,
         }
     },
@@ -71,6 +68,9 @@ export default {
         },
         loading() {
             return this.$store.getters.loading;
+        },
+        showPlan() {
+            return this.$store.getters.showPlan;
         },
         story() {
             return this.$store.getters.getStory;
@@ -110,7 +110,9 @@ export default {
         activePage() {
             return this.$store.getters.getPage;
         },
-
+        screen() {
+            return this.$store.getters.screen;
+        }
     },
     mounted() {
         console.log('story mounted');
@@ -143,12 +145,6 @@ export default {
                 storyKey: this.$route.params.id,
             }
             this.$store.dispatch('setPages', payload);
-        }
-        /** Media queries */
-        if (this.$q.screen.lt.md) {
-            this.showPlan = false
-        } else {
-            this.showPlan = true;
         }
     },
     methods: {
@@ -321,7 +317,6 @@ export default {
         },
         activePage: {
             handler: function(newPage, oldPage) {
-                console.log('newPage Joson');
                 if (!this.thumbCanvas) {
                     this.canvasInit();
                     this.generateThumb();
@@ -335,13 +330,11 @@ export default {
 
                     /** Scroll active thumb into view */
                     const _this = this;
-                    console.log('scrollTop=', this.scrollTop);
 
                     this.$nextTick()
                         .then(function () {
                             // DOM updated
                             const thumbWrapper = document.getElementById('thumb-wrapper');
-                            console.log('then', _this.scrollTop );
                             if (_this.scrollTop === -1) {
                                 _this.$scrollTo('#thumb'+_this.activePage.id, 0, {
                                     container: '#thumb-wrapper',
@@ -391,20 +384,27 @@ export default {
     background: #ddd;
     flex-wrap: nowrap;
     overflow: hidden;
+    justify-content: flex-start;
 }
 
 .side-bar {
     min-width: 20%;
     max-width: 50%;
+    width: 400px;
+    position: fixed;
+    top: 50px;
+    right: 0;
+    height: calc(100vh - 50px);
+    background: rgba(255,255,255,.8);
+    z-index: 3;
 }
 .add-page {
     text-align: center;
+    width: 84px;
 }
 .thumbs {
-    margin: 5px;
-    padding: 5px;
-    border: solid 1px #999;
-    width: 96px;
+    margin-top: 35px;
+    width: 106px;
     align-self: flex-start;
 }
 #thumb-wrapper {
@@ -417,13 +417,13 @@ export default {
     display: flex;
     justify-content: center;
     align-items: stretch;
-    border: 1px solid #999;
     margin-bottom: 5px;
+    margin-right: 10px;
     background-size: cover;
     background-repeat: no-repeat;
     background-color: #fff;
     position: relative;
-    border: solid 3px #fff;
+    border: solid 3px #aeaeae;
     -webkit-transition: border-color 1s; /* Safari */
     transition: border-color 1s;
 }
@@ -462,6 +462,9 @@ export default {
     .story-page {
         flex-direction: column
     }
+    .side-bar {
+        height: calc(100vh - (50px + 100px));
+    }
     .thumbs {
         display: flex;
         flex-wrap: nowrap;
@@ -470,24 +473,26 @@ export default {
         align-items: center;
         order: 2;
         width: 100%;
+        margin-top: 5px;
     }
     #thumb-wrapper {
-        max-height: 45px;
-        overflow: auto;
-        display: flex;
-        flex-direction: row;
-        justify-content: flex-end;
-        .thumb {
-            width: 60px;
-            height: 45px;
-            flex-basis: 60px;
+        >div {
+            max-height: 60px;
+            overflow: auto;
+            display: flex;
+            flex-direction: row;
+            justify-content: flex-end;
+            .thumb {
+                width: 700px;
+                height: 50px;
+                flex-basis: 70px;
+                min-width: 70px;
+                margin-right: 5px;
+                .delete-page {
+                    display: none;
+                }
+            }
         }
     }
-}
-
-@media(max-width: $breakpoint-md) and (orientation: landscape) {
-  .thumbs {
-    margin-top: 50px;
-  }
 }
 </style>

@@ -1,16 +1,29 @@
 <template>
   <q-layout view="lHh Lpr lFf">
+    <!-- left drawer -->
     <q-btn
-      v-if="$q.screen.lt.md"
       class="drawer-btn"
       flat
       dense
       round
+      size="lg"
       @click="leftDrawerOpen = !leftDrawerOpen"
     >
       <q-icon name="mdi-menu" />
     </q-btn>
-    <q-layout-header v-if="$q.screen.gt.md">
+    <!-- plan -->
+    <q-btn
+      class="plan-btn"
+      flat
+      dense
+      round
+      size="lg"
+      @click="togglePlan()"
+    >
+      <q-icon :name="showPlan ? 'mdi-close' : 'mdi-file-document-box-outline'" />
+    </q-btn>
+    <!-- titlebar -->
+    <!-- <q-layout-header v-if="screen.width > screen.height">
       <q-toolbar color="primary">
         <q-btn
           flat
@@ -26,8 +39,17 @@
           Quasar + Firebase Auth
           <div slot="subtitle">Quasar Framework 0.15.6 + Firebase Auth</div>
         </q-toolbar-title>
+        <q-btn
+          flat
+          dense
+          round
+          size="lg"
+          @click="togglePlan()"
+        >
+          <q-icon name="mdi-menu" />
+        </q-btn>
       </q-toolbar>
-    </q-layout-header>
+    </q-layout-header> -->
 
     <q-layout-drawer
       v-model="leftDrawerOpen"
@@ -85,13 +107,22 @@ export default {
     },
     loading () {
       return this.$store.getters.loading
-    }
+    },
+    screen() {
+      return this.$store.getters.screen;
+    },
+    showPlan() {
+      return this.$store.getters.showPlan;
+    },
   },
   methods: {
    onLogout () {
       this.$store.dispatch('logout');
       this.$router.push('/');
-    }
+    },
+    togglePlan() {
+      this.$store.dispatch('toggleShowPlan');
+    },
   },
   mounted () {
     /* if (this.user) {
@@ -113,8 +144,14 @@ export default {
 <style>
 .drawer-btn {
   position: absolute;
-  top: 5px;
+  top: 0;
   left: 5px;
+  z-index: 999;
+}
+.plan-btn {
+  position: absolute;
+  top: 0;
+  right: 5px;
   z-index: 999;
 }
 .loading-box {
