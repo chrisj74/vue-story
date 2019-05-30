@@ -71,14 +71,21 @@ export default {
               docRef
                 .collection('pages').add({
                   order: 0,
-                  pageJson: '{}',
+                  canvasJson: '{}',
+                  textLayer: {
+                    text: '',
+                    x: 0,
+                    y: 0,
+                    width: 595,
+                    height: (842 - 50)
+                  },
                   background: {
                     color: '#ffffff',
                     image: false,
                   },
                   pageSize: {
-                    width: 842,
-                    height: 595,
+                    width: 595,
+                    height: 842,
                   }
                 });
           })
@@ -131,8 +138,28 @@ export default {
           .firestore()
           .collection('users/' + payload.user.id + '/stories/' + payload.storyKey + '/pages/').doc(payload.pageKey);
           userStory.update({
-            pageJson: payload.page.json,
+            canvasJson: payload.page.json,
             background: payload.page.background
+          });
+        resolve();
+      });
+    },
+
+
+    updatePageText( {commit }, payload) {
+      // console.log('updatePage payload =', payload);
+      return new Promise((resolve, reject) => {
+        const userStory = firebase
+          .firestore()
+          .collection('users/' + payload.user.id + '/stories/' + payload.storyKey + '/pages/').doc(payload.pageKey);
+          userStory.update({
+            textLayer: {
+              y: payload.textLayer.y,
+              x: payload.textLayer.x,
+              width: payload.textLayer.width,
+              height: payload.textLayer.height,
+              text: payload.textLayer.text
+            }
           });
         resolve();
       });
@@ -146,7 +173,14 @@ export default {
           .firestore()
           .collection('users/' + payload.user.id + '/stories/' + payload.storyKey + '/pages/');
           userStory.add({
-            pageJson: null,
+            canvasJson: null,
+            textLayer: {
+              text: '',
+              x: 0,
+              y: 0,
+              width: 595,
+              height: (842 -50)
+            },
             background: {
               color: '#ffffff',
               image: false,
@@ -272,7 +306,8 @@ export default {
             querySnapshot.docs.forEach(doc => {
               if (doc.id === payload.pageKey)
                 page = {
-                  pageJson: doc.data().pageJson,
+                  canvasJson: doc.data().canvasJson,
+                  textLayer: doc.data().textLayer,
                   id: doc.id,
                   thumb: doc.data().thumb,
                   background: doc.data().background,
@@ -282,7 +317,8 @@ export default {
           } else {
             /** cater for index without id */
             page = {
-              pageJson : querySnapshot.docs[0].data().pageJson,
+              canvasJson : querySnapshot.docs[0].data().canvasJson,
+              textLayer : querySnapshot.docs[0].data().textLayer,
               id: querySnapshot.docs[0].id,
               thumb: querySnapshot.docs[0].data().thumb,
               background: querySnapshot.docs[0].data().background,
@@ -394,6 +430,17 @@ export default {
     },
     getPage(state) {
       return state.page;
+    },
+    getPageText(state) {
+      if (state.page && state.page.textLayer) {
+        return state.page.textLayer.text;
+      } else {
+        return 'Loading';
+      }
+
+    },
+    getPageTextDimensions(state) {
+      return state.page.textLayer;
     },
     getImageSearchResults(state) {
       return state.imageSearchResults;

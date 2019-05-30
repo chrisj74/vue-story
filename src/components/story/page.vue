@@ -228,7 +228,7 @@
 
 
     <span
-      v-if="mode != 'text'"
+      v-if="mode != 'text' && !showPlan"
       v-shortkey="{undoWin:['ctrl', 'z'], undoMac:['meta', 'z'], deleteKey:['del'], backspaceKey:['backspace']}"
       @shortkey="shortKeys($event)"
     ></span>
@@ -313,6 +313,9 @@ export default {
     screen() {
       return this.$store.getters.screen;
     },
+    showPlan() {
+      return this.$store.getters.showPlan;
+    },
     toolsPos() {
       let pos = {
         top: 0,
@@ -351,7 +354,7 @@ export default {
           // landscape
           pos = {
             top: '50px',
-            right: (this.screen.width - (this.canvas.width + 330)) + 'px',
+            right: (this.screen.width - (this.canvas.width + 300)) + 'px',
           }
         }
       }
@@ -378,9 +381,9 @@ export default {
         this.background.image = this.activePage.background.image;
       }
 
-      if (this.activePage.pageJson) {
+      if (this.activePage.canvasJson) {
         this.canvasInit();
-        this.canvas.loadFromJSON(this.activePage.pageJson, function() {
+        this.canvas.loadFromJSON(this.activePage.canvasJson, function() {
           _this.canvas.renderAll.bind(_this.canvas);
           _this.setDefaultZoom();
           _this.addHistory();
@@ -935,13 +938,12 @@ export default {
     },
     activePage: {
       handler: function(newPage, oldPage) {
-        console.log('activePage=', this.activePage);
-        if (!this.canvas && newPage && newPage.pageJson) {
+        if (!this.canvas && newPage && newPage.canvasJson) {
           this.background.color = this.activePage.background.color;
           this.background.image = this.activePage.background.image;
           this.canvasInit();
           const _this = this;
-          this.canvas.loadFromJSON(this.activePage.pageJson, function() {
+          this.canvas.loadFromJSON(this.activePage.canvasJson, function() {
             _this.canvas.renderAll.bind(_this.canvas);
             _this.setDefaultZoom();
             _this.addHistory();

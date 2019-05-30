@@ -23,10 +23,11 @@
     </div>
 
 
-    <div v-if="width" :style="{ transform: 'scale('+zoom+')', height: (pageHeight - 50)+'px', width: pageWidth+'px', pointerEvents: active ? 'all' : 'none', userSelect: active ? 'all' : 'none'}" class="text-layer">
-      <vue-draggable-resizable :prevent-deactivation="true" :w="500" :h="500" :x="0" :y="0" @dragging="onDrag" @resizing="onResize" :parent="true" :drag-handle="'.drag-handle'" :active="active">
-        <quill-editor v-model="editorContent"
-          ref="myQuillEditor"
+    <div v-if="pageWidth" :style="{ transform: 'scale('+zoom+')', height: (pageHeight - 50)+'px', width: pageWidth+'px', pointerEvents: active ? 'all' : 'none', userSelect: active ? 'all' : 'none'}" class="text-layer">
+      <vue-draggable-resizable :prevent-deactivation="true" :w="draggableDimensions.width" :h="draggableDimensions.height" :x="draggableDimensions.x" :y="draggableDimensions.y" @dragging="onDrag" @resizing="onResize" :parent="true" :drag-handle="'.drag-handle'" :active="active">
+        <quill-editor :content="editorContent"
+          ref="textLayerEditor"
+          @change="onEditorChange($event)"
           :options="editorConfig" class="editor" v-if="active">
         </quill-editor>
         <div v-else v-html="editorContent" class="text-render ql-editor ql-container"></div>
@@ -40,6 +41,7 @@
 <script>
 
 import VueDraggableResizable from 'vue-draggable-resizable';
+import * as _ from 'lodash';
 
 export default {
   name: 'TextEditor',
@@ -49,7 +51,7 @@ export default {
   props: ['zoom','active','pageWidth','pageHeight'],
   data() {
     return {
-      editorContent: '',
+      editorContent: 'Loading',
       editorConfig: {
         bounds: '.draggable',
         modules: {
@@ -68,43 +70,107 @@ export default {
           }
         }
       },
-      width: 500,
-      height: 800,
-      x: 0,
-      y: 0,
+      cursorSelection: null,
     }
   },
-/*   mounted: {
-
-  },*/
-  /* computed: {
-    width() {
-      return
-    }
-  },  */
-  methods: {
-    onResize: function (x, y, width, height) {
-      this.x = x
-      this.y = y
-      this.width = width
-      this.height = height
+  mounted() {
+    /** Need to hydrate local prop from store, binding to store cuases cursor to move to start after keystroke */
+    this.editorContent = this.storeContent;
+  },
+  computed: {
+    editor() {
+      return this.$refs.textLayerEditor.quill
     },
-    onDrag: function (x, y) {
-      this.x = x
-      this.y = y
-    }
+    user() {
+      return this.$store.getters.user;
+    },
+    loading() {
+      return this.$store.getters.loading;
+    },
+    story() {
+      return this.$store.getters.getStory;
+    },
+    pages() {
+      return this.$store.getters.getPages;
+    },
+    activePage() {
+      return this.$store.getters.getPage;
+    },
+    storeContent() {
+        return this.$store.getters.getPageText;
+    },
+    draggableDimensions(){
+      return this.$store.getters.getPageTextDimensions;
+    },
   },
-  /* watch: {
-    zoom: {
+  methods: {
+    onEditorChange: _.debounce(function(event) {
+      console.log('onEditorChange event=', event.html);
+      console.log('this.editorContent=', this.editorContent);
+      if (this.user && event.html !== this.editorContent) {
+            const payload = {
+                user: this.user,
+                storyKey: this.$route.params.id,
+                pageKey: this.activePage.id,
+                textLayer: {
+                  x: (this.draggableDimensions.x * 1),
+                  y: (this.draggableDimensions.y * 1),
+                  width: (this.draggableDimensions.width * 1),
+                  height: (this.draggableDimensions.height * 1),
+                  text: event.html
+                }
+            };
+            this.$store.dispatch('updatePageText', payload)
+        }
+    }, 500),
+    onResize: _.debounce(function (x, y, width, height) {
+      if (this.user) {
+        const payload = {
+            user: this.user,
+            storyKey: this.$route.params.id,
+            pageKey: this.activePage.id,
+            textLayer: {
+              x: (x * 1),
+              y: (y * 1),
+              width: (width * 1),
+              height: (height * 1),
+              text: this.editorContent
+            }
+        };
+        this.$store.dispatch('updatePageText', payload);
+      }
+    }, 500),
+    onDrag: _.debounce(function (x, y) {
+      if (this.user) {
+          const payload = {
+              user: this.user,
+              storyKey: this.$route.params.id,
+              pageKey: this.activePage.id,
+              textLayer: {
+                x: x,
+                y: y,
+                width: this.draggableDimensions.width,
+                height: this.draggableDimensions.height,
+                text: this.editorContent
+              }
+          };
+          this.$store.dispatch('updatePageText', payload);
+      }
+    }, 500)
+  },
+  watch: {
+    editorContent: {
       handler: function(from, to) {
-        this.$nextTick(() => {
+        // console.log('watcher', this.cursorSelection.index);
+        // this.editor.setSelection(this.cursorSelection);
+        /* this.$nextTick(() => {
           const editorToolbar = document.querySelectorAll('.ql-toolbar.ql-snow ');
           console.log('editorToolbar=', editorToolbar);
           editorToolbar[0].style.transform = 'scale(' + (1 / this.zoom) + ')';
-        });
+        }); */
       }
     }
-  } */
+  }
 }
 </script>
 
@@ -167,24 +233,25 @@ export default {
 }
 #toolbar {
   z-index: 101;
-}
-.ql-toolbar.ql-snow  {
-  background: #fff;
-  position: absolute;
-  width: 100%;
-  top: 0;
-  left: 0;
-  display: flex;
-  flex-direction: row;
-  padding: 0;
-  .ql-formats {
+  &.ql-toolbar.ql-snow  {
+    background: #fff;
+    position: absolute;
+    width: 100%;
+    top: 0;
+    left: 0;
     display: flex;
     flex-direction: row;
-  }
-  .ql-snow .ql-picker-options {
-    z-index: 102;
+    padding: 0;
+    .ql-formats {
+      display: flex;
+      flex-direction: row;
+    }
+    .ql-snow .ql-picker-options {
+      z-index: 102;
+    }
   }
 }
+
 
 .vdr {
   border: dashed 1px rgba(0,0,0,0.2);

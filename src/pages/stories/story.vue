@@ -3,14 +3,15 @@
         <q-page class="story-page row justify-center">
             <!-- Thumbs -->
             <div class="thumbs">
+                <q-btn size="sm" @click="isEdit = !isEdit" :label="isEdit? 'done' : 'edit'"></q-btn>
                 <!-- List thumbs -->
                 <div id="thumb-wrapper" v-if="isActiveRoute()">
-                    <draggable v-model="pages">
+                    <draggable v-model="pages" :disabled="!isEdit">
                         <div class="thumb" v-for="(page, index) of pages" :key="page.id" :id="'thumb'+page.id" :style="{backgroundColor: thumbBgColor(page)}" :class="{'active-thumb': activePage && page.id === activePage.id}">
                             <router-link :to="'/story/'+$route.params.id+'/'+page.id">
                                 <img :src="getThumb(page)" style="max-width: 100%" />
                             </router-link>
-                            <div class="delete-page" @click="deletePage(page.id, pages[index-1].id)"><q-icon v-if="index !== 0" size="sm" color="negative" name="mdi-delete" /></div>
+                            <div v-if="isEdit" class="delete-page" @click="deletePage(page.id, pages[index-1].id)"><q-icon v-if="index !== 0" size="sm" color="negative" name="mdi-delete" /></div>
                         </div>
                     </draggable>
                 </div>
@@ -32,7 +33,11 @@
             <!-- Plan -->
             <transition appear>
                 <div class="side-bar" v-if="showPlan">
-                    <p>Plan</p>
+                    <quill-editor v-model="editorContent"
+                    ref="guideEditor"
+                    @focus="onEditorFocus($event)"
+                    :options="editorConfig">
+                    </quill-editor>
                 </div>
             </transition>
         </q-page>
@@ -53,16 +58,42 @@ export default {
     data() {
         return {
             thumbCanvas: null,
-            // editor: InlineEditor,
             activeThumb: {},
             editorConfig: {
-                // The configuration of the editor.
+                modules: {
+                    blotFormatter: {},
+                    toolbar: [
+                        ['bold', 'italic', 'underline'],        // toggled buttons
+                        ['blockquote'],
+
+                        // [{ 'header': 1 }, { 'header': 2 }],               // custom button values
+                        [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+                        // [{ 'script': 'sub'}, { 'script': 'super' }],      // superscript/subscript
+                        // [{ 'indent': '-1'}, { 'indent': '+1' }],          // outdent/indent
+                        // [{ 'direction': 'rtl' }],                         // text direction
+
+                        [{ 'size': ['small', false, 'large', 'huge'] }],  // custom dropdown
+                        // [{ 'header': [1, 2, 3, 4, 5, 6, false] }],
+
+                        [{ 'color': [] }, { 'background': [] }],          // dropdown with defaults from theme
+                        [{ 'font': [] }],
+                        [{ 'align': [] }],
+                        ['link', 'video']
+
+                        // ['clean']                                         // remove formatting button
+                    ]
+                }
             },
             imageKey: 0,
             scrollTop: -1,
+            cursorSelection: null,
+            isEdit: false
         }
     },
     computed: {
+        editor() {
+            return this.$refs.guideEditor.quill
+        },
         user() {
             return this.$store.getters.user;
         },
@@ -78,8 +109,10 @@ export default {
         editorContent: {
             get() {
                 return this.$store.getters.getStoryPlan;
+                this.editor.setSelection(this.cursorSelection);
             },
             set: _.debounce(function(content) {
+                this.cursorSelection = this.editor.getSelection();
                 if (this.user) {
                     const payload = {
                         user: this.user,
@@ -117,7 +150,7 @@ export default {
     mounted() {
         console.log('story mounted');
         this.imageKey = Math.random();
-        /* if(this.activePage && this.activePage.pageJson) {
+        /* if(this.activePage && this.activePage.canvasJson) {
             this.canvasInit();
         } */
         /** Set story from route */
@@ -148,6 +181,9 @@ export default {
         }
     },
     methods: {
+        onEditorFocus(quill){
+            this.cursorSelection = quill.getSelection();
+        },
         isActiveRoute() {
             if ((this.activePage && this.$route.params.pageId === this.activePage.id)
                 || !this.$route.params.pageId) {
@@ -177,7 +213,7 @@ export default {
             this.thumbCanvas = new fabric.Canvas('thumbCanvas');
             this.thumbCanvas.setHeight(595);
             this.thumbCanvas.setWidth(842);
-            if (this.activePage && this.activePage.pageJson) {
+            if (this.activePage && this.activePage.canvasJson) {
                 this.generateThumb()
             }
         },
@@ -228,8 +264,8 @@ export default {
 
         setZoom(factor) {
             /** change zoom to load or export */
-            this.thumbCanvas.setHeight(595 * factor);
-            this.thumbCanvas.setWidth(842 * factor)
+            this.thumbCanvas.setHeight(842 * factor);
+            this.thumbCanvas.setWidth(595 * factor)
             this.thumbCanvas.setZoom(factor);
             this.thumbCanvas.renderAll();
         },
@@ -240,7 +276,7 @@ export default {
             const _this = this;
             this.thumbCanvas.clear();
             this.thumbCanvas.loadFromJSON(
-                this.activePage.pageJson,
+                this.activePage.canvasJson,
                 function() {
                     _this.thumbCanvas.renderAll.bind(_this.thumbCanvas);
                     let thumbImg = _this.thumbCanvas.toDataURL('png');
@@ -323,8 +359,8 @@ export default {
                 }
                 if (newPage
                     && oldPage
-                    && newPage.pageJson
-                    && (newPage.pageJson != oldPage.pageJson || newPage.id !== oldPage.id)
+                    && newPage.canvasJson
+                    && (newPage.canvasJson != oldPage.canvasJson || newPage.id !== oldPage.id)
                     && (newPage.id === this.$route.params.pageId || !this.$route.params.pageId)) {
                     this.generateThumb();
 
@@ -400,20 +436,21 @@ export default {
 }
 .add-page {
     text-align: center;
-    width: 84px;
+    width: 61px;
 }
 .thumbs {
     margin-top: 35px;
-    width: 106px;
+    width: 81px;
     align-self: flex-start;
 }
 #thumb-wrapper {
-    max-height: calc(100vh - 130px);
+    margin-top: 5px;
+    max-height: calc(100vh - 160px);
     overflow: auto;
 }
 .thumb {
-    height: 61px;
-    width: 84px;
+    height: 84px;
+    width: 61px;
     display: flex;
     justify-content: center;
     align-items: stretch;
