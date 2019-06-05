@@ -13,6 +13,8 @@
               type="password"
               float-label="Password"
               v-model="password"
+              ref="pw"
+              :after="[{icon: 'mdi-eye-outline', content: false, condition: $refs.pw && !$refs.pw.showPass, handler () {$refs.pw.showPass = !$refs.pw.showPass}}, {icon: 'mdi-eye-off-outline', content: false, condition: $refs.pw && $refs.pw.showPass, handler () {$refs.pw.showPass = !$refs.pw.showPass}}]"
               @keyup.enter="onSignin"
             />
           </div>
@@ -22,6 +24,7 @@
             <span v-if="!loading">LOG IN</span>
             <q-spinner-dots v-else/>
           </q-btn>
+          <p>OR</p>
           <social-sign-in></social-sign-in>
           <p>Don't have an account? <a href="/register">Register now</a>.</p>
         </div>
@@ -78,3 +81,7 @@ export default {
 
 }
 </script>
+<style lang="stylus">
+.q-input i.q-if-control.q-icon.material-icons
+	display none
+</style>

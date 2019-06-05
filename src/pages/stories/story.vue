@@ -20,9 +20,23 @@
                     <q-btn color="primary" icon="mdi-plus-circle" :size="$q.screen.lt.sm ? 'md' : 'lg'" round @click="addPage()" />
                 </div>
                 <!-- Thumb canvas -->
-                <div class="thumb-generator">
+                <div class="thumb-generator" ref="thumbGenerator">
+                    <div v-if="activePage && activePage.pageSize" class="canvas-bg-img-wrapper" :style="{width: activePage.pageSize.width+'px', height: activePage.pageSize.height+'px'}">
+                        <div v-if="activePage && activePage.background" class="canvas-bg-img" :style="{backgroundColor: activePage.background.color,
+                        backgroundImage: activePage.background.image? 'url('+activePage.background.image+')' : 'none'}">
+
+                        </div>
+                    </div>
+
                     <canvas id="thumbCanvas"></canvas>
+                    <img :src="thumbImgSrc" class="thumb-canvas-img" />
+
+                    <div class="text-layer">
+                        <!-- TEXT EDITOR -->
+                        <text-editor :print="true" v-if="activePage && activePage.pageSize" :active="false" :zoom="1" :pageWidth="activePage.pageSize.width" :pageHeight="activePage.pageSize.height" ></text-editor>
+                    </div>
                 </div>
+                <!-- <img :src="previewSrc" class=preview /> -->
             </div>
 
             <!-- Canvas -->
@@ -30,16 +44,7 @@
                 <router-view />
             </transition>
 
-            <!-- Plan -->
-            <transition appear>
-                <div class="side-bar" v-if="showPlan">
-                    <quill-editor v-model="editorContent"
-                    ref="guideEditor"
-                    @focus="onEditorFocus($event)"
-                    :options="editorConfig">
-                    </quill-editor>
-                </div>
-            </transition>
+
         </q-page>
     </div>
 </template>
@@ -49,16 +54,17 @@ import { fabric } from 'fabric';
 import * as b64toBlob from 'b64-to-blob';
 import * as _ from 'lodash';
 import draggable from 'vuedraggable';
+import TextEditor from "../../components/story/TextEditor";
 
 export default {
     name: 'Story',
     components: {
         draggable,
+        TextEditor
     },
     data() {
         return {
             thumbCanvas: null,
-            activeThumb: {},
             editorConfig: {
                 modules: {
                     blotFormatter: {},
@@ -87,7 +93,9 @@ export default {
             imageKey: 0,
             scrollTop: -1,
             cursorSelection: null,
-            isEdit: false
+            isEdit: false,
+            thumbImgSrc: '',
+            previewSrc: '',
         }
     },
     computed: {
@@ -128,7 +136,6 @@ export default {
                 return this.$store.getters.getPages;
             },
             set(value) {
-                console.log('set value=', value);
                 const payload = {
                     user: this.user,
                     storyKey: this.$route.params.id,
@@ -148,7 +155,6 @@ export default {
         }
     },
     mounted() {
-        console.log('story mounted');
         this.imageKey = Math.random();
         /* if(this.activePage && this.activePage.canvasJson) {
             this.canvasInit();
@@ -195,7 +201,7 @@ export default {
         getThumb(page) {
             const isActive = this.activePage && this.activePage.id === page.id ? true : false;
             if (isActive) {
-                return this.activeThumb;
+                return this.previewSrc;
             } else {
                 return page.thumb + '&rnd=' + this.imageKey;
             }
@@ -272,52 +278,60 @@ export default {
 
         generateThumb() {
             this.setZoom(1);
-            this.activeThumb = this.activePage.thumb + '&rnd=' + this.imageKey;
             const _this = this;
             this.thumbCanvas.clear();
             this.thumbCanvas.loadFromJSON(
                 this.activePage.canvasJson,
                 function() {
                     _this.thumbCanvas.renderAll.bind(_this.thumbCanvas);
-                    let thumbImg = _this.thumbCanvas.toDataURL('png');
-                    /** Apply background and reload image */
-                    _this.thumbCanvas.clear();
-                    /** set bg color */
-                    if (_this.activePage.background.color) {
-                        _this.thumbCanvas.setBackgroundColor(_this.activePage.background.color), _this.thumbCanvas.renderAll.bind(_this.thumbCanvas);
+                    _this.thumbImgSrc = _this.thumbCanvas.toDataURL('png');
+                    const el = _this.$refs.thumbGenerator;
+                    // add option type to get the image version
+                    // if not provided the promise will return
+                    // the canvas.
+                    const options = {
+                        type: 'dataURL',
+                        useCORS: true,
+                        logging: false
                     }
-                    /** set bg image */
-                    if (_this.activePage.background.image && _this.activePage.background.image !== 'none') {
-                        fabric.Image.fromURL(_this.activePage.background.image, function(img) {
-
-                            _this.thumbCanvas.setBackgroundImage(img, _this.thumbCanvas.renderAll.bind(_this.thumbCanvas), {
-                                scaleX: _this.thumbCanvas.width / img.width,
-                                scaleY: _this.thumbCanvas.height / img.height
-                            });
-                            /* myImg.set({ left: 0, top: 0 });
-                            _this.thumbCanvas.add(myImg); */
-                            _this.addThumbBack(thumbImg)
-                        },  { crossOrigin: 'Anonymous' });
-                    }else {
-                        _this.addThumbBack(thumbImg)
-                    }
+                    _this.$html2canvas(el, options).then(th => {
+                        let thumbImg = th;
+                        _this.previewSrc = th;
+                        _this.addThumbBack(thumbImg);
+                    });
                 });
         },
 
         addThumbBack(thumbImg) {
+            /** export preview image */
+            const previewBlob = b64toBlob(thumbImg.split(',')[1], 'image/png');
+            this.setPreview(previewBlob);
             const _this = this;
             /** add canvas image back */
             fabric.Image.fromURL(thumbImg, function(myImg) {
                 myImg.set({ left: 0, top: 0 });
                 _this.thumbCanvas.add(myImg);
                 _this.thumbCanvas.renderAll.bind(_this.thumbCanvas);
-                _this.setZoom(0.5);
                 /** export final image */
+                _this.setZoom(0.5);
                 const thumbImg = _this.thumbCanvas.toDataURL('png');
                 /** convert to blob */
-                const blob = b64toBlob(thumbImg.split(',')[1], 'image/png');
-                _this.setThumb(blob);
+                const thumbBlob = b64toBlob(thumbImg.split(',')[1], 'image/png');
+                _this.setThumb(thumbBlob);
             });
+        },
+
+        setPreview(previewImg) {
+            const payload = {
+                user: this.user,
+                storyKey: this.$route.params.id,
+                pageKey: this.activePage.id,
+                image: {
+                    type: 'image/png',
+                    dataUrl: previewImg,
+                },
+            };
+            this.$store.dispatch('setPreview', payload);
         },
 
         setThumb(thumbImg) {
@@ -331,9 +345,17 @@ export default {
                 },
                 order: this.activePage.order
             };
+            const _this = this;
             this.$store.dispatch('setThumb', payload)
                 .then(imgUrl => {
-                     this.activeThumb = imgUrl;
+                    if (this.activePage.order === 0) {
+                        const payload = {
+                            user: this.user,
+                            storyKey : this.$route.params.id,
+                            thumbUrl: imgUrl
+                        };
+                        this.$store.dispatch('updateStory', payload);
+                    }
                 });
         },
 
@@ -359,8 +381,8 @@ export default {
                 }
                 if (newPage
                     && oldPage
-                    && newPage.canvasJson
-                    && (newPage.canvasJson != oldPage.canvasJson || newPage.id !== oldPage.id)
+                    && (newPage.canvasJson || newPage.textLayer.text)
+                    && (newPage.canvasJson != oldPage.canvasJson || newPage.id !== oldPage.id || newPage.textLayer.text !== oldPage.textLayer.text)
                     && (newPage.id === this.$route.params.pageId || !this.$route.params.pageId)) {
                     this.generateThumb();
 
@@ -494,6 +516,45 @@ export default {
     z-index: 999;
     border: solid 1px #999;
     background: #fff;
+    .text-layer {
+        position: absolute;
+        top: 0;
+        left: 0;
+        bottom: 0;
+        right: 0;
+        z-index: 6;
+    }
+    #thumbCanvas {
+        display: none;
+    }
+    .thumb-canvas-img {
+        position: absolute;
+        top: 0;
+        left: 0;
+        bottom: 0;
+        right: 0;
+        z-index: 5;
+    }
+    .canvas-bg-img-wrapper {
+        position: absolute;
+        overflow: hidden;
+        top: 0;
+        left: 0;
+        bottom: 0;
+        right: 0;
+        z-index: 4;
+        .canvas-bg-img {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            width: 100%;
+            z-index: 1;
+            background: #fff;
+            background-repeat: no-repeat;
+            background-size: cover;
+            background-position: center center;
+        }
+    }
 }
 @media(orientation: portrait) {
     .story-page {

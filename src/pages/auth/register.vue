@@ -3,7 +3,7 @@
     <div class="layout-padding">
       <div class="mid-bg"></div>
       <div class="login-card shadow-4 bg-white">
-        <h5 class="login-title">LOGIN</h5>
+        <h5 class="login-title">REGISTER</h5>
         <div class="row gutter-md">
           <div class="col-xs-12">
             <q-input float-label="Email" type="email" v-model="email"/>
@@ -13,6 +13,8 @@
               type="password"
               float-label="Password"
               v-model="password"
+              ref="pw"
+              :after="[{icon: 'mdi-eye-outline', content: false, condition: $refs.pw && !$refs.pw.showPass, handler () {$refs.pw.showPass = !$refs.pw.showPass}}, {icon: 'mdi-eye-off-outline', content: false, condition: $refs.pw && $refs.pw.showPass, handler () {$refs.pw.showPass = !$refs.pw.showPass}}]"
               @keyup.enter="onSignup"
             />
           </div>
@@ -22,7 +24,9 @@
             <span v-if="!loading">SIGN UP</span>
             <q-spinner-dots v-else/>
           </q-btn>
+          <p>OR</p>
           <social-sign-in></social-sign-in>
+          <p>Already have an account? <a href="/login">Login</a>.</p>
         </div>
       </div>
     </div>
@@ -68,3 +72,7 @@ export default {
     },
 }
 </script>
+<style lang="stylus">
+.q-input i.q-if-control.q-icon.material-icons
+	display none
+</style>

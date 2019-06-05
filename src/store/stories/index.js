@@ -74,10 +74,10 @@ export default {
                   canvasJson: '{}',
                   textLayer: {
                     text: '',
-                    x: 0,
-                    y: 0,
-                    width: 595,
-                    height: (842 - 50)
+                    x: 50,
+                    y: 25,
+                    width: (595 - 100),
+                    height: (842 - 100)
                   },
                   background: {
                     color: '#ffffff',
@@ -97,10 +97,12 @@ export default {
     },
 
     updateStory({ commit }, payload) {
+      // console.log('updateStory');
       const payloadRef = payload;
       const userStory = firebase
       .firestore()
       .collection('users/' + payload.user.id + '/stories/').doc(payload.storyKey);
+      // console.log('payloadRef=', payloadRef);
       if (payloadRef.thumbUrl) {
         userStory.update({
           thumb: payloadRef.thumbUrl
@@ -176,10 +178,10 @@ export default {
             canvasJson: null,
             textLayer: {
               text: '',
-              x: 0,
-              y: 0,
-              width: 595,
-              height: (842 -50)
+              x: 50,
+              y: 25,
+              width: (595 - 100),
+              height: (842 -100)
             },
             background: {
               color: '#ffffff',
@@ -251,7 +253,8 @@ export default {
                 stories.push({
                   id: doc.id,
                   title: doc.data().title,
-                  thumbs: doc.data().thumbs,
+                  thumb: doc.data().thumb,
+                  preview: doc.data().preview
                 });
 
               });
@@ -286,6 +289,7 @@ export default {
                 id: doc.id,
                 order: doc.data().order,
                 thumb: doc.data().thumb,
+                preview: doc.data().preview,
                 background: doc.data().background,
                 pageSize: doc.data().pageSize,
               });
@@ -310,8 +314,10 @@ export default {
                   textLayer: doc.data().textLayer,
                   id: doc.id,
                   thumb: doc.data().thumb,
+                  preview: doc.data().preview,
                   background: doc.data().background,
                   pageSize: doc.data().pageSize,
+                  order: doc.data().order,
                 };
             });
           } else {
@@ -321,8 +327,10 @@ export default {
               textLayer : querySnapshot.docs[0].data().textLayer,
               id: querySnapshot.docs[0].id,
               thumb: querySnapshot.docs[0].data().thumb,
+              preview: querySnapshot.docs[0].data().preview,
               background: querySnapshot.docs[0].data().background,
               pageSize: querySnapshot.docs[0].data().pageSize,
+              order: querySnapshot.docs[0].data().order,
             };
           }
           commit('setPage', page);
@@ -349,7 +357,29 @@ export default {
             /*  */
           })
           .catch(console.error);
+      });
+    },
 
+    setPreview({ commit, dispatch }, payload) {
+      // console.log('setThumb payload=', payload);
+      return new Promise((resolve, reject) => {
+        const ref = firebase.storage().ref();
+        const path = 'images/' + payload.user.id + '/preview/' + payload.storyKey + '/' + payload.pageKey;
+        const metadata = {
+          contentType: payload.image.type
+        };
+        const task = ref.child(path).put(payload.image.dataUrl, metadata);
+        task
+          .then(snapshot => snapshot.ref.getDownloadURL())
+          .then((url) => {
+            resolve(url);
+            const newPayload = payload;
+            newPayload.previewUrl = url;
+            dispatch('updatePreviewData', newPayload);
+            // Also update the story with the thumb ref
+            /*  */
+          })
+          .catch(console.error);
       });
     },
 
@@ -362,6 +392,20 @@ export default {
           if(!doc.data().thumb) {
             userStory.update({
               thumb: payloadRef.thumbUrl
+            });
+          }
+        });
+    },
+
+    updatePreviewData({ commit }, payload) {
+      const payloadRef = payload;
+      const userStory = firebase
+        .firestore()
+        .collection('users/' + payload.user.id + '/stories/' + payload.storyKey + '/pages/').doc(payload.pageKey);
+        userStory.get().then(doc => {
+          if(!doc.data().thumb) {
+            userStory.update({
+              preview: payloadRef.previewUrl
             });
           }
         });

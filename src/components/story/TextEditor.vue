@@ -1,18 +1,18 @@
 <template>
-  <div>
+  <div class="text-wrapper">
     <div id="toolbar" v-if="active" :style="{width: (pageWidth * zoom) + 'px'}">
       <span class="ql-format-group">
         <button type="button" class="ql-bold"></button>
         <button type="button" class="ql-italic"></button>
         <button type="button" class="ql-underline"></button>
-        <button type="button" class="ql-blockquote"></button>
+        <button type="button" class="ql-blockquote" v-if="$q.screen.gt.sm"></button>
         <select class="ql-align"></select>
 
         <button type="button" class="ql-list" value="ordered"></button>
         <button type="button" class="ql-list" value="bullet"></button>
 
         <select class="ql-size"></select>
-        <select class="ql-font"></select>
+        <select class="ql-font" v-if="$q.screen.gt.sm"></select>
 
         <select class="ql-color"></select>
         <select class="ql-background"></select>
@@ -24,13 +24,24 @@
 
 
     <div v-if="pageWidth" :style="{ transform: 'scale('+zoom+')', height: (pageHeight - 50)+'px', width: pageWidth+'px', pointerEvents: active ? 'all' : 'none', userSelect: active ? 'all' : 'none'}" class="text-layer">
-      <vue-draggable-resizable :prevent-deactivation="true" :w="draggableDimensions.width" :h="draggableDimensions.height" :x="draggableDimensions.x" :y="draggableDimensions.y" @dragging="onDrag" @resizing="onResize" :parent="true" :drag-handle="'.drag-handle'" :active="active">
+      <vue-draggable-resizable
+        :prevent-deactivation="true"
+        :w="draggableDimensions.width"
+        :h="draggableDimensions.height"
+        :x="draggableDimensions.x"
+        :y="draggableDimensions.y"
+        @dragging="onDrag"
+        @resizing="onResize"
+        :parent="true"
+        :drag-handle="'.drag-handle'"
+        :active="active"
+        :class="{print: print}">
         <quill-editor :content="editorContent"
           ref="textLayerEditor"
           @change="onEditorChange($event)"
           :options="editorConfig" class="editor" v-if="active">
         </quill-editor>
-        <div v-else v-html="editorContent" class="text-render ql-editor ql-container"></div>
+        <div v-else v-html="storeContent" class="text-render ql-editor ql-container"></div>
         <div class="drag-handle" v-if="active"><i class="mdi mdi-cursor-move"></i></div>
       </vue-draggable-resizable>
     </div>
@@ -48,7 +59,7 @@ export default {
   components: {
     VueDraggableResizable,
   },
-  props: ['zoom','active','pageWidth','pageHeight'],
+  props: ['zoom','active','pageWidth','pageHeight','print'],
   data() {
     return {
       editorContent: 'Loading',
@@ -105,8 +116,6 @@ export default {
   },
   methods: {
     onEditorChange: _.debounce(function(event) {
-      console.log('onEditorChange event=', event.html);
-      console.log('this.editorContent=', this.editorContent);
       if (this.user && event.html !== this.editorContent) {
             const payload = {
                 user: this.user,
@@ -182,6 +191,9 @@ export default {
   --ck-z-modal: 7000;
   --ck-z-default: 7000;
 }
+.text-wrapper {
+  position: relative;
+}
 .text-layer {
   position: absolute;
   z-index: 100;
@@ -251,17 +263,22 @@ export default {
     }
   }
 }
-
-
 .vdr {
   border: dashed 1px rgba(0,0,0,0.2);
   &.active {
     border-color: rgba(0,0,0,1);
   }
+  &.print {
+    border: none;
+  }
 }
-
 .blot-formatter__proxy-image {
   z-index: 105;
+}
+@media(max-width: $breakpoint-md) and (orientation: landscape) {
+  #toolbar.ql-toolbar.ql-snow {
+    top: -10px;
+  }
 }
 
 </style>

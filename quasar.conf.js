@@ -10,6 +10,7 @@ module.exports = function (ctx) {
       'uploader',
       'scrollto',
       'quill',
+      'html2canvas'
     ],
     css: [
       'app.styl'

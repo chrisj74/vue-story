@@ -5,8 +5,8 @@
     dark
     :disabled="loading"
     @click.prevent="onSigninGoogle"
-  >Login with Google
-    <span v-if="!loading">Google LOG IN</span>
+  >
+    <span v-if="!loading">Use your Google account</span>
     <q-spinner-dots v-else/>
   </q-btn>
 </template>

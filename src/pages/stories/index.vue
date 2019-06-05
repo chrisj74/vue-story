@@ -4,7 +4,7 @@
     <div v-if="stories" class="story-wrapper">
       <q-card v-for="(story) in stories" :key="story.id" class="story">
         <q-card-media>
-          <!-- <img src="~assets/donuts.png"> -->
+          <img :src="story.thumb" class="story-thumb">
         </q-card-media>
         <q-card-title>
           <router-link :to="'/story/'+story.id">
@@ -12,7 +12,7 @@
           </router-link>
         </q-card-title>
         <q-card-main>
-          <p>Info about the story</p>
+          <p>info</p>
         </q-card-main>
         <q-card-separator />
         <q-card-actions align="between">
@@ -62,7 +62,7 @@ export default {
       const newStory = {
         title: this.newStory.title,
         plan: "<p>Plan from db</p>",
-        thumbs: []
+        thumb: ''
       };
       const payload = {
         user: this.user,
@@ -102,6 +102,13 @@ export default {
 .story {
   flex-basis: 23%;
   margin: 1%;
+}
+.q-card-media > img.story-thumb {
+  width: auto;
+  max-width: calc(100% - 12px);
+  margin: 5px;
+  border: solid 1px rgba(0,0,0,0.12);
+  max-height: 100px;
 }
 </style>
 

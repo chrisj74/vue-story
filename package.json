@@ -20,6 +20,7 @@
     "quill-blot-formatter": "^1.0.5",
     "raw-loader": "^0.5.1",
     "vue-draggable-resizable": "^2.0.0-rc1",
+    "vue-html2canvas": "0.0.4",
     "vue-image-upload-resize": "^2.0.4",
     "vue-quill-editor": "^3.0.6",
     "vue-scrollto": "^2.15.0",
