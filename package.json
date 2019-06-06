@@ -17,6 +17,7 @@
     "firebase": "^5.8.0",
     "lodash": "^4.17.11",
     "npm": "^6.9.0",
+    "pdfmake": "^0.1.56",
     "quill-blot-formatter": "^1.0.5",
     "raw-loader": "^0.5.1",
     "vue-draggable-resizable": "^2.0.0-rc1",

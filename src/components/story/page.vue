@@ -380,7 +380,6 @@ export default {
   },
   methods: {
     canvasInit() {
-      console.log('canvasINIT');
       /** Main canvas */
       this.canvas = new fabric.Canvas("storyCanvas");
       const _this = this;
@@ -550,7 +549,6 @@ export default {
     },
 
     setDefaultZoom() {
-      console.log('defaultZoom, canvas=', this.canvas);
       this.setPageSize();
       const maxHeightRatio = this.page.height / this.canvas.height;
       const maxWidthRatio = this.page.width / this.canvas.width;
@@ -654,7 +652,6 @@ export default {
     },
 
     setDraw() {
-      console.log('setDraw, canvas=', this.canvas);
       this.canvas.forEachObject(function(object) {
         object.selectable = true;
       });
@@ -801,17 +798,14 @@ export default {
   watch: {
     $route: {
       handler: function(from, to) {
-        console.log('to=', to);
         if (
           (from.params.id === to.params.id &&
             from.params.pageId != to.params.pageId) ||
           !to.params.pageId
         ) {
-          console.log('handle route change');
           // same story new page
           // detroy canvas
           if (this.canvas) {
-            console.log('dispose');
             this.canvas.dispose();
             this.canvas = null;
             this.background = {
@@ -860,7 +854,6 @@ export default {
     },
     text: {
       handler: function(newText, oldText) {
-        console.log('text watcher, subMode=', this.subMode);
         if (this.canvas.getActiveObject()) {
           const textObj = this.canvas.getActiveObject();
           textObj.setSelectionStyles({'fontSize': this.text.size});''
@@ -882,9 +875,7 @@ export default {
     },
     activePage: {
       handler: function(newPage, oldPage) {
-        console.log('activepage watcher canvas=', this.canvas);
         if (!this.canvas && newPage && newPage.canvasJson) {
-          console.log('newcanvas');
           this.background.color = this.activePage.background.color;
           this.background.image = this.activePage.background.image;
           this.canvasInit();
@@ -894,13 +885,11 @@ export default {
           this.setFreeBrush();
           const _this = this;
           this.canvas.loadFromJSON(this.activePage.canvasJson, function() {
-            console.log('json loaded');
             _this.canvas.renderAll.bind(_this.canvas);
             _this.setDefaultZoom();
             _this.addHistory();
           });
         } else if (!this.canvas) {
-          console.log('no canvas no json');
           this.background.color = this.activePage.background.color;
           this.background.image = this.activePage.background.image;
           this.canvasInit();
@@ -985,7 +974,6 @@ export default {
   position: relative;
   z-index: 2;
   height: 595px;
-  border: solid 1px red;
 }
 .upper-canvas {
   z-index: 2

@@ -3,7 +3,11 @@
         <q-page class="story-page row justify-center">
             <!-- Thumbs -->
             <div class="thumbs">
-                <q-btn size="sm" @click="isEdit = !isEdit" :label="isEdit? 'done' : 'edit'"></q-btn>
+                <div class="actiion-buttons">
+                    <q-btn size="sm" :round="true" @click="isEdit = !isEdit" :icon="isEdit? 'mdi-check-outline' : 'mdi-pencil'"></q-btn>
+                    <q-btn size="sm" :round="true" @click="getPageImages()" icon="mdi-cloud-download"></q-btn>
+                </div>
+
                 <!-- List thumbs -->
                 <div id="thumb-wrapper" v-if="isActiveRoute()">
                     <draggable v-model="pages" :disabled="!isEdit">
@@ -37,6 +41,9 @@
                     </div>
                 </div>
                 <!-- <img :src="previewSrc" class=preview /> -->
+                <!-- <div id="pdf" style="position: absolute; top: 0; background: red; z-index: 1000;">
+                    <a :href="pdf" :download="'test'">download</a>
+                </div> -->
             </div>
 
             <!-- Canvas -->
@@ -55,6 +62,11 @@ import * as b64toBlob from 'b64-to-blob';
 import * as _ from 'lodash';
 import draggable from 'vuedraggable';
 import TextEditor from "../../components/story/TextEditor";
+
+
+import pdfMake from "pdfmake/build/pdfmake";
+import pdfFonts from "pdfmake/build/vfs_fonts";
+pdfMake.vfs = pdfFonts.pdfMake.vfs;
 
 export default {
     name: 'Story',
@@ -96,6 +108,8 @@ export default {
             isEdit: false,
             thumbImgSrc: '',
             previewSrc: '',
+            downloadPdf: false,
+            // pdf: '',
         }
     },
     computed: {
@@ -113,6 +127,9 @@ export default {
         },
         story() {
             return this.$store.getters.getStory;
+        },
+        pdfImages() {
+            return this.$store.getters.getPdfImages;
         },
         editorContent: {
             get() {
@@ -185,8 +202,42 @@ export default {
             }
             this.$store.dispatch('setPages', payload);
         }
+
     },
     methods: {
+        getPageImages() {
+            const payload = {
+                user: this.user,
+                storyKey: this.$route.params.id,
+            }
+            this.$store.dispatch('genPdfImages', payload);
+            this.$store.commit('setLoading', true);
+            this.downloadPdf = true;
+        },
+
+        createPdf() {
+            // const iframe = document.getElementById('pdf');
+            console.log('createPdf');
+            const docDefinition = {
+                pageSize: 'A4',
+
+                // by default we use portrait, you can change it to landscape if you wish
+                pageOrientation: 'portrait',
+
+                // [left, top, right, bottom] or [horizontal, vertical] or just a number for equal margins
+                pageMargins: [ 40, 60, 40, 60 ],
+            content: []};
+            this.pdfImages.forEach(image => {
+                docDefinition.content.push({
+                    image: 'data:image/png;base64, ' + image,
+                    fit: [(595 - 80), (868 - 120)],
+                })
+            })
+            const pdfDocGenerator = pdfMake.createPdf(docDefinition).download('canvas');
+            this.downloadPdf = false;
+            this.$store.commit('setLoading', false);
+        },
+
         onEditorFocus(quill){
             this.cursorSelection = quill.getSelection();
         },
@@ -348,6 +399,7 @@ export default {
             const _this = this;
             this.$store.dispatch('setThumb', payload)
                 .then(imgUrl => {
+                    /** If this is page 1, set image as story cover */
                     if (this.activePage.order === 0) {
                         const payload = {
                             user: this.user,
@@ -377,7 +429,6 @@ export default {
             handler: function(newPage, oldPage) {
                 if (!this.thumbCanvas) {
                     this.canvasInit();
-                    this.generateThumb();
                 }
                 if (newPage
                     && oldPage
@@ -400,11 +451,9 @@ export default {
                                     duration: 10,
                                     onStart: function(element) {
                                     // scrolling started
-                                    console.log('start scroll');
                                     },
                                     onDone: function(element) {
                                         _this.scrollTop = thumbWrapper.scrollTop;
-                                        console.log('onDone', _this.scrollTop );
                                     }
                                 });
                             } else {
@@ -425,9 +474,12 @@ export default {
             },
             deep: true
         },
-        pages: {
-            handler: function(newPages, oldPages) {
-
+        pdfImages: {
+            handler: function(newImages, oldImages) {
+                console.log('pdfImages Watcher');
+                if (this.downloadPdf) {
+                    this.createPdf();
+                }
             }
         }
     },
@@ -455,6 +507,11 @@ export default {
     height: calc(100vh - 50px);
     background: rgba(255,255,255,.8);
     z-index: 3;
+}
+.actiion-buttons {
+    display: flex;
+    justify-comtent: space-between;
+    flex-direction: row;
 }
 .add-page {
     text-align: center;
@@ -557,6 +614,9 @@ export default {
     }
 }
 @media(orientation: portrait) {
+    .actiion-buttons {
+        flex-direction: column;
+    }
     .story-page {
         flex-direction: column
     }

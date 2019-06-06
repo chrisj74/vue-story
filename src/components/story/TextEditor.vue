@@ -30,8 +30,8 @@
         :h="draggableDimensions.height"
         :x="draggableDimensions.x"
         :y="draggableDimensions.y"
-        @dragging="onDrag"
-        @resizing="onResize"
+        @dragstop="onDrag"
+        @resizestop="onResize"
         :parent="true"
         :drag-handle="'.drag-handle'"
         :active="active"
@@ -150,6 +150,7 @@ export default {
       }
     }, 500),
     onDrag: _.debounce(function (x, y) {
+      console.log('onDrag');
       if (this.user) {
           const payload = {
               user: this.user,

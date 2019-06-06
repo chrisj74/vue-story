@@ -18,6 +18,7 @@ export default {
     },
     searchSize: 50,
     insertImage: null,
+    pdfImages: null,
   },
   mutations: {
     addStory(state, payload) {
@@ -54,6 +55,9 @@ export default {
     clearInsertImage(state) {
       state.insertImage = null;
     },
+    setPdfImages(state, payload) {
+      state.pdfImages = payload;
+    }
   },
   actions: {
     addStory({ commit }, payload) {
@@ -299,6 +303,31 @@ export default {
         });
     },
 
+    genPdfImages({ commit }, payload) {
+      return new Promise((resolve, reject) => {
+        firebase
+          .firestore()
+          .collection('users/' + payload.user.id + '/stories/' + payload.storyKey + '/pages').orderBy('order', 'asc')
+          .get()
+          .then(function(querySnapshot) {
+            const pages = [];
+            querySnapshot.forEach(function(doc) {
+              pages.push(
+                axios.get(doc.data().preview,
+                {
+                  responseType: 'arraybuffer'
+                }).then(result => new Buffer(result.data, 'binary').toString('base64'))
+              );
+            });
+            Promise.all(pages).then(res => {
+                console.log(res);
+                commit('setPdfImages', res);
+            });
+            // commit('setPages', pages);
+          });
+        });
+    },
+
     setPage({ commit }, payload) {
       // console.log('setPage payload=', payload);
       firebase
@@ -491,6 +520,9 @@ export default {
     },
     getInsertImage(state) {
       return state.insertImage;
+    },
+    getPdfImages(state) {
+      return state.pdfImages;
     }
   }
 };
