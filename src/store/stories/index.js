@@ -312,12 +312,16 @@ export default {
           .then(function(querySnapshot) {
             const pages = [];
             querySnapshot.forEach(function(doc) {
-              pages.push(
-                axios.get(doc.data().preview,
-                {
-                  responseType: 'arraybuffer'
-                }).then(result => new Buffer(result.data, 'binary').toString('base64'))
-              );
+              if (doc.data().preview) {
+                pages.push(
+                  axios.get(doc.data().preview,
+                  {
+                    responseType: 'arraybuffer'
+                  }).then(result => new Buffer(result.data, 'binary').toString('base64'))
+                );
+              } else {
+                console.log('no preview for :', doc.data())
+              }
             });
             Promise.all(pages).then(res => {
                 console.log(res);

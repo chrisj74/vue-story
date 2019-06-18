@@ -206,6 +206,7 @@ export default {
     },
     methods: {
         getPageImages() {
+            // console.log('getPageImages');
             const payload = {
                 user: this.user,
                 storyKey: this.$route.params.id,

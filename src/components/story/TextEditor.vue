@@ -150,7 +150,7 @@ export default {
       }
     }, 500),
     onDrag: _.debounce(function (x, y) {
-      console.log('onDrag');
+      // console.log('onDrag x=', x, ' y=', y);
       if (this.user) {
           const payload = {
               user: this.user,
@@ -188,10 +188,6 @@ export default {
 @import '~variables';
 @import '../../../node_modules/vue-draggable-resizable/dist/VueDraggableResizable.css'
 
-:root {
-  --ck-z-modal: 7000;
-  --ck-z-default: 7000;
-}
 .text-wrapper {
   position: relative;
 }

@@ -34,8 +34,12 @@
         @click="setDraw()"
       />
     </div>
-    <!-- TEXT EDITOR -->
+    <!-- PAGE TEXT EDITOR -->
     <text-editor v-if="canvas && activePage" :print="false" :active="mode === 'page' && subMode === 'text'" :zoom="page.zoom" :pageWidth="activePage.pageSize.width" :pageHeight="activePage.pageSize.height" ></text-editor>
+
+    <!-- TEXT LAYER -->
+    <!-- <text-editor v-if="canvas && activePage" :print="false" :active="true" :zoom="page.zoom" :pageWidth="activePage.pageSize.width" :pageHeight="activePage.pageSize.height" ></text-editor> -->
+
     <!-- MAIN CONTENT -->
     <div class="main-content">
       <!-- Canvas -->
