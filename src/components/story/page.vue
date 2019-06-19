@@ -8,7 +8,7 @@
       <!-- PHOTO -->
       <q-btn
         icon="mdi-camera"
-        :color="mode === 'photo' ? 'primary' : 'dark'"
+        :color="modes.mode === 'photo' ? 'primary' : 'dark'"
         round
         :size="$q.screen.lt.sm ? 'sm' : 'md'"
         @click="addPhoto()"
@@ -20,7 +20,7 @@
       <!-- PAGE -->
       <q-btn
         icon="mdi-file-image"
-        :color="mode === 'page' ? 'primary' : 'dark'"
+        :color="modes.mode === 'page' ? 'primary' : 'dark'"
         round
         :size="$q.screen.lt.sm ? 'sm' : 'md'"
         @click="setPage()"
@@ -28,14 +28,14 @@
       <!-- DRAW -->
       <q-btn
         icon="mdi-pencil"
-        :color="mode === 'draw' ? 'primary' : 'dark'"
+        :color="modes.mode === 'draw' ? 'primary' : 'dark'"
         round
         :size="$q.screen.lt.sm ? 'sm' : 'md'"
         @click="setDraw()"
       />
     </div>
     <!-- PAGE TEXT EDITOR -->
-    <text-editor v-if="canvas && activePage" :print="false" :active="mode === 'page' && subMode === 'text'" :zoom="page.zoom" :pageWidth="activePage.pageSize.width" :pageHeight="activePage.pageSize.height" ></text-editor>
+    <text-editor v-if="canvas && activePage" :print="false" :active="modes.mode === 'page' && modes.subMode === 'text'" :zoom="page.zoom" :pageWidth="activePage.pageSize.width" :pageHeight="activePage.pageSize.height" ></text-editor>
 
     <!-- TEXT LAYER -->
     <!-- <text-editor v-if="canvas && activePage" :print="false" :active="true" :zoom="page.zoom" :pageWidth="activePage.pageSize.width" :pageHeight="activePage.pageSize.height" ></text-editor> -->
@@ -70,30 +70,30 @@
           colors="text-advanced"
           :popover-to="screen.width > screen.height ? 'left' : 'right'"
           :trigger-style="{ width: '30px', height: '30px', borderRadius: '50%' }"
-          :disabled="mode === 'page' && subMode === 'text'"
+          :disabled="modes.mode === 'page' && modes.subMode === 'text'"
         ></swatches>
         <!-- PAGE TOOLS -->
           <!-- TEXT -->
           <q-btn
-            v-if="mode === 'page'"
+            v-if="modes.mode === 'page'"
             icon="mdi-format-text"
-            :color="subMode === 'text' ? 'primary' : 'dark'"
+            :color="modes.subMode === 'text' ? 'primary' : 'dark'"
             round
             size="sm"
             @click="addText()"
           />
           <!-- BG COLOR -->
           <q-btn
-            v-if="mode === 'page'"
+            v-if="modes.mode === 'page'"
             icon="mdi-format-color-fill"
-            :color="subMode === 'backgroundColor' ? 'primary' : 'dark'"
+            :color="modes.subMode === 'backgroundColor' ? 'primary' : 'dark'"
             round
             size="sm"
             @click="backgroundColor()"
           />
           <!-- BG IMAGE -->
           <q-btn
-            v-if="mode === 'page'"
+            v-if="modes.mode === 'page'"
             key="bgImageButton"
             icon="mdi-camera"
             size="sm"
@@ -104,20 +104,20 @@
         <!-- DRAWING TOOLS -->
         <!-- MOVE -->
         <q-btn
-          v-if="mode === 'draw'"
+          v-if="modes.mode === 'draw'"
           icon="mdi-cursor-move"
-          :color="subMode === 'select' ? 'primary' : 'dark'"
+          :color="modes.subMode === 'select' ? 'primary' : 'dark'"
           round
           size="sm"
           @click="setSelect()"
         />
         <!-- RULER -->
-        <q-btn v-if="mode === 'draw'" icon="mdi-ruler" :color="subMode === 'line' ? 'primary' : 'dark'" round @click="line()" size="sm"/>
+        <q-btn v-if="modes.mode === 'draw'" icon="mdi-ruler" :color="modes.subMode === 'line' ? 'primary' : 'dark'" round @click="line()" size="sm"/>
         <!-- FILL OBJ -->
         <q-btn
-          v-if="mode === 'draw'"
+          v-if="modes.mode === 'draw'"
           icon="mdi-format-color-fill"
-          :color="subMode === 'fill' ? 'primary' : 'dark'"
+          :color="modes.subMode === 'fill' ? 'primary' : 'dark'"
           round
           size="sm"
           @click="fillColor()"
@@ -125,42 +125,42 @@
         />
         <!-- BRUSH -->
         <q-btn
-          v-if="mode === 'draw'"
+          v-if="modes.mode === 'draw'"
           key="pencil"
           icon="mdi-pencil"
           size="sm"
-          :color="subMode === 'brush'? 'primary' : 'dark'"
+          :color="modes.subMode === 'brush'? 'primary' : 'dark'"
           round
           @click="setDraw()"
         />
         <!-- ERASER -->
         <q-btn
-          v-if="mode === 'draw'"
+          v-if="modes.mode === 'draw'"
           key="eraser"
           size="sm"
-          :color="subMode === 'eraser' ? 'primary' : 'dark'"
+          :color="modes.subMode === 'eraser' ? 'primary' : 'dark'"
           icon="mdi-eraser"
           round
           @click="setEraser()"
         />
         <!-- TEXT -->
         <q-btn
-          v-if="mode === 'draw'"
+          v-if="modes.mode === 'draw'"
           icon="mdi-format-text"
-          :color="subMode === 'text' ? 'primary' : 'dark'"
+          :color="modes.subMode === 'text' ? 'primary' : 'dark'"
           round
           size="sm"
           @click="canvasText()"
         />
         <!-- TEXT SIZE -->
-        <div class="tool-slider" v-if="mode === 'draw' && (subMode === 'text' || subMode === 'selectText')">
+        <div class="tool-slider" v-if="modes.mode === 'draw' && (modes.subMode === 'text' || modes.subMode === 'selectText')">
           <q-btn size="sm" color="primary" icon="mdi-format-size" round @click="toggleTextSize()"/>
           <div class="q-slider-wrap" v-if="showTextSize">
             <q-slider v-model="text.size" :min="5" :max="100" :step="1" label snap/>
           </div>
         </div>
         <!-- BRUSH SIZE -->
-        <div class="tool-slider" v-if="mode === 'draw' && (subMode === 'brush' || subMode === 'eraser')">
+        <div class="tool-slider" v-if="modes.mode === 'draw' && (modes.subMode === 'brush' || modes.subMode === 'eraser')">
           <q-btn
             size="sm"
             icon="mdi-signal"
@@ -173,7 +173,7 @@
           </div>
         </div>
         <!-- LINE WIDTH -->
-        <div class="tool-slider" v-if="mode === 'draw' && subMode === 'line'">
+        <div class="tool-slider" v-if="modes.mode === 'draw' && modes.subMode === 'line'">
           <q-btn
             size="sm"
             icon="mdi-signal"
@@ -196,7 +196,7 @@
           :disabled="!isSelected"
         />
         <!-- CLEAR -->
-        <q-btn v-if="mode === 'draw'" icon="mdi-close" round @click="clearCanvas()" size="sm"/>
+        <q-btn v-if="modes.mode === 'draw'" icon="mdi-close" round @click="clearCanvas()" size="sm"/>
       </div>
     </div>
 
@@ -205,11 +205,11 @@
       v-if="canvas"
       v-model="imageModal"
       :content-css="{minWidth: '350px', height: '90vh', maxWidth: '100%', width: canvas.width+'px'}">
-      <add-image v-if="mode === 'photo' || subMode === 'background'"></add-image>
+      <add-image v-if="modes.mode === 'photo' || modes.subMode === 'background'"></add-image>
     </q-modal>
     <!-- SHORTCUTS -->
     <span
-      v-if="mode != 'page' && subMode !== 'text' && !showPlan"
+      v-if="modes.subMode !== 'text' && !showPlan"
       v-shortkey="{undoWin:['ctrl', 'z'], undoMac:['meta', 'z'], deleteKey:['del'], backspaceKey:['backspace']}"
       @shortkey="shortKeys($event)"
     ></span>
@@ -239,8 +239,6 @@ export default {
         color: null,
         image: false
       },
-      mode: "page",
-      subMode: "text",
       isSelected: false,
       isDown: false,
       brush: {
@@ -255,14 +253,12 @@ export default {
       },
       color: "#000000",
       canvas: null,
-      history: [],
       canUndo: false,
       canRedo: false,
       panning: {
         timer: null,
         active: false
       },
-      restoreIndex: -1,
       imageModal: false,
       textModal: false,
 
@@ -293,6 +289,12 @@ export default {
     },
     screen() {
       return this.$store.getters.screen;
+    },
+    modes() {
+      return this.$store.getters.getModes;
+    },
+    history() {
+      return this.$store.getters.getHistory;
     },
     showPlan() {
       return this.$store.getters.showPlan;
@@ -397,7 +399,7 @@ export default {
       let line;
       const ctx = canvas.getContext("2d");
       this.canvas.on("path:created", function(e) {
-        if (_this.subMode === 'eraser') {
+        if (_this.modes.subMode === 'eraser') {
           e.path.globalCompositeOperation = "destination-out";
           canvas.renderAll();
         }
@@ -420,11 +422,11 @@ export default {
         _this.showBrushWidth = false;
         _this.showLineWidth = false;
         /** BRUSH */
-        if (_this.subMode === "brush") {
+        if (_this.modes.subMode === "brush") {
           _this.brush.active = true;
         }
         /** SELECT */
-        if (_this.subMode === "select") {
+        if (_this.modes.subMode === "select") {
           if (canvas.getActiveObject()) {
             _this.isSelected = true;
           } else {
@@ -432,7 +434,7 @@ export default {
           }
         }
         /** LINE */
-        if (_this.subMode === "line") {
+        if (_this.modes.subMode === "line") {
           canvas.selection = false;
           const pointer = canvas.getPointer(o.e);
           const points = [pointer.x, pointer.y, pointer.x, pointer.y];
@@ -446,7 +448,7 @@ export default {
           canvas.add(line);
         }
         /** TEXT */
-        if (_this.mode === 'draw' && _this.subMode === "text") {
+        if (_this.modes.mode === 'draw' && _this.modes.subMode === "text") {
           if (
             !canvas.getActiveObject() ||
             !canvas.getActiveObject().isEditing
@@ -469,13 +471,13 @@ export default {
             canvas.add(text).setActiveObject(text);
             text.enterEditing();
             text.selectAll();
-            _this.subMode = "selectText";
+            _this.modes.subMode = "selectText";
             _this.addHistory();
           } else {
           }
         }
         /** FILL */
-        if (_this.subMode === "fill") {
+        if (_this.modes.subMode === "fill") {
           const activeObject = canvas.getActiveObject();
           if (activeObject) {
             if (activeObject.stroke) {
@@ -492,7 +494,7 @@ export default {
       });
       this.canvas.on("mouse:move", o => {
         if (!_this.isDown) return;
-        if (_this.subMode === "line") {
+        if (_this.modes.subMode === "line") {
           const pointer = canvas.getPointer(o.e);
           line.set({ x2: pointer.x, y2: pointer.y });
           canvas.renderAll();
@@ -501,10 +503,10 @@ export default {
       this.canvas.on("mouse:up", o => {
         _this.isDown = false;
         canvas.selection = false;
-        if (_this.subMode === "line") {
+        if (_this.modes.subMode === "line") {
           _this.addHistory();
         }
-        if (_this.subMode === "brush") {
+        if (_this.modes.subMode === "brush") {
           _this.brush.active = false;
         }
       });
@@ -573,7 +575,7 @@ export default {
     },
 
     setSelect() {
-      this.subMode = "select";
+      this.$store.commit('setSubMode', "select");
       this.canvas.isDrawingMode = false;
       this.canvas.forEachObject(function(object) {
         object.selectable = true;
@@ -581,7 +583,7 @@ export default {
     },
 
     fillColor() {
-      this.subMode = "fill";
+      this.$store.commit('setSubMode', "fill");
       this.canvas.isDrawingMode = false;
       this.canvas.forEachObject(function(object) {
         object.selectable = true;
@@ -592,12 +594,12 @@ export default {
       this.canvas.forEachObject(function(object) {
         object.selectable = false;
       });
-      this.subMode = "line";
+      this.$store.commit('setSubMode', "line");
       this.canvas.isDrawingMode = false;
     },
 
     addPhoto() {
-      this.mode = "photo";
+      this.$store.commit('setMode', "photo");
       this.imageModal = true;
       this.canvas.isDrawingMode = false;
       this.canvas.forEachObject(function(object) {
@@ -606,7 +608,7 @@ export default {
     },
 
     canvasText() {
-      this.subMode = "text";
+      this.$store.commit('setSubMode', "text");
       this.canvas.isDrawingMode = false;
       this.canvas.forEachObject(function(object) {
         object.selectable = true;
@@ -614,11 +616,11 @@ export default {
     },
 
     backgroundColor() {
-      this.subMode = 'backgroundColor';
+      this.$store.commit('setSubMode', "backgroundColor");
     },
 
     pageText() {
-      this.subMode = "text";
+      this.$store.commit('setSubMode', "text");
       this.textModal = true;
     },
 
@@ -652,20 +654,20 @@ export default {
       this.$store.commit("clearImageSearchResults");
       this.background.image = imageObj.webformatURL;
       this.addHistory();
-      this.subMode = 'text';
+      this.$store.commit('setSubMode', "text");
     },
 
     setDraw() {
       this.canvas.forEachObject(function(object) {
         object.selectable = true;
       });
-      this.mode = "draw";
-      this.subMode = 'brush';
+      this.$store.commit('setMode', "draw");
+      this.$store.commit('setSubMode', "brush");
       this.setFreeBrush();
     },
 
     setEraser() {
-      this.subMode = eraser;
+      this.$store.commit('setSubMode', "eraser");
       this.canvas.freeDrawingBrush.color = "rgba(255,255,255,.95)";
     },
 
@@ -676,19 +678,19 @@ export default {
     },
 
     setPage() {
-      this.mode = 'page';
-      this.subMode = "text";
+      this.$store.commit('setMode', "page");
+      this.$store.commit('setSubMode', "text");
       this.canvas.isDrawingMode = false;
     },
 
     setBackground() {
-      this.subMode = "background";
+      this.$store.commit('setSubMode', "background");
       this.canvas.isDrawingMode = false;
     },
 
     addBgPhoto() {
       this.imageModal = true;
-      this.subMode = 'background';
+      this.$store.commit('setSubMode', "background");
       this.canvas.forEachObject(function(object) {
         object.selectable = true;
       });
@@ -722,51 +724,50 @@ export default {
           image: this.background.image
         }
       };
-      if (this.restoreIndex === this.history.length - 1) {
-        this.history.push(snapshot);
-        this.restoreIndex++;
+      if (this.history.restoreIndex === this.history.states.length - 1) {
+        this.$store.dispatch('historyAdd', snapshot);
       } else {
-        this.history = this.history.slice(0, this.restoreIndex + 1);
-        this.history.push(snapshot);
-        this.restoreIndex = this.history.length - 1;
+        this.$store.dispatch('historySlice', snapshot);
       }
-      this.canUndo = this.history.length > 1;
-      this.canRedo = this.restoreIndex < this.history.length - 1;
+      this.canUndo = this.history.states.length > 1;
+      this.canRedo = this.history.restoreIndex < this.history.states.length - 1;
       this.saveStory();
     },
 
     undo() {
-      if (this.restoreIndex > 0) {
-        this.restoreIndex--;
-        this.canvas.loadFromJSON(this.history[this.restoreIndex].json);
+      if (this.history.restoreIndex > 0) {
+        this.$store.commit('setHistoryRestoreIndex', this.history.restoreIndex - 1)
+        // this.restoreIndex--;
+        this.canvas.loadFromJSON(this.history.states[this.history.restoreIndex].json);
         this.canvas.renderAll.bind(this.canvas);
         this.background = {
-          color: this.history[this.restoreIndex].background.color,
-          image: this.history[this.restoreIndex].background.image
+          color: this.history.states[this.history.restoreIndex].background.color,
+          image: this.history.states[this.history.restoreIndex].background.image
         };
         this.saveStory();
-        if (this.history.length === this.restoreIndex + 1) {
+        if (this.history.states.length === this.history.restoreIndex + 1) {
           this.canredo = false;
         } else {
           this.canRedo = true;
         }
-        if (this.restoreIndex === 0) {
+        if (this.history.restoreIndex === 0) {
           this.canUndo = false;
         }
       }
     },
 
     redo() {
-      if (this.restoreIndex < this.history.length - 1) {
-        this.restoreIndex++;
-        this.canvas.loadFromJSON(this.history[this.restoreIndex].json);
+      if (this.history.restoreIndex < this.history.states.length - 1) {
+        this.$store.commit('setHistoryRestoreIndex', this.history.restoreIndex + 1)
+        // this.restoreIndex++;
+        this.canvas.loadFromJSON(this.history.states[this.history.restoreIndex].json);
         this.canvas.renderAll.bind(this.canvas);
         this.background = {
-          color: this.history[this.restoreIndex].background.color,
-          image: this.history[this.restoreIndex].background.image
+          color: this.history.states[this.history.restoreIndex].background.color,
+          image: this.history.states[this.history.restoreIndex].background.image
         };
         this.saveStory();
-        if (this.history.length === this.restoreIndex + 1) {
+        if (this.history.states.length === this.history.restoreIndex + 1) {
           this.canRedo = false;
           this.canUndo = true;
         }
@@ -818,7 +819,8 @@ export default {
             };
           }
           // reset history
-          this.history = [];
+          this.$state.commit('setHistoryStates', []);
+          this.$state.commit('setHistoryRestoreIndex', -1)
           // set activePage
           const payload = {
             user: this.user,
@@ -843,10 +845,10 @@ export default {
     color: {
       handler: function(newColor, oldColor) {
         this.canvas.freeDrawingBrush.color = newColor;
-        if (this.mode === "page" && this.subMode === 'backgroundColor') {
+        if (this.modes.mode === "page" && this.modes.subMode === 'backgroundColor') {
           this.background.color = newColor;
           this.addHistory();
-        } else if (this.mode === 'draw') {
+        } else if (this.modes.mode === 'draw') {
           if (this.canvas.getActiveObject()) {
             const textObj = this.canvas.getActiveObject();
             textObj.setSelectionStyles({'fill': newColor})
@@ -870,9 +872,9 @@ export default {
     insertImage: {
       handler: function(newImage, oldImage) {
         this.$store.commit('setLoading', false);
-        if (newImage && this.mode === "photo") {
+        if (newImage && this.modes.mode === "photo") {
           this.canvasInsertImage(newImage);
-        } else if (newImage && this.subMode === "background") {
+        } else if (newImage && this.modes.subMode === "background") {
           this.backgroundAddImage(newImage);
         }
       }

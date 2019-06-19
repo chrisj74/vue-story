@@ -19,6 +19,14 @@ export default {
     searchSize: 50,
     insertImage: null,
     pdfImages: null,
+    modes: {
+      mode: 'page',
+      subMode: 'text',
+    },
+    history: {
+      restoreIndex: -1,
+      states: []
+    },
   },
   mutations: {
     addStory(state, payload) {
@@ -57,7 +65,26 @@ export default {
     },
     setPdfImages(state, payload) {
       state.pdfImages = payload;
-    }
+    },
+    setMode(state, payload) {
+      state.modes.mode = payload;
+    },
+    setSubMode(state, payload) {
+      state.modes.subMode = payload;
+    },
+    setHistoryAddStates(state, payload) {
+      console.log('setHistoryStates payload=', payload);
+      state.history.states.push(payload);
+    },
+    setHistorySliceStates(state, payload) {
+      console.log('historySlice state=', state.history.states);
+      state.history.states.slice(0, state.history.restoreIndex + 1);
+      state.history.states.push(payload);
+    },
+    setHistoryRestoreIndex(state, payload) {
+      console.log('setHistoryRestoreIndex payload=', payload);
+      state.history.restoreIndex = payload;
+    },
   },
   actions: {
     addStory({ commit }, payload) {
@@ -490,6 +517,16 @@ export default {
         });
       });
     },
+
+    historyAdd({ commit, state }, payload) {
+      commit('setHistoryAddStates', payload);
+      commit('setHistoryRestoreIndex', state.history.restoreIndex + 1)
+    },
+
+    historySlice({ commit, state }, payload) {
+      commit('setHistorySliceStates', payload);
+      commit('setHistoryRestoreIndex', commitPayload.length - 1)
+    },
   },
 
   getters: {
@@ -527,6 +564,13 @@ export default {
     },
     getPdfImages(state) {
       return state.pdfImages;
+    },
+    getModes(state) {
+      return state.modes;
+    },
+    getHistory(state) {
+      return state.history;
     }
+
   }
 };
