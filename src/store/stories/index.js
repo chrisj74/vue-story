@@ -24,6 +24,8 @@ export default {
       subMode: 'text',
     },
     history: {
+      undo: false,
+      redo: false,
       restoreIndex: -1,
       states: []
     },
@@ -77,14 +79,20 @@ export default {
       state.history.states.push(payload);
     },
     setHistorySliceStates(state, payload) {
-      console.log('historySlice state=', state.history.states);
-      state.history.states.slice(0, state.history.restoreIndex + 1);
+      console.log('historySlice state=', state.history);
+      state.history.states = state.history.states.slice(0, state.history.restoreIndex + 1);
       state.history.states.push(payload);
     },
     setHistoryRestoreIndex(state, payload) {
       console.log('setHistoryRestoreIndex payload=', payload);
       state.history.restoreIndex = payload;
     },
+    setHistoryUndo(state, payload){
+      state.history.undo = payload;
+    },
+    setHistoryRedo(state, payload){
+      state.history.redo = payload;
+    }
   },
   actions: {
     addStory({ commit }, payload) {
@@ -520,12 +528,13 @@ export default {
 
     historyAdd({ commit, state }, payload) {
       commit('setHistoryAddStates', payload);
-      commit('setHistoryRestoreIndex', state.history.restoreIndex + 1)
+      commit('setHistoryRestoreIndex', state.history.restoreIndex + 1);
     },
 
     historySlice({ commit, state }, payload) {
+      console.log('historySlice', payload);
       commit('setHistorySliceStates', payload);
-      commit('setHistoryRestoreIndex', commitPayload.length - 1)
+      commit('setHistoryRestoreIndex', state.history.restoreIndex + 1);
     },
   },
 
