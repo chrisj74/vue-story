@@ -10,6 +10,7 @@ export default {
     story: {},
     pages: [],
     page: {},
+    pageDimensions: null,
     imageSearchResults: {
       str: '',
       page: 0,
@@ -78,6 +79,9 @@ export default {
       console.log('setHistoryStates payload=', payload);
       state.history.states.push(payload);
     },
+    setHistoryStates(state, payload) {
+      state.history.states = payload;
+    },
     setHistorySliceStates(state, payload) {
       console.log('historySlice state=', state.history);
       state.history.states = state.history.states.slice(0, state.history.restoreIndex + 1);
@@ -92,6 +96,9 @@ export default {
     },
     setHistoryRedo(state, payload){
       state.history.redo = payload;
+    },
+    setPageDimensions(state, payload) {
+      state.pageDimensions = payload;
     }
   },
   actions: {
@@ -178,10 +185,16 @@ export default {
         const userStory = firebase
           .firestore()
           .collection('users/' + payload.user.id + '/stories/' + payload.storyKey + '/pages/').doc(payload.pageKey);
-          userStory.update({
-            canvasJson: payload.page.json,
-            background: payload.page.background
-          });
+          if (payload.page.json) {
+            userStory.update({
+              canvasJson: payload.page.json,
+            });
+          }
+          if (payload.page.background){
+            userStory.update({
+              background: payload.page.background
+            });
+          }
         resolve();
       });
     },
@@ -504,7 +517,7 @@ export default {
         commit('clearImageSearchResults');
       }
       const pageStr = '&page=' + (state.imageSearchResults.page +1);
-      let path = 'https://pixabay.com/api/?key=11945260-36d09543fa5ee7da289366856&image_type=all&per_page='
+      let path = 'https://pixabay.com/api/?key=11945260-36d09543fa5ee7da289366856&image_type=all&per_page=';
       path += state.searchSize + '&safesearch=true&q=';
       const query = encodeURIComponent(payload.str);
       const fullPath = path + query + pageStr;
@@ -579,6 +592,10 @@ export default {
     },
     getHistory(state) {
       return state.history;
+    },
+    getPageDimensions(state) {
+      console.log('getPageDimensions=', state.pageDimensions);
+      return state.pageDimensions;
     }
 
   }

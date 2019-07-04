@@ -1,22 +1,9 @@
 <template>
-  <div class="canvas-ref" ref="page">
-    <div class="canvas-wrapper">
-      <div v-if="page" class="canvas-bg-img-wrapper" :style="{width: page.width+'px', height: page.height+'px'}">
-        <div v-if="canvas && background.color" class="canvas-bg-img" :style="{backgroundColor: background.color,
-          backgroundImage: background.image? 'url('+background.image+')' : 'none',
-          width: (canvas.width * (page.zoom / canvas.getZoom())) + 'px',
-          height: (canvas.height * (page.zoom / canvas.getZoom())) + 'px',
-          top: 0,
-          left: 0}">
-        </div>
-      </div>
-      <canvas
-        id="storyCanvas"
-        ref="canvas"
-        key="canvas">
-      </canvas>
-    </div>
-  </div>
+  <canvas
+    id="storyCanvas"
+    ref="canvas"
+    key="canvas">
+  </canvas>
 </template>
 
 <script>
@@ -307,19 +294,18 @@ export default {
 
     setDefaultZoom() {
       this.setPageSize();
-      const maxHeightRatio = this.page.height / this.canvas.height;
-      const maxWidthRatio = this.page.width / this.canvas.width;
+      const maxHeightRatio = this.page.height / this.this.activePage.pageSize.height;
+      const maxWidthRatio = this.page.width / this.this.activePage.pageSize.width;
       if (maxHeightRatio < maxWidthRatio) {
         this.page.zoom = maxHeightRatio;
-        this.canvas.setHeight(this.canvas.height * maxHeightRatio);
-        this.canvas.setWidth(this.canvas.width * maxHeightRatio);
+        this.canvas.setHeight(this.cthis.activePage.pageSize.height * maxHeightRatio);
+        this.canvas.setWidth(this.activePage.pageSize.width * maxHeightRatio);
         this.canvas.setZoom(maxHeightRatio);
         this.canvas.renderAll();
       } else {
         this.page.zoom = maxWidthRatio;
-
-        this.canvas.setHeight(this.canvas.height * maxWidthRatio);
-        this.canvas.setWidth(this.canvas.width * maxWidthRatio);
+        this.canvas.setHeight(this.activePage.pageSize.height * maxWidthRatio);
+        this.canvas.setWidth(this.activePage.pageSize.width * maxWidthRatio);
         this.canvas.setZoom(maxWidthRatio);
       }
       this.scaleBrushWidth();
@@ -694,7 +680,7 @@ export default {
   position: relative;
 }
 
-.canvas-ref {
+.page-ref {
   display: flex;
   height: calc(100vh - 20px);
   overflow: hidden;
@@ -854,7 +840,7 @@ export default {
   .main-content {
     display: block;
   }
-  .canvas-ref {
+  .page-ref {
     padding-left: 0;
     max-width: calc(100vw - 10px);
         height: calc(100vh - 220px);
@@ -878,7 +864,7 @@ export default {
   }
 }
 @media(max-width: $breakpoint-md) and (orientation: landscape) {
-  .canvas-ref {
+  .page-ref {
     height: calc(100vh - 20px);
   }
   .tools {
@@ -890,7 +876,7 @@ export default {
     max-height: calc(100vh - 170px);
     overflow: hidden;
   }
-  .canvas-ref {
+  .page-ref {
     height: calc(100vh - 250px);
   }
 }

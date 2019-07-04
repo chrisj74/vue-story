@@ -33,37 +33,42 @@
         :size="$q.screen.lt.sm ? 'sm' : 'md'"
         @click="setDraw()"
       />
+      <!-- SHAPE -->
+      <q-btn
+        icon="mdi-shape"
+        :color="modes.mode === 'shape' ? 'primary' : 'dark'"
+        round
+        :size="$q.screen.lt.sm ? 'sm' : 'md'"
+        @click="setShape()"
+      />
     </div>
     <!-- PAGE TEXT EDITOR -->
-    <text-editor v-if="canvas && activePage" :print="false" :active="modes.mode === 'page' && modes.subMode === 'text'" :zoom="page.zoom" :pageWidth="activePage.pageSize.width" :pageHeight="activePage.pageSize.height" ></text-editor>
+    <text-editor v-if="activePage && pageDimensions" :print="false" :active="modes.mode === 'page' && modes.subMode === 'text'" :zoom="pageDimensions.zoom" :pageWidth="activePage.pageSize.width" :pageHeight="activePage.pageSize.height" ></text-editor>
 
     <!-- TEXT LAYER -->
-    <!-- <text-editor v-if="canvas && activePage" :print="false" :active="true" :zoom="page.zoom" :pageWidth="activePage.pageSize.width" :pageHeight="activePage.pageSize.height" ></text-editor> -->
+    <!-- <text-editor v-if="activePage" :print="false" :active="true" :zoom="page.zoom" :pageWidth="activePage.pageSize.width" :pageHeight="activePage.pageSize.height" ></text-editor> -->
 
     <!-- MAIN CONTENT -->
     <div class="main-content">
       <!-- Canvas -->
-      <div class="canvas-ref" ref="page">
-        <div class="canvas-wrapper">
-          <div v-if="page" class="canvas-bg-img-wrapper" :style="{width: page.width+'px', height: page.height+'px'}">
-            <div v-if="canvas && background.color" class="canvas-bg-img" :style="{backgroundColor: background.color,
+      <!-- TODO  -->
+      <div class="page-ref" ref="page">
+        <div v-if="pageDimensions" class="canvas-wrapper" :style="{width: pageDimensions.width+'px', height: pageDimensions.height+'px'}">
+          <div class="canvas-bg-img-wrapper" :style="{width: pageDimensions.width+'px', height: pageDimensions.height+'px'}">
+            <div v-if="background.color" class="canvas-bg-img" :style="{
+              backgroundColor: background.color,
               backgroundImage: background.image? 'url('+background.image+')' : 'none',
-              width: (canvas.width * (page.zoom / canvas.getZoom())) + 'px',
-              height: (canvas.height * (page.zoom / canvas.getZoom())) + 'px',
+              width: pageDimensions.width + 'px',
+              height: pageDimensions.height + 'px',
               top: 0,
               left: 0}">
             </div>
           </div>
-          <canvas
-            id="storyCanvas"
-            ref="canvas"
-            key="canvas">
-          </canvas>
         </div>
       </div>
 
       <!-- EXTRA TOOLS -->
-      <div class="extra-tools" v-if="canvas" key="extra-tools" :style="{top: extraToolsPos.top, right: extraToolsPos.right}">
+      <div class="extra-tools" v-if="pageDimensions" key="extra-tools" :style="{top: extraToolsPos.top, right: extraToolsPos.right}">
         <!-- COLORS -->
         <swatches
           v-model="color"
@@ -95,16 +100,26 @@
           <q-btn
             v-if="modes.mode === 'page'"
             key="bgImageButton"
-            icon="mdi-camera"
+            icon="mdi-image-plus"
             size="sm"
             :color="'dark'"
             round
             @click="addBgPhoto()"
           />
-        <!-- DRAWING TOOLS -->
+          <!-- REMOVE BG IMAGE -->
+          <q-btn
+            v-if="modes.mode === 'page'"
+            key="bgImageRemoveButton"
+            icon="mdi-image-off"
+            size="sm"
+            :color="'negative'"
+            round
+            @click="backgroundRemoveImage()"
+          />
+        <!-- SHAPE TOOLS -->
         <!-- MOVE -->
         <q-btn
-          v-if="modes.mode === 'draw'"
+          v-if="modes.mode === 'shape'"
           icon="mdi-cursor-move"
           :color="modes.subMode === 'select' ? 'primary' : 'dark'"
           round
@@ -112,10 +127,16 @@
           @click="setSelect()"
         />
         <!-- RULER -->
-        <q-btn v-if="modes.mode === 'draw'" icon="mdi-ruler" :color="modes.subMode === 'line' ? 'primary' : 'dark'" round @click="line()" size="sm"/>
+        <q-btn
+          v-if="modes.mode === 'shape'"
+          icon="mdi-ruler"
+          :color="modes.subMode === 'line' ? 'primary' : 'dark'"
+          round @click="line()"
+          size="sm"
+        />
         <!-- FILL OBJ -->
         <q-btn
-          v-if="modes.mode === 'draw'"
+          v-if="modes.mode === 'shape'"
           icon="mdi-format-color-fill"
           :color="modes.subMode === 'fill' ? 'primary' : 'dark'"
           round
@@ -123,29 +144,10 @@
           @click="fillColor()"
           :disabled="!isSelected"
         />
-        <!-- BRUSH -->
-        <q-btn
-          v-if="modes.mode === 'draw'"
-          key="pencil"
-          icon="mdi-pencil"
-          size="sm"
-          :color="modes.subMode === 'brush'? 'primary' : 'dark'"
-          round
-          @click="setDraw()"
-        />
-        <!-- ERASER -->
-        <q-btn
-          v-if="modes.mode === 'draw'"
-          key="eraser"
-          size="sm"
-          :color="modes.subMode === 'eraser' ? 'primary' : 'dark'"
-          icon="mdi-eraser"
-          round
-          @click="setEraser()"
-        />
+
         <!-- TEXT -->
         <q-btn
-          v-if="modes.mode === 'draw'"
+          v-if="modes.mode === 'shape'"
           icon="mdi-format-text"
           :color="modes.subMode === 'text' ? 'primary' : 'dark'"
           round
@@ -153,27 +155,14 @@
           @click="canvasText()"
         />
         <!-- TEXT SIZE -->
-        <div class="tool-slider" v-if="modes.mode === 'draw' && (modes.subMode === 'text' || modes.subMode === 'selectText')">
+        <div class="tool-slider" v-if="modes.mode === 'shape' && (modes.subMode === 'text' || modes.subMode === 'selectText')">
           <q-btn size="sm" color="primary" icon="mdi-format-size" round @click="toggleTextSize()"/>
           <div class="q-slider-wrap" v-if="showTextSize">
             <q-slider v-model="text.size" :min="5" :max="100" :step="1" label snap/>
           </div>
         </div>
-        <!-- BRUSH SIZE -->
-        <div class="tool-slider" v-if="modes.mode === 'draw' && (modes.subMode === 'brush' || modes.subMode === 'eraser')">
-          <q-btn
-            size="sm"
-            icon="mdi-signal"
-            round
-            :color="showBrushWidth ? 'primary' : 'dark'"
-            @click="toggleBrushWidth()"
-          />
-          <div class="q-slider-wrap" v-if="showBrushWidth">
-            <q-slider v-model="brush.width" :min="1" :max="50" :step="1" label snap/>
-          </div>
-        </div>
         <!-- LINE WIDTH -->
-        <div class="tool-slider" v-if="modes.mode === 'draw' && modes.subMode === 'line'">
+        <div class="tool-slider" v-if="modes.mode === 'shape' && modes.subMode === 'line'">
           <q-btn
             size="sm"
             icon="mdi-signal"
@@ -196,15 +185,51 @@
           :disabled="!isSelected"
         />
         <!-- CLEAR -->
-        <q-btn v-if="modes.mode === 'draw'" icon="mdi-close" round @click="clearCanvas()" size="sm"/>
+        <q-btn v-if="modes.mode === 'shape'" icon="mdi-close" round @click="clearCanvas()" size="sm"/>
+
+
+        <!-- DRAW TOOLS -->
+        <!-- BRUSH -->
+        <q-btn
+          v-if="modes.mode === 'draw'"
+          key="pencil"
+          icon="mdi-pencil"
+          size="sm"
+          :color="modes.subMode === 'brush'? 'primary' : 'dark'"
+          round
+          @click="setDraw()"
+        />
+        <!-- ERASER -->
+        <q-btn
+          v-if="modes.mode === 'draw'"
+          key="eraser"
+          size="sm"
+          :color="modes.subMode === 'eraser' ? 'primary' : 'dark'"
+          icon="mdi-eraser"
+          round
+          @click="setEraser()"
+        />
+        <!-- BRUSH SIZE -->
+        <div class="tool-slider" v-if="modes.mode === 'draw' && (modes.subMode === 'brush' || modes.subMode === 'eraser')">
+          <q-btn
+            size="sm"
+            icon="mdi-signal"
+            round
+            :color="showBrushWidth ? 'primary' : 'dark'"
+            @click="toggleBrushWidth()"
+          />
+          <div class="q-slider-wrap" v-if="showBrushWidth">
+            <q-slider v-model="brush.width" :min="1" :max="50" :step="1" label snap/>
+          </div>
+        </div>
       </div>
     </div>
 
     <!-- IMAGE MODAL -->
     <q-modal
-      v-if="canvas"
+      v-if="pageDimensions"
       v-model="imageModal"
-      :content-css="{minWidth: '350px', height: '90vh', maxWidth: '100%', width: canvas.width+'px'}">
+      :content-css="{minWidth: '350px', height: '90vh', maxWidth: '100%', width: pageDimensions.width+'px'}">
       <add-image v-if="modes.mode === 'photo' || modes.subMode === 'background'"></add-image>
     </q-modal>
     <!-- SHORTCUTS -->
@@ -228,13 +253,6 @@ export default {
   components: { Swatches, AddImage, TextEditor },
   data() {
     return {
-      page: {
-        width: 0,
-        height: 0,
-        zoom: 1,
-        offsetY: 0,
-        offsetX: 0
-      },
       background: {
         color: null,
         image: false
@@ -252,7 +270,6 @@ export default {
         width: 5
       },
       color: "#000000",
-      canvas: null,
       canUndo: false,
       canRedo: false,
       panning: {
@@ -299,12 +316,15 @@ export default {
     showPlan() {
       return this.$store.getters.showPlan;
     },
+    pageDimensions() {
+      return this.$store.getters.getPageDimensions;
+    },
     toolsPos() {
       let pos = {
         top: 0,
         right: 0
       };
-      if (this.canvas) {
+      if (this.pageDimensions) {
         if (this.screen.width < this.screen.height) {
           // Portrait
           pos = {
@@ -315,7 +335,7 @@ export default {
           // landscape
           pos = {
             top: '45px',
-            left: this.canvas.width+'px',
+            left: this.pageDimensions.width+'px',
           }
         }
       }
@@ -326,18 +346,18 @@ export default {
         top: 0,
         right: 0
       };
-      if (this.canvas) {
+      if (this.pageDimensions) {
         if (this.screen.width < this.screen.height) {
           // Portrait
           pos = {
-            top: (this.canvas.height + 10) + 'px',
+            top: (this.pageDimensions.height + 10) + 'px',
             right: 0,
           }
         } else {
           // landscape
           pos = {
             top: '50px',
-            right: (this.screen.width - (this.canvas.width + 300)) + 'px',
+            right: (this.screen.width - (this.pageDimensions.width + 300)) + 'px',
           }
         }
       }
@@ -355,178 +375,29 @@ export default {
       this.$store.dispatch('setPage', payload);
     }
     const _this = this;
-    if (this.activePage && !this.canvas && this.story.id === this.$route.params.id) {
+    if (this.activePage && !this.pageDimensions && this.story.id === this.$route.params.id) {
       if (this.activePage.background) {
         this.background.color = this.activePage.background.color;
         this.background.image = this.activePage.background.image;
       }
 
-      if (this.activePage.canvasJson) {
-        this.canvasInit();
-        this.canvas.loadFromJSON(this.activePage.canvasJson, function() {
-          _this.canvas.renderAll.bind(_this.canvas);
-          _this.setDefaultZoom();
-          _this.addHistory();
-        });
+      if (this.activePage) {
+        _this.setDefaultZoom();
       }
     }
-    /** Trigger canvas resize on browser resize */
+    /** Trigger page resize on browser resize */
 
     window.addEventListener("resize", function(event) {
       this.windowWidth = window.innerWidth;
       _this.$nextTick()
           .then(function () {
               // DOM updated
-              _this.canvas.setHeight(_this.activePage.pageSize.height);
-              _this.canvas.setWidth(_this.activePage.pageSize.width);
               _this.setDefaultZoom();
           })
     });
     this.windowWidth = window.innerWidth;
   },
   methods: {
-    canvasInit() {
-      /** Main canvas */
-      this.canvas = new fabric.Canvas("storyCanvas");
-      const _this = this;
-      const canvas = this.canvas;
-
-      this.canvas.targetFindTolerance = 4;
-      this.canvas.preserveObjectStacking = true;
-      canvas.renderAll.bind(canvas);
-
-      /** Canvas events */
-      let line;
-      const ctx = canvas.getContext("2d");
-      this.canvas.on("path:created", function(e) {
-        if (_this.modes.subMode === 'eraser') {
-          e.path.globalCompositeOperation = "destination-out";
-          canvas.renderAll();
-        }
-        _this.addHistory();
-      });
-      this.canvas.on("object:moved", () => {
-        canvas.renderAll.bind(canvas);
-        _this.addHistory();
-      });
-      this.canvas.on("selection:created", function(o) {
-        _this.isSelected = true;
-      });
-      this.canvas.on("selection:cleared", function(o) {
-        _this.isSelected = false;
-      });
-      /** MOUSE DOWN */
-      this.canvas.on("mouse:down", o => {
-        _this.isDown = true;
-        _this.showtextSize = false;
-        _this.showBrushWidth = false;
-        _this.showLineWidth = false;
-        /** BRUSH */
-        if (_this.modes.subMode === "brush") {
-          _this.brush.active = true;
-        }
-        /** SELECT */
-        if (_this.modes.subMode === "select") {
-          if (canvas.getActiveObject()) {
-            _this.isSelected = true;
-          } else {
-            _this.isSelected = false;
-          }
-        }
-        /** LINE */
-        if (_this.modes.subMode === "line") {
-          canvas.selection = false;
-          const pointer = canvas.getPointer(o.e);
-          const points = [pointer.x, pointer.y, pointer.x, pointer.y];
-          line = new fabric.Line(points, {
-            strokeWidth: _this.lineObj.width,
-            fill: _this.color,
-            stroke: _this.color,
-            originX: "center",
-            originY: "center"
-          });
-          canvas.add(line);
-        }
-        /** TEXT */
-        if (_this.modes.mode === 'draw' && _this.modes.subMode === "text") {
-          if (
-            !canvas.getActiveObject() ||
-            !canvas.getActiveObject().isEditing
-          ) {
-            const pointer = canvas.getPointer(o.e);
-            const textOptions = {
-              fontSize: _this.text.size,
-              fill: _this.color,
-              left: pointer.x,
-              top: pointer.y,
-              radius: 10,
-              borderRadius: "25px",
-              hasRotatingPoint: true,
-              lockScalingX: true,
-              lockScalingY: true,
-              hiddenTextarea: true,
-              editingBorderColor: "#999999"
-            };
-            const text = new fabric.IText("Start typing...", textOptions);
-            canvas.add(text).setActiveObject(text);
-            text.enterEditing();
-            text.selectAll();
-            _this.modes.subMode = "selectText";
-            _this.addHistory();
-          } else {
-          }
-        }
-        /** FILL */
-        if (_this.modes.subMode === "fill") {
-          const activeObject = canvas.getActiveObject();
-          if (activeObject) {
-            if (activeObject.stroke) {
-              activeObject.set("fill", _this.color);
-              activeObject.set("stroke", activeObject.stroke);
-            } else if (activeObject.stroke && activeObject.fill) {
-              activeObject.set("fill", _this.color);
-              activeObject.set("stroke", _this.color);
-            }
-            canvas.renderAll.bind(canvas);
-          }
-          _this.addHistory();
-        }
-      });
-      this.canvas.on("mouse:move", o => {
-        if (!_this.isDown) return;
-        if (_this.modes.subMode === "line") {
-          const pointer = canvas.getPointer(o.e);
-          line.set({ x2: pointer.x, y2: pointer.y });
-          canvas.renderAll();
-        }
-      });
-      this.canvas.on("mouse:up", o => {
-        _this.isDown = false;
-        canvas.selection = false;
-        if (_this.modes.subMode === "line") {
-          _this.addHistory();
-        }
-        if (_this.modes.subMode === "brush") {
-          _this.brush.active = false;
-        }
-      });
-      this.canvas.setHeight(this.activePage.pageSize.height);
-      this.canvas.setWidth(this.activePage.pageSize.width);
-      // this.draw();
-    },
-
-    addPage() {
-      const payload = {
-        user: this.user,
-        storyKey: this.$route.params.id,
-        pageKey: this.$route.params.pageId ? this.$route.params.pageId : null,
-        order: this.pages.length
-      };
-      this.$store.dispatch("addPage", payload).then(newPage => {
-        this.$router.push({ path: newPage });
-      });
-    },
-
     shortKeys(e) {
       switch (e.srcKey) {
         case "undoWin":
@@ -540,79 +411,42 @@ export default {
       }
     },
 
-    deleteObj() {
-      const activeObject = this.canvas.getActiveObject();
-      if (activeObject && !activeObject.isEditing) {
-        this.canvas.remove(activeObject);
-        this.canvas.renderAll.bind(this.canvas);
-      }
-      this.addHistory();
-    },
-
-    setPageSize() {
-      this.page.height = this.$refs.page.clientHeight;
-      this.page.width = this.$refs.page.clientWidth;
-    },
-
     setDefaultZoom() {
-      this.setPageSize();
-      const maxHeightRatio = this.page.height / this.canvas.height;
-      const maxWidthRatio = this.page.width / this.canvas.width;
+      // this.setPageSize();
+      const maxHeightRatio = this.$refs.page.clientHeight / this.activePage.pageSize.height;
+      const maxWidthRatio = this.$refs.page.clientWidth / this.activePage.pageSize.width;
+      let dimensions;
       if (maxHeightRatio < maxWidthRatio) {
-        this.page.zoom = maxHeightRatio;
-        this.canvas.setHeight(this.canvas.height * maxHeightRatio);
-        this.canvas.setWidth(this.canvas.width * maxHeightRatio);
-        this.canvas.setZoom(maxHeightRatio);
-        this.canvas.renderAll();
+        dimensions = {
+          height: (this.activePage.pageSize.height * maxHeightRatio),
+          width: (this.activePage.pageSize.width * maxHeightRatio),
+          zoom: maxHeightRatio,
+        }
       } else {
-        this.page.zoom = maxWidthRatio;
-
-        this.canvas.setHeight(this.canvas.height * maxWidthRatio);
-        this.canvas.setWidth(this.canvas.width * maxWidthRatio);
-        this.canvas.setZoom(maxWidthRatio);
+        dimensions = {
+          height: (this.activePage.pageSize.height * maxWidthRatio),
+          width: (this.activePage.pageSize.width * maxWidthRatio),
+          zoom: maxWidthRatio,
+        }
       }
-      this.scaleBrushWidth();
-    },
-
-    setSelect() {
-      this.$store.commit('setSubMode', "select");
-      this.canvas.isDrawingMode = false;
-      this.canvas.forEachObject(function(object) {
-        object.selectable = true;
-      });
+      this.$store.commit('setPageDimensions', dimensions);
     },
 
     fillColor() {
       this.$store.commit('setSubMode', "fill");
-      this.canvas.isDrawingMode = false;
-      this.canvas.forEachObject(function(object) {
-        object.selectable = true;
-      });
     },
 
     line() {
-      this.canvas.forEachObject(function(object) {
-        object.selectable = false;
-      });
       this.$store.commit('setSubMode', "line");
-      this.canvas.isDrawingMode = false;
     },
 
     addPhoto() {
       this.$store.commit('setMode', "photo");
       this.imageModal = true;
-      this.canvas.isDrawingMode = false;
-      this.canvas.forEachObject(function(object) {
-        object.selectable = true;
-      });
     },
 
     canvasText() {
       this.$store.commit('setSubMode', "text");
-      this.canvas.isDrawingMode = false;
-      this.canvas.forEachObject(function(object) {
-        object.selectable = true;
-      });
     },
 
     backgroundColor() {
@@ -624,30 +458,6 @@ export default {
       this.textModal = true;
     },
 
-    canvasInsertImage(imageObj) {
-      this.imageModal = false;
-      this.$store.commit("clearInsertImage");
-      this.$store.commit("clearImageSearchResults");
-
-      const canvas = this.canvas;
-      const _this = this;
-      fabric.Image.fromURL(
-        imageObj.webformatURL,
-        function(myImg) {
-          myImg.set({
-            left: canvas.width / 4,
-            top: 100,
-            width: imageObj.webformatWidth,
-            height: imageObj.webformatHeight
-          });
-          myImg.scaleToWidth(canvas.width / 2);
-          canvas.add(myImg);
-          _this.addHistory();
-        },
-        { crossOrigin: "Anonymous" }
-      );
-    },
-
     backgroundAddImage(imageObj) {
       this.imageModal = false;
       this.$store.commit("clearInsertImage");
@@ -657,55 +467,46 @@ export default {
       this.$store.commit('setSubMode', "text");
     },
 
+    backgroundRemoveImage() {
+      this.background.image = null;
+      this.addHistory();
+    },
+
     setDraw() {
-      this.canvas.forEachObject(function(object) {
-        object.selectable = true;
-      });
       this.$store.commit('setMode', "draw");
       this.$store.commit('setSubMode', "brush");
-      this.setFreeBrush();
+    },
+
+    setShape() {
+      this.$store.commit('setMode', "shape");
+      this.$store.commit('setSubMode', "line");
     },
 
     setEraser() {
       this.$store.commit('setSubMode', "eraser");
-      this.canvas.freeDrawingBrush.color = "rgba(255,255,255,.95)";
-    },
-
-    setFreeBrush() {
-      this.canvas.isDrawingMode = true;
-      this.canvas.freeDrawingBrush.color = this.color;
-      this.canvas.freeDrawingBrush.width = this.brush.width;
     },
 
     setPage() {
       this.$store.commit('setMode', "page");
       this.$store.commit('setSubMode', "text");
-      this.canvas.isDrawingMode = false;
     },
 
     setBackground() {
       this.$store.commit('setSubMode', "background");
-      this.canvas.isDrawingMode = false;
     },
 
     addBgPhoto() {
       this.imageModal = true;
       this.$store.commit('setSubMode', "background");
-      this.canvas.forEachObject(function(object) {
-        object.selectable = true;
-      });
-      this.canvas.isDrawingMode = false;
     },
 
     saveStory() {
-      const jsonObj = this.canvas.toJSON(["globalCompositeOperation"]);
       if (this.activePage) {
         const payload = {
           user: this.user,
           storyKey: this.$route.params.id,
           pageKey: this.activePage.id,
           page: {
-            json: JSON.stringify(jsonObj),
             background: {
               color: this.background.color,
               image: this.background.image
@@ -718,7 +519,6 @@ export default {
 
     addHistory() {
       const snapshot = {
-        json: this.canvas.toJSON(["globalCompositeOperation"]),
         background: {
           color: this.background.color,
           image: this.background.image
@@ -738,8 +538,6 @@ export default {
       if (this.history.restoreIndex > 0) {
         this.$store.commit('setHistoryRestoreIndex', this.history.restoreIndex - 1)
         // this.restoreIndex--;
-        this.canvas.loadFromJSON(this.history.states[this.history.restoreIndex].json);
-        this.canvas.renderAll.bind(this.canvas);
         this.background = {
           color: this.history.states[this.history.restoreIndex].background.color,
           image: this.history.states[this.history.restoreIndex].background.image
@@ -760,8 +558,6 @@ export default {
       if (this.history.restoreIndex < this.history.states.length - 1) {
         this.$store.commit('setHistoryRestoreIndex', this.history.restoreIndex + 1)
         // this.restoreIndex++;
-        this.canvas.loadFromJSON(this.history.states[this.history.restoreIndex].json);
-        this.canvas.renderAll.bind(this.canvas);
         this.background = {
           color: this.history.states[this.history.restoreIndex].background.color,
           image: this.history.states[this.history.restoreIndex].background.image
@@ -775,17 +571,6 @@ export default {
         this.canUndo = true;
         this.canRedo = false;
       }
-    },
-
-    clearCanvas() {
-      this.canvas.clear();
-      this.addHistory();
-    },
-
-    scaleBrushWidth() {
-      this.canvas.freeDrawingBrush.width = Math.ceil(
-        this.brush.width * this.canvas.getZoom()
-      );
     },
 
     toggleTextSize() {
@@ -809,15 +594,6 @@ export default {
           !to.params.pageId
         ) {
           // same story new page
-          // detroy canvas
-          if (this.canvas) {
-            this.canvas.dispose();
-            this.canvas = null;
-            this.background = {
-              color: null,
-              image: "none"
-            };
-          }
           // reset history
           this.$store.commit('setHistoryStates', []);
           this.$store.commit('setHistoryRestoreIndex', -1)
@@ -834,72 +610,32 @@ export default {
       },
       deep: true
     },
-    brush: {
-      handler: function(newBrush, oldVal) {
-        if (this.canvas.freeDrawingBrush.width !== newBrush.width) {
-          this.canvas.freeDrawingBrush.width = newBrush.width;
-        }
-      },
-      deep: true
-    },
     color: {
       handler: function(newColor, oldColor) {
-        this.canvas.freeDrawingBrush.color = newColor;
         if (this.modes.mode === "page" && this.modes.subMode === 'backgroundColor') {
           this.background.color = newColor;
-          this.addHistory();
-        } else if (this.modes.mode === 'draw') {
-          if (this.canvas.getActiveObject()) {
-            const textObj = this.canvas.getActiveObject();
-            textObj.setSelectionStyles({'fill': newColor})
-          }
-          this.canvas.renderAll();
           this.addHistory();
         }
       }
     },
-    text: {
-      handler: function(newText, oldText) {
-        if (this.canvas.getActiveObject()) {
-          const textObj = this.canvas.getActiveObject();
-          textObj.setSelectionStyles({'fontSize': this.text.size});''
-          this.canvas.renderAll();
-          this.addHistory();
-        }
-      },
-      deep: true
-    },
+
     insertImage: {
       handler: function(newImage, oldImage) {
         this.$store.commit('setLoading', false);
-        if (newImage && this.modes.mode === "photo") {
-          this.canvasInsertImage(newImage);
-        } else if (newImage && this.modes.subMode === "background") {
+        if (newImage && this.modes.subMode === "background") {
           this.backgroundAddImage(newImage);
         }
       }
     },
     activePage: {
       handler: function(newPage, oldPage) {
-        if (!this.canvas && newPage && newPage.canvasJson) {
-          this.background.color = this.activePage.background.color;
-          this.background.image = this.activePage.background.image;
-          this.canvasInit();
-          this.canvas.forEachObject(function(object) {
-            object.selectable = true;
-          });
-          this.setFreeBrush();
-          const _this = this;
-          this.canvas.loadFromJSON(this.activePage.canvasJson, function() {
-            _this.canvas.renderAll.bind(_this.canvas);
-            _this.setDefaultZoom();
-            _this.addHistory();
-          });
-        } else if (!this.canvas) {
-          this.background.color = this.activePage.background.color;
-          this.background.image = this.activePage.background.image;
-          this.canvasInit();
+        if (!this.pageDimensions && this.activePage.pageSize) {
           this.setDefaultZoom();
+        }
+        if (this.background.color !== this.activePage.background.color
+          || this.background.image !== this.activePage.background.image) {
+          this.background.color = this.activePage.background.color;
+          this.background.image = this.activePage.background.image;
           this.addHistory();
         }
       },
@@ -943,13 +679,14 @@ export default {
   position: relative;
 }
 
-.canvas-ref {
+.page-ref {
   display: flex;
   height: calc(100vh - 20px);
   overflow: hidden;
   max-width: calc(100vw - 190px);
   flex-grow: 2;
 }
+
 
 .canvas-wrapper {
   position: relative;
@@ -974,15 +711,6 @@ export default {
   background-repeat: no-repeat;
   background-size: cover;
   background-position: center center;
-}
-
-#storyCanvas {
-  position: relative;
-  z-index: 2;
-  height: 595px;
-}
-.upper-canvas {
-  z-index: 2
 }
 
 .color-picker-input {
@@ -1027,22 +755,6 @@ export default {
   background: rgba(255, 255, 255, 0.8);
 }
 
-.zoom-controls {
-  display: inline-flex;
-  display: none;
-  font-size: 2em;
-  position: absolute;
-  top: 10px;
-  right: 10px;
-  z-index: 999;
-  flex-direction: column;
-  align-items: center;
-  background: rgba(255, 255, 255, 0.8);
-}
-.zoom-controls .disabled {
-  color: #bbb;
-}
-
 .color-btn {
   width: 42px;
   height: 42px;
@@ -1063,33 +775,6 @@ export default {
   z-index: 1000;
 }
 
-.zoom-in {
-  cursor: zoom-in;
-}
-
-.zoom-out {
-  cursor: zoom-out;
-}
-
-.pan-up {
-  cursor: n-resize;
-}
-
-.pan-left {
-  cursor: w-resize;
-}
-
-.pan-right {
-  cursor: e-resize;
-}
-
-.pan-down {
-  cursor: s-resize;
-}
-
-.reset-canvas {
-  cursor: crosshair;
-}
 .text-modal {
   display: flex;
   justify-content: center;
@@ -1103,10 +788,10 @@ export default {
   .main-content {
     display: block;
   }
-  .canvas-ref {
+  .page-ref {
     padding-left: 0;
     max-width: calc(100vw - 10px);
-        height: calc(100vh - 220px);
+    height: calc(100vh - 220px);
   }
   .tools {
     display: flex;
@@ -1127,7 +812,7 @@ export default {
   }
 }
 @media(max-width: $breakpoint-md) and (orientation: landscape) {
-  .canvas-ref {
+  .page-ref {
     height: calc(100vh - 20px);
   }
   .tools {
@@ -1139,7 +824,7 @@ export default {
     max-height: calc(100vh - 170px);
     overflow: hidden;
   }
-  .canvas-ref {
+  .page-ref {
     height: calc(100vh - 250px);
   }
 }

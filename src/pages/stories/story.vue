@@ -434,7 +434,10 @@ export default {
                 if (newPage
                     && oldPage
                     && (newPage.canvasJson || newPage.textLayer.text)
-                    && (newPage.canvasJson != oldPage.canvasJson || newPage.id !== oldPage.id || newPage.textLayer.text !== oldPage.textLayer.text)
+                    && (newPage.canvasJson != oldPage.canvasJson
+                        || newPage.id !== oldPage.id
+                        || newPage.textLayer.text !== oldPage.textLayer.text
+                        || newPage.background !== oldPage.background)
                     && (newPage.id === this.$route.params.pageId || !this.$route.params.pageId)) {
                     this.generateThumb();
 
