@@ -34,6 +34,7 @@
 
                     <canvas id="thumbCanvas"></canvas>
                     <img :src="thumbImgSrc" class="thumb-canvas-img" />
+                    <img v-if="activePage && activePage.drawingLayer" :src="activePage.drawingLayer.drawingJson" class="thumb-drawing-img" />
 
                     <div class="text-layer">
                         <!-- TEXT EDITOR -->
@@ -62,6 +63,7 @@ import * as b64toBlob from 'b64-to-blob';
 import * as _ from 'lodash';
 import draggable from 'vuedraggable';
 import TextEditor from "../../components/story/TextEditor";
+import DrawingCanvas from '../../components/story/DrawingCanvas';
 
 
 import pdfMake from "pdfmake/build/pdfmake";
@@ -72,7 +74,8 @@ export default {
     name: 'Story',
     components: {
         draggable,
-        TextEditor
+        TextEditor,
+        DrawingCanvas
     },
     data() {
         return {
@@ -272,7 +275,7 @@ export default {
             this.thumbCanvas.setHeight(595);
             this.thumbCanvas.setWidth(842);
             if (this.activePage && this.activePage.canvasJson) {
-                this.generateThumb()
+                // this.generateThumb()
             }
         },
 
@@ -346,11 +349,12 @@ export default {
                         useCORS: true,
                         logging: false
                     }
-                    _this.$html2canvas(el, options).then(th => {
+                    /* _this.$html2canvas(el, options).then(th => {
                         let thumbImg = th;
                         _this.previewSrc = th;
                         _this.addThumbBack(thumbImg);
-                    });
+                    }); */
+                    _this.addThumbBack(_this.thumbImgSrc)
                 });
         },
 
@@ -439,7 +443,7 @@ export default {
                         || newPage.textLayer.text !== oldPage.textLayer.text
                         || newPage.background !== oldPage.background)
                     && (newPage.id === this.$route.params.pageId || !this.$route.params.pageId)) {
-                    this.generateThumb();
+                    // this.generateThumb();
 
                     /** Scroll active thumb into view */
                     const _this = this;
@@ -595,6 +599,14 @@ export default {
         bottom: 0;
         right: 0;
         z-index: 5;
+    }
+    .thumb-drawing-img {
+        position: absolute;
+        top: 0;
+        left: 0;
+        bottom: 0;
+        right: 0;
+        z-index: 6;
     }
     .canvas-bg-img-wrapper {
         position: absolute;

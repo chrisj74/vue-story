@@ -9,7 +9,18 @@ export default {
     ],
     story: {},
     pages: [],
-    page: {},
+    page: {
+      commit: 0,
+      photoLayer: null,
+      textLayer: null,
+      id: null,
+      thumb: null,
+      preview: null,
+      background: null,
+      drawingLayer: null,
+      pageSize: null,
+      order: null,
+    },
     pageDimensions: null,
     imageSearchResults: {
       str: '',
@@ -24,12 +35,20 @@ export default {
       mode: 'page',
       subMode: 'text',
     },
+    settings: {
+      brushWidth: 5,
+      showBrushWidth: false,
+      color: '#000000',
+      isSelected: false,
+      showImageModal: false,
+    },
     history: {
       undo: false,
       redo: false,
       restoreIndex: -1,
       states: []
     },
+    toolAction: null,
   },
   mutations: {
     addStory(state, payload) {
@@ -46,7 +65,21 @@ export default {
       state.pages = payload;
     },
     setPage (state, payload) {
-      state.page = payload;
+      let pageVal = _.cloneDeep(state.page)
+      pageVal = _.merge(pageVal, payload);
+      state.page = pageVal;
+      console.log('page set');
+      /** Update history */
+      pageVal.modes = _.cloneDeep(state.modes);
+      if (state.history.restoreIndex === state.history.states.length - 1) {
+        console.log('need to add');
+        state.history.states.push(pageVal);
+      } else {
+        state.history.states = state.history.states.slice(0, state.history.restoreIndex + 1);
+        state.history.states.push(pageVal);
+      }
+      state.history.restoreIndex = state.history.restoreIndex + 1;
+      console.log('history set');
     },
     clearImageSearchResults(state) {
       state.imageSearchResults.str = '';
@@ -76,7 +109,7 @@ export default {
       state.modes.subMode = payload;
     },
     setHistoryAddStates(state, payload) {
-      console.log('setHistoryStates payload=', payload);
+      payload.modes = _.cloneDeep(state.modes);
       state.history.states.push(payload);
     },
     setHistoryStates(state, payload) {
@@ -85,20 +118,37 @@ export default {
     setHistorySliceStates(state, payload) {
       console.log('historySlice state=', state.history);
       state.history.states = state.history.states.slice(0, state.history.restoreIndex + 1);
+      payload.modes = _.cloneDeep(state.modes);
       state.history.states.push(payload);
     },
     setHistoryRestoreIndex(state, payload) {
       console.log('setHistoryRestoreIndex payload=', payload);
       state.history.restoreIndex = payload;
+
     },
-    setHistoryUndo(state, payload){
-      state.history.undo = payload;
+    setHistoryUndo(state){
+      const modes = _.cloneDeep(state.history.states[state.history.restoreIndex].modes);
+      if (modes.mode === 'draw') {
+        /** issue with loading pad with erase mode, force brush */
+        modes.subMode = 'brush';
+      }
+      state.modes = modes;
+      state.page.drawingLayer = _.cloneDeep(state.history.states[state.history.restoreIndex]['drawingLayer']);
     },
     setHistoryRedo(state, payload){
       state.history.redo = payload;
     },
     setPageDimensions(state, payload) {
       state.pageDimensions = payload;
+    },
+    setSettings(state, payload) {
+      console.log('setSettings payload =', payload);
+      let settings = _.cloneDeep(state.settings);
+      settings = _.merge(settings, payload);
+      state.settings = settings;
+    },
+    setToolAction(state, payload) {
+      state.toolAction = payload;
     }
   },
   actions: {
@@ -117,7 +167,7 @@ export default {
               docRef
                 .collection('pages').add({
                   order: 0,
-                  canvasJson: '{}',
+                  photoLayer: {},
                   textLayer: {
                     text: '',
                     x: 50,
@@ -132,7 +182,8 @@ export default {
                   pageSize: {
                     width: 595,
                     height: 842,
-                  }
+                  },
+                  drawingLayer: {}
                 });
           })
           .catch(function(error) {
@@ -179,20 +230,32 @@ export default {
       });
     },
 
-    updatePage( {commit }, payload) {
-      // console.log('updatePage payload =', payload);
+    updatePage( {commit, state }, payload) {
+      console.log('updatePage payload =', payload);
+      const statePage = _.cloneDeep(state.page);
+      const newState = _.merge(statePage, payload.page);
+      newState.commit++;
+      commit('setPage', newState);
       return new Promise((resolve, reject) => {
         const userStory = firebase
           .firestore()
           .collection('users/' + payload.user.id + '/stories/' + payload.storyKey + '/pages/').doc(payload.pageKey);
-          if (payload.page.json) {
+          if (payload.page.drawingLayer) {
             userStory.update({
-              canvasJson: payload.page.json,
+              commit: newState.commit,
+              drawingLayer: payload.page.drawingLayer,
             });
           }
           if (payload.page.background){
             userStory.update({
+              commit: newState.commit,
               background: payload.page.background
+            });
+          }
+          if (payload.page.photoLayer){
+            userStory.update({
+              commit: newState.commit,
+              photoLayer: payload.page.photoLayer
             });
           }
         resolve();
@@ -200,13 +263,18 @@ export default {
     },
 
 
-    updatePageText( {commit }, payload) {
+    updatePageText( {commit, state }, payload) {
       // console.log('updatePage payload =', payload);
+      const newState = _.cloneDeep(state.page);
+      newState.textLayer = _.merge(newState.textLayer, payload.textLayer);
+      newState.commit++;
+      commit('setPage', newState);
       return new Promise((resolve, reject) => {
         const userStory = firebase
           .firestore()
           .collection('users/' + payload.user.id + '/stories/' + payload.storyKey + '/pages/').doc(payload.pageKey);
           userStory.update({
+            commit: newState.commit,
             textLayer: {
               y: payload.textLayer.y,
               x: payload.textLayer.x,
@@ -227,7 +295,9 @@ export default {
           .firestore()
           .collection('users/' + payload.user.id + '/stories/' + payload.storyKey + '/pages/');
           userStory.add({
-            canvasJson: null,
+            commit: 0,
+            photoLayer: null,
+            drawingLayer: null,
             textLayer: {
               text: '',
               x: 50,
@@ -380,7 +450,7 @@ export default {
         });
     },
 
-    setPage({ commit }, payload) {
+    setPage({ commit, state }, payload) {
       // console.log('setPage payload=', payload);
       firebase
         .firestore()
@@ -389,32 +459,40 @@ export default {
           let page;
           if (payload.pageKey) {
             querySnapshot.docs.forEach(doc => {
-              if (doc.id === payload.pageKey)
+              if (doc.id === payload.pageKey && (!state.page || doc.data().commit > state.page.commit || state.page.commit == 0))
                 page = {
-                  canvasJson: doc.data().canvasJson,
+                  photoLayer: doc.data().photoLayer,
                   textLayer: doc.data().textLayer,
                   id: doc.id,
                   thumb: doc.data().thumb,
                   preview: doc.data().preview,
                   background: doc.data().background,
+                  drawingLayer: doc.data().drawingLayer,
                   pageSize: doc.data().pageSize,
                   order: doc.data().order,
+                  commit: doc.data().commit,
                 };
+                commit('setPage', page);
             });
-          } else {
+
+          } else if (!state.page || querySnapshot.docs[0].data().commit > state.page.commit || state.page.commit == 0) {
             /** cater for index without id */
+            console.log('pass test no id');
             page = {
-              canvasJson : querySnapshot.docs[0].data().canvasJson,
+              photoLayer : querySnapshot.docs[0].data().photoLayer,
               textLayer : querySnapshot.docs[0].data().textLayer,
               id: querySnapshot.docs[0].id,
               thumb: querySnapshot.docs[0].data().thumb,
               preview: querySnapshot.docs[0].data().preview,
               background: querySnapshot.docs[0].data().background,
+              drawingLayer: querySnapshot.docs[0].data().drawingLayer,
               pageSize: querySnapshot.docs[0].data().pageSize,
               order: querySnapshot.docs[0].data().order,
+              commit: querySnapshot.docs[0].data().commit,
             };
+            commit('setPage', page);
           }
-          commit('setPage', page);
+
       });
     },
 
@@ -596,6 +674,12 @@ export default {
     getPageDimensions(state) {
       console.log('getPageDimensions=', state.pageDimensions);
       return state.pageDimensions;
+    },
+    getSettings(state) {
+      return state.settings;
+    },
+    getToolAction(state) {
+      return state.toolAction;
     }
 
   }

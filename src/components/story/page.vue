@@ -4,14 +4,14 @@
     <div class="tools" :style="{top: toolsPos.top, left: toolsPos.left}">
       <!-- HISTORY -->
       <q-btn icon="mdi-undo" round @click="undo()" :disable="!canUndo" :size="$q.screen.lt.sm ? 'sm' : 'md'"/>
-        <q-btn icon="mdi-redo" round @click="redo()" :disable="!canRedo" :size="$q.screen.lt.sm ? 'sm' : 'md'"/>
+      <q-btn icon="mdi-redo" round @click="redo()" :disable="!canRedo" :size="$q.screen.lt.sm ? 'sm' : 'md'"/>
       <!-- PHOTO -->
       <q-btn
         icon="mdi-camera"
         :color="modes.mode === 'photo' ? 'primary' : 'dark'"
         round
         :size="$q.screen.lt.sm ? 'sm' : 'md'"
-        @click="addPhoto()"
+        @click="setPhoto()"
       >
         <q-tooltip>
           Add an image
@@ -63,6 +63,8 @@
               top: 0,
               left: 0}">
             </div>
+            <fabric-canvas type="photo"></fabric-canvas>
+            <drawing-canvas></drawing-canvas>
           </div>
         </div>
       </div>
@@ -71,7 +73,8 @@
       <div class="extra-tools" v-if="pageDimensions" key="extra-tools" :style="{top: extraToolsPos.top, right: extraToolsPos.right}">
         <!-- COLORS -->
         <swatches
-          v-model="color"
+          :value="color"
+          @input="updateColor"
           colors="text-advanced"
           :popover-to="screen.width > screen.height ? 'left' : 'right'"
           :trigger-style="{ width: '30px', height: '30px', borderRadius: '50%' }"
@@ -85,7 +88,7 @@
             :color="modes.subMode === 'text' ? 'primary' : 'dark'"
             round
             size="sm"
-            @click="addText()"
+            @click="setText()"
           />
           <!-- BG COLOR -->
           <q-btn
@@ -117,118 +120,148 @@
             @click="backgroundRemoveImage()"
           />
         <!-- SHAPE TOOLS -->
-        <!-- MOVE -->
-        <q-btn
-          v-if="modes.mode === 'shape'"
-          icon="mdi-cursor-move"
-          :color="modes.subMode === 'select' ? 'primary' : 'dark'"
-          round
-          size="sm"
-          @click="setSelect()"
-        />
-        <!-- RULER -->
-        <q-btn
-          v-if="modes.mode === 'shape'"
-          icon="mdi-ruler"
-          :color="modes.subMode === 'line' ? 'primary' : 'dark'"
-          round @click="line()"
-          size="sm"
-        />
-        <!-- FILL OBJ -->
-        <q-btn
-          v-if="modes.mode === 'shape'"
-          icon="mdi-format-color-fill"
-          :color="modes.subMode === 'fill' ? 'primary' : 'dark'"
-          round
-          size="sm"
-          @click="fillColor()"
-          :disabled="!isSelected"
-        />
+        <template v-if="modes.mode === 'shape'">
+          <!-- MOVE -->
+          <q-btn
+            icon="mdi-cursor-move"
+            :color="modes.subMode === 'select' ? 'primary' : 'dark'"
+            round
+            size="sm"
+            @click="setSelect()"
+          />
+          <!-- RULER -->
+          <q-btn
+            icon="mdi-ruler"
+            :color="modes.subMode === 'line' ? 'primary' : 'dark'"
+            round @click="line()"
+            size="sm"
+          />
+          <!-- FILL OBJ -->
+          <q-btn
+            icon="mdi-format-color-fill"
+            :color="modes.subMode === 'fill' ? 'primary' : 'dark'"
+            round
+            size="sm"
+            @click="fillColor()"
+            :disabled="!isSelected"
+          />
 
-        <!-- TEXT -->
-        <q-btn
-          v-if="modes.mode === 'shape'"
-          icon="mdi-format-text"
-          :color="modes.subMode === 'text' ? 'primary' : 'dark'"
-          round
-          size="sm"
-          @click="canvasText()"
-        />
-        <!-- TEXT SIZE -->
-        <div class="tool-slider" v-if="modes.mode === 'shape' && (modes.subMode === 'text' || modes.subMode === 'selectText')">
-          <q-btn size="sm" color="primary" icon="mdi-format-size" round @click="toggleTextSize()"/>
-          <div class="q-slider-wrap" v-if="showTextSize">
-            <q-slider v-model="text.size" :min="5" :max="100" :step="1" label snap/>
+          <!-- TEXT -->
+          <q-btn
+            icon="mdi-format-text"
+            :color="modes.subMode === 'text' ? 'primary' : 'dark'"
+            round
+            size="sm"
+            @click="canvasText()"
+          />
+          <!-- TEXT SIZE -->
+          <div class="tool-slider" v-if="modes.mode === 'shape' && (modes.subMode === 'text' || modes.subMode === 'selectText')">
+            <q-btn size="sm" color="primary" icon="mdi-format-size" round @click="toggleTextSize()"/>
+            <div class="q-slider-wrap" v-if="showTextSize">
+              <q-slider v-model="text.size" :min="5" :max="100" :step="1" label snap/>
+            </div>
           </div>
-        </div>
-        <!-- LINE WIDTH -->
-        <div class="tool-slider" v-if="modes.mode === 'shape' && modes.subMode === 'line'">
+          <!-- LINE WIDTH -->
+          <div class="tool-slider" v-if="modes.mode === 'shape' && modes.subMode === 'line'">
+            <q-btn
+              size="sm"
+              icon="mdi-signal"
+              round
+              :color="showLineWidth ? 'primary' : 'dark'"
+              @click="toggleLineWidth()"
+            />
+            <div class="q-slider-wrap" v-if="showLineWidth">
+              <q-slider v-model="lineObj.width" :min="1" :max="20" :step="1" label snap/>
+            </div>
+          </div>
+          <!-- DELETE OBJ -->
           <q-btn
             size="sm"
-            icon="mdi-signal"
+            color="negative"
+            icon="mdi-delete"
             round
-            :color="showLineWidth ? 'primary' : 'dark'"
-            @click="toggleLineWidth()"
+            @click="deleteObj()"
+            :disabled="!settings.isSelected"
           />
-          <div class="q-slider-wrap" v-if="showLineWidth">
-            <q-slider v-model="lineObj.width" :min="1" :max="20" :step="1" label snap/>
-          </div>
-        </div>
-        <!-- DELETE OBJ -->
-        <q-btn
-          v-if="isSelected"
-          size="sm"
-          color="negative"
-          icon="mdi-delete"
-          round
-          @click="deleteObj()"
-          :disabled="!isSelected"
-        />
-        <!-- CLEAR -->
-        <q-btn v-if="modes.mode === 'shape'" icon="mdi-close" round @click="clearCanvas()" size="sm"/>
+          <!-- CLEAR -->
+          <q-btn icon="mdi-close" round @click="clearCanvas()" size="sm"/>
+        </template>
 
+        <!-- PHOTO TOOLS -->
+        <template v-if="modes.mode === 'photo'">
+          <!-- Add photo -->
+          <q-btn
+            icon="mdi-camera"
+            :color="modes.mode === 'photo' ? 'primary' : 'dark'"
+            round
+            size="sm"
+            @click="addPhoto()"
+          >
+            <q-tooltip>
+              Add an image
+            </q-tooltip>
+          </q-btn>
+
+          <!-- DELETE OBJ -->
+          <q-btn
+            size="sm"
+            color="negative"
+            icon="mdi-delete"
+            round
+            @click="deleteObj()"
+            :disabled="!settings.isSelected"
+          />
+        </template>
 
         <!-- DRAW TOOLS -->
-        <!-- BRUSH -->
-        <q-btn
-          v-if="modes.mode === 'draw'"
-          key="pencil"
-          icon="mdi-pencil"
-          size="sm"
-          :color="modes.subMode === 'brush'? 'primary' : 'dark'"
-          round
-          @click="setDraw()"
-        />
-        <!-- ERASER -->
-        <q-btn
-          v-if="modes.mode === 'draw'"
-          key="eraser"
-          size="sm"
-          :color="modes.subMode === 'eraser' ? 'primary' : 'dark'"
-          icon="mdi-eraser"
-          round
-          @click="setEraser()"
-        />
-        <!-- BRUSH SIZE -->
-        <div class="tool-slider" v-if="modes.mode === 'draw' && (modes.subMode === 'brush' || modes.subMode === 'eraser')">
+        <template v-if="modes.mode === 'draw'">
+          <!-- BRUSH -->
+          <q-btn
+            key="pencil"
+            icon="mdi-pencil"
+            size="sm"
+            :color="modes.subMode === 'brush'? 'primary' : 'dark'"
+            round
+            @click="setDraw()"
+          />
+          <!-- ERASER -->
+          <q-btn
+            key="eraser"
+            size="sm"
+            :color="modes.subMode === 'eraser' ? 'primary' : 'dark'"
+            icon="mdi-eraser"
+            round
+            @click="setEraser()"
+          />
+          <!-- BRUSH SIZE -->
+          <div class="tool-slider" v-if="modes.subMode === 'brush' || modes.subMode === 'eraser'">
+            <q-btn
+              size="sm"
+              icon="mdi-signal"
+              round
+              :color="settings.showBrushWidth ? 'primary' : 'dark'"
+              @click="toggleBrushWidth()"
+            />
+            <div class="q-slider-wrap" v-if="settings.showBrushWidth">
+              <q-slider v-model="settings.brushWidth" :min="1" :max="50" :step="1" label snap @change="updateBrushWidth(newVal)"/>
+            </div>
+          </div>
+          <!-- CLEAR -->
           <q-btn
             size="sm"
-            icon="mdi-signal"
+            :color="'dark'"
+            icon="mdi-close"
             round
-            :color="showBrushWidth ? 'primary' : 'dark'"
-            @click="toggleBrushWidth()"
+            @click="clearDrawing()"
           />
-          <div class="q-slider-wrap" v-if="showBrushWidth">
-            <q-slider v-model="brush.width" :min="1" :max="50" :step="1" label snap/>
-          </div>
-        </div>
+        </template>
       </div>
     </div>
 
     <!-- IMAGE MODAL -->
     <q-modal
       v-if="pageDimensions"
-      v-model="imageModal"
+      v-model="settings.showImageModal"
       :content-css="{minWidth: '350px', height: '90vh', maxWidth: '100%', width: pageDimensions.width+'px'}">
       <add-image v-if="modes.mode === 'photo' || modes.subMode === 'background'"></add-image>
     </q-modal>
@@ -247,10 +280,13 @@ import Swatches from "vue-swatches";
 import "vue-swatches/dist/vue-swatches.min.css";
 import AddImage from "./PixabaySearch";
 import TextEditor from "./TextEditor";
+// import FabricCanvas from './FabricCanvas';
+import DrawingCanvas from './DrawingCanvas';
+import FabricCanvas from './FabricCanvas'
 
 export default {
   name: "Page",
-  components: { Swatches, AddImage, TextEditor },
+  components: { Swatches, AddImage, TextEditor, DrawingCanvas, FabricCanvas },
   data() {
     return {
       background: {
@@ -272,15 +308,10 @@ export default {
       color: "#000000",
       canUndo: false,
       canRedo: false,
-      panning: {
-        timer: null,
-        active: false
-      },
       imageModal: false,
       textModal: false,
 
       showTextSize: false,
-      showBrushWidth: false,
       showLineWidth: false,
       windowWidth: 1024
     };
@@ -318,6 +349,9 @@ export default {
     },
     pageDimensions() {
       return this.$store.getters.getPageDimensions;
+    },
+    settings() {
+      return this.$store.getters.getSettings;
     },
     toolsPos() {
       let pos = {
@@ -442,7 +476,10 @@ export default {
 
     addPhoto() {
       this.$store.commit('setMode', "photo");
-      this.imageModal = true;
+      const newSetting = {
+        showImageModal: true,
+      };
+      this.$store.commit('setSettings', newSetting);
     },
 
     canvasText() {
@@ -463,13 +500,22 @@ export default {
       this.$store.commit("clearInsertImage");
       this.$store.commit("clearImageSearchResults");
       this.background.image = imageObj.webformatURL;
-      this.addHistory();
+      this.savestory();
       this.$store.commit('setSubMode', "text");
+      const newSetting = {
+        showImageModal: false,
+      };
+      this.$store.commit('setSettings', newSetting);
     },
 
     backgroundRemoveImage() {
       this.background.image = null;
-      this.addHistory();
+      this.saveStory();
+    },
+
+    setPhoto() {
+      this.$store.commit('setMode', "photo");
+      this.$store.commit('setSubMode', "select");
     },
 
     setDraw() {
@@ -491,13 +537,43 @@ export default {
       this.$store.commit('setSubMode', "text");
     },
 
+    setText() {
+      this.$store.commit('setSubMode', "text");
+    },
+
     setBackground() {
       this.$store.commit('setSubMode', "background");
     },
 
     addBgPhoto() {
-      this.imageModal = true;
+      const newSetting = {
+        showImageModal: true,
+      };
+      this.$store.commit('setSettings', newSetting);
       this.$store.commit('setSubMode', "background");
+    },
+
+    /** ACTIONS */
+    updateBrushWidth(newVal) {
+      const payload = {
+        brushWidth: newVal
+      };
+      this.$store.commit('setSettings', payload);
+    },
+
+    updateColor(newColor) {
+      const payload = {
+        color: newColor
+      };
+      this.$store.commit('setSettings', payload);
+    },
+
+    clearDrawing() {
+      this.$store.commit('setToolAction', 'clearDrawing');
+    },
+
+    deleteObj() {
+      this.$store.commit('setToolAction', 'deleteObj');
     },
 
     saveStory() {
@@ -519,6 +595,7 @@ export default {
 
     addHistory() {
       const snapshot = {
+        drawingLayer: this.activePage.drawingLayer,
         background: {
           color: this.background.color,
           image: this.background.image
@@ -529,19 +606,15 @@ export default {
       } else {
         this.$store.dispatch('historySlice', snapshot);
       }
-      this.canUndo = this.history.states.length > 1;
-      this.canRedo = this.history.restoreIndex < this.history.states.length - 1;
       this.saveStory();
     },
 
     undo() {
       if (this.history.restoreIndex > 0) {
-        this.$store.commit('setHistoryRestoreIndex', this.history.restoreIndex - 1)
+        this.$store.commit('setHistoryRestoreIndex', this.history.restoreIndex - 1);
+        this.$store.commit('setHistoryUndo');
         // this.restoreIndex--;
-        this.background = {
-          color: this.history.states[this.history.restoreIndex].background.color,
-          image: this.history.states[this.history.restoreIndex].background.image
-        };
+
         this.saveStory();
         if (this.history.states.length === this.history.restoreIndex + 1) {
           this.canredo = false;
@@ -556,12 +629,8 @@ export default {
 
     redo() {
       if (this.history.restoreIndex < this.history.states.length - 1) {
-        this.$store.commit('setHistoryRestoreIndex', this.history.restoreIndex + 1)
-        // this.restoreIndex++;
-        this.background = {
-          color: this.history.states[this.history.restoreIndex].background.color,
-          image: this.history.states[this.history.restoreIndex].background.image
-        };
+        this.$store.commit('setHistoryRestoreIndex', this.history.restoreIndex + 1);
+        this.$store.commit('setHistoryUndo');
         this.saveStory();
         if (this.history.states.length === this.history.restoreIndex + 1) {
           this.canRedo = false;
@@ -578,7 +647,10 @@ export default {
     },
 
     toggleBrushWidth() {
-      this.showBrushWidth = !this.showBrushWidth;
+      const payload = {
+        showBrushWidth: !this.settings.showBrushWidth
+      };
+      this.$store.commit('setSettings', payload);
     },
 
     toggleLineWidth() {
@@ -610,11 +682,12 @@ export default {
       },
       deep: true
     },
+
     color: {
       handler: function(newColor, oldColor) {
         if (this.modes.mode === "page" && this.modes.subMode === 'backgroundColor') {
           this.background.color = newColor;
-          this.addHistory();
+          this.saveStory();
         }
       }
     },
@@ -636,8 +709,15 @@ export default {
           || this.background.image !== this.activePage.background.image) {
           this.background.color = this.activePage.background.color;
           this.background.image = this.activePage.background.image;
-          this.addHistory();
+          this.saveStory();
         }
+      },
+      deep: true
+    },
+    history: {
+      handler: function(newH, oldH) {
+        this.canUndo = this.history.restoreIndex > 0;
+        this.canRedo = this.history.restoreIndex < this.history.states.length - 1;
       },
       deep: true
     },

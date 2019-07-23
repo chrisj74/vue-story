@@ -2,7 +2,14 @@
   <canvas
     id="storyCanvas"
     ref="canvas"
-    key="canvas">
+    key="canvas"
+    v-if="pageDimensions"
+    :style="{
+      width: pageDimensions.width + 'px',
+      height: pageDimensions.height + 'px',
+      top: 0,
+      left: 0,
+    }">
   </canvas>
 </template>
 
@@ -11,41 +18,12 @@ import { fabric } from "fabric";
 
 export default {
   name: "FabricCanvas",
+  props: ['type'],
   data() {
     return {
-      page: {
-        width: 0,
-        height: 0,
-        zoom: 1,
-        offsetY: 0,
-        offsetX: 0
-      },
-      background: {
-        color: null,
-        image: false
-      },
-      isSelected: false,
       isDown: false,
-      brush: {
-        width: 5,
-        active: false
-      },
-      text: {
-        size: 16
-      },
-      lineObj: {
-        width: 5
-      },
       color: "#000000",
       canvas: null,
-      canUndo: false,
-      canRedo: false,
-      panning: {
-        timer: null,
-        active: false
-      },
-
-      windowWidth: 1024
     };
   },
   computed: {
@@ -79,32 +57,24 @@ export default {
     showPlan() {
       return this.$store.getters.showPlan;
     },
-
+    pageDimensions() {
+      return this.$store.getters.getPageDimensions;
+    },
+    settings() {
+      return this.$store.getters.getSettings;
+    },
+    toolAction() {
+      return this.$store.getters.getToolAction;
+    },
 
   },
   mounted() {
-    /** Set page from route */
-    if(this.user) {
-      const payload = {
-          user: this.user,
-          storyKey: this.$route.params.id,
-          pageKey: this.$route.params.pageId ? this.$route.params.pageId : null
-      }
-      this.$store.dispatch('setPage', payload);
-    }
     const _this = this;
-    if (this.activePage && !this.canvas && this.story.id === this.$route.params.id) {
-      if (this.activePage.background) {
-        this.background.color = this.activePage.background.color;
-        this.background.image = this.activePage.background.image;
-      }
-
-      if (this.activePage.canvasJson) {
+    if (this.activePage && !this.canvas) {
+      if (this.activePage.photoLayer.photoCanvasJson) {
         this.canvasInit();
-        this.canvas.loadFromJSON(this.activePage.canvasJson, function() {
+        this.canvas.loadFromJSON(this.activePage.photoLayer.photoCanvasJson, function() {
           _this.canvas.renderAll.bind(_this.canvas);
-          _this.setDefaultZoom();
-          _this.addHistory();
         });
       }
     }
@@ -117,10 +87,8 @@ export default {
               // DOM updated
               _this.canvas.setHeight(_this.activePage.pageSize.height);
               _this.canvas.setWidth(_this.activePage.pageSize.width);
-              _this.setDefaultZoom();
           })
     });
-    this.windowWidth = window.innerWidth;
   },
   methods: {
     canvasInit() {
@@ -141,17 +109,23 @@ export default {
           e.path.globalCompositeOperation = "destination-out";
           canvas.renderAll();
         }
-        _this.addHistory();
+        _this.saveStory();
       });
       this.canvas.on("object:moved", () => {
         canvas.renderAll.bind(canvas);
-        _this.addHistory();
+        _this.saveStory();
       });
       this.canvas.on("selection:created", function(o) {
-        _this.isSelected = true;
+        const newSetting = {
+          isSelected: true
+        };
+        _this.$store.commit('setSettings', newSetting);
       });
       this.canvas.on("selection:cleared", function(o) {
-        _this.isSelected = false;
+        const newSetting = {
+          isSelected: false
+        };
+        _this.$store.commit('setSettings', newSetting);
       });
       /** MOUSE DOWN */
       this.canvas.on("mouse:down", o => {
@@ -159,16 +133,18 @@ export default {
         _this.showtextSize = false;
         _this.showBrushWidth = false;
         _this.showLineWidth = false;
-        /** BRUSH */
-        if (_this.modes.subMode === "brush") {
-          _this.brush.active = true;
-        }
         /** SELECT */
         if (_this.modes.subMode === "select") {
           if (canvas.getActiveObject()) {
-            _this.isSelected = true;
+            const newSetting = {
+              isSelected: true
+            };
+            _this.$store.commit('setSettings', newSetting);
           } else {
-            _this.isSelected = false;
+            const newSetting = {
+              isSelected: false
+            };
+            _this.$store.commit('setSettings', newSetting);
           }
         }
         /** LINE */
@@ -178,8 +154,8 @@ export default {
           const points = [pointer.x, pointer.y, pointer.x, pointer.y];
           line = new fabric.Line(points, {
             strokeWidth: _this.lineObj.width,
-            fill: _this.color,
-            stroke: _this.color,
+            fill: _this.settings.color,
+            stroke: _this.settings.color,
             originX: "center",
             originY: "center"
           });
@@ -210,7 +186,7 @@ export default {
             text.enterEditing();
             text.selectAll();
             _this.modes.subMode = "selectText";
-            _this.addHistory();
+            _this.saveStory();
           } else {
           }
         }
@@ -227,7 +203,7 @@ export default {
             }
             canvas.renderAll.bind(canvas);
           }
-          _this.addHistory();
+          _this.saveStory();
         }
       });
       this.canvas.on("mouse:move", o => {
@@ -242,81 +218,22 @@ export default {
         _this.isDown = false;
         canvas.selection = false;
         if (_this.modes.subMode === "line") {
-          _this.addHistory();
+          _this.saveStory();
         }
         if (_this.modes.subMode === "brush") {
           _this.brush.active = false;
         }
       });
-      this.canvas.setHeight(this.activePage.pageSize.height);
-      this.canvas.setWidth(this.activePage.pageSize.width);
+      this.canvas.setHeight(this.pageDimensions.height);
+      this.canvas.setWidth(this.pageDimensions.width);
       // this.draw();
     },
 
-    addPage() {
-      const payload = {
-        user: this.user,
-        storyKey: this.$route.params.id,
-        pageKey: this.$route.params.pageId ? this.$route.params.pageId : null,
-        order: this.pages.length
-      };
-      this.$store.dispatch("addPage", payload).then(newPage => {
-        this.$router.push({ path: newPage });
-      });
-    },
-
-    shortKeys(e) {
-      switch (e.srcKey) {
-        case "undoWin":
-        case "undoMac":
-          this.undo();
-          break;
-        case "deleteKey":
-        case "backspaceKey":
-          this.deleteObj();
-          break;
-      }
-    },
-
-    deleteObj() {
-      const activeObject = this.canvas.getActiveObject();
-      if (activeObject && !activeObject.isEditing) {
-        this.canvas.remove(activeObject);
-        this.canvas.renderAll.bind(this.canvas);
-      }
-      this.addHistory();
-    },
-
-    setPageSize() {
-      this.page.height = this.$refs.page.clientHeight;
-      this.page.width = this.$refs.page.clientWidth;
-    },
-
-    setDefaultZoom() {
-      this.setPageSize();
-      const maxHeightRatio = this.page.height / this.this.activePage.pageSize.height;
-      const maxWidthRatio = this.page.width / this.this.activePage.pageSize.width;
-      if (maxHeightRatio < maxWidthRatio) {
-        this.page.zoom = maxHeightRatio;
-        this.canvas.setHeight(this.cthis.activePage.pageSize.height * maxHeightRatio);
-        this.canvas.setWidth(this.activePage.pageSize.width * maxHeightRatio);
-        this.canvas.setZoom(maxHeightRatio);
-        this.canvas.renderAll();
-      } else {
-        this.page.zoom = maxWidthRatio;
-        this.canvas.setHeight(this.activePage.pageSize.height * maxWidthRatio);
-        this.canvas.setWidth(this.activePage.pageSize.width * maxWidthRatio);
-        this.canvas.setZoom(maxWidthRatio);
-      }
-      this.scaleBrushWidth();
-    },
-
     setSelect() {
-      this.$store.commit('setSubMode', "select");
-      this.canvas.isDrawingMode = false;
-      this.canvas.forEachObject(function(object) {
-        object.selectable = true;
-      });
+      const newSetting = {
+        isSelected: true,
+      };
+      this.$store.commit('setSettings', newSetting);
     },
 
     fillColor() {
@@ -352,15 +269,6 @@ export default {
       });
     },
 
-    backgroundColor() {
-      this.$store.commit('setSubMode', "backgroundColor");
-    },
-
-    pageText() {
-      this.$store.commit('setSubMode', "text");
-      this.textModal = true;
-    },
-
     canvasInsertImage(imageObj) {
       this.imageModal = false;
       this.$store.commit("clearInsertImage");
@@ -379,59 +287,21 @@ export default {
           });
           myImg.scaleToWidth(canvas.width / 2);
           canvas.add(myImg);
-          _this.addHistory();
+          _this.saveStory();
         },
         { crossOrigin: "Anonymous" }
       );
     },
 
-    backgroundAddImage(imageObj) {
-      this.imageModal = false;
-      this.$store.commit("clearInsertImage");
-      this.$store.commit("clearImageSearchResults");
-      this.background.image = imageObj.webformatURL;
-      this.addHistory();
-      this.$store.commit('setSubMode', "text");
-    },
-
-    setDraw() {
+    setCanvas() {
       this.canvas.forEachObject(function(object) {
         object.selectable = true;
       });
-      this.$store.commit('setMode', "draw");
-      this.$store.commit('setSubMode', "brush");
-      this.setFreeBrush();
     },
 
     setEraser() {
       this.$store.commit('setSubMode', "eraser");
       this.canvas.freeDrawingBrush.color = "rgba(255,255,255,.95)";
-    },
-
-    setFreeBrush() {
-      this.canvas.isDrawingMode = true;
-      this.canvas.freeDrawingBrush.color = this.color;
-      this.canvas.freeDrawingBrush.width = this.brush.width;
-    },
-
-    setPage() {
-      this.$store.commit('setMode', "page");
-      this.$store.commit('setSubMode', "text");
-      this.canvas.isDrawingMode = false;
-    },
-
-    setBackground() {
-      this.$store.commit('setSubMode', "background");
-      this.canvas.isDrawingMode = false;
-    },
-
-    addBgPhoto() {
-      this.imageModal = true;
-      this.$store.commit('setSubMode', "background");
-      this.canvas.forEachObject(function(object) {
-        object.selectable = true;
-      });
-      this.canvas.isDrawingMode = false;
     },
 
     saveStory() {
@@ -442,10 +312,8 @@ export default {
           storyKey: this.$route.params.id,
           pageKey: this.activePage.id,
           page: {
-            json: JSON.stringify(jsonObj),
-            background: {
-              color: this.background.color,
-              image: this.background.image
+            photoLayer: {
+              photoCanvasJson: JSON.stringify(jsonObj),
             }
           }
         };
@@ -455,10 +323,8 @@ export default {
 
     addHistory() {
       const snapshot = {
-        json: this.canvas.toJSON(["globalCompositeOperation"]),
-        background: {
-          color: this.background.color,
-          image: this.background.image
+        photoLayer: {
+          photoCanvasJson: this.canvas.toJSON(["globalCompositeOperation"]),
         }
       };
       if (this.history.restoreIndex === this.history.states.length - 1) {
@@ -466,75 +332,25 @@ export default {
       } else {
         this.$store.dispatch('historySlice', snapshot);
       }
-      this.canUndo = this.history.states.length > 1;
-      this.canRedo = this.history.restoreIndex < this.history.states.length - 1;
       this.saveStory();
-    },
-
-    undo() {
-      if (this.history.restoreIndex > 0) {
-        this.$store.commit('setHistoryRestoreIndex', this.history.restoreIndex - 1)
-        // this.restoreIndex--;
-        this.canvas.loadFromJSON(this.history.states[this.history.restoreIndex].json);
-        this.canvas.renderAll.bind(this.canvas);
-        this.background = {
-          color: this.history.states[this.history.restoreIndex].background.color,
-          image: this.history.states[this.history.restoreIndex].background.image
-        };
-        this.saveStory();
-        if (this.history.states.length === this.history.restoreIndex + 1) {
-          this.canredo = false;
-        } else {
-          this.canRedo = true;
-        }
-        if (this.history.restoreIndex === 0) {
-          this.canUndo = false;
-        }
-      }
-    },
-
-    redo() {
-      if (this.history.restoreIndex < this.history.states.length - 1) {
-        this.$store.commit('setHistoryRestoreIndex', this.history.restoreIndex + 1)
-        // this.restoreIndex++;
-        this.canvas.loadFromJSON(this.history.states[this.history.restoreIndex].json);
-        this.canvas.renderAll.bind(this.canvas);
-        this.background = {
-          color: this.history.states[this.history.restoreIndex].background.color,
-          image: this.history.states[this.history.restoreIndex].background.image
-        };
-        this.saveStory();
-        if (this.history.states.length === this.history.restoreIndex + 1) {
-          this.canRedo = false;
-          this.canUndo = true;
-        }
-      } else {
-        this.canUndo = true;
-        this.canRedo = false;
-      }
     },
 
     clearCanvas() {
       this.canvas.clear();
-      this.addHistory();
+      this.saveStory();
+      this.$store.commit('setToolAction', null);
     },
 
-    scaleBrushWidth() {
-      this.canvas.freeDrawingBrush.width = Math.ceil(
-        this.brush.width * this.canvas.getZoom()
-      );
-    },
 
-    toggleTextSize() {
-      this.showTextSize = !this.showTextSize;
-    },
-
-    toggleBrushWidth() {
-      this.showBrushWidth = !this.showBrushWidth;
-    },
-
-    toggleLineWidth() {
-      this.showLineWidth = !this.showLineWidth;
+    deleteObj() {
+      const activeObject = this.canvas.getActiveObject();
+      console.log('activeObject =', activeObject );
+      if (activeObject && !activeObject.isEditing) {
+        this.canvas.remove(activeObject);
+        this.canvas.renderAll.bind(this.canvas);
+      }
+      this.saveStory();
+      this.$store.commit('setToolAction', null);
     },
   },
   watch: {
@@ -543,101 +359,76 @@ export default {
         if (
           (from.params.id === to.params.id &&
             from.params.pageId != to.params.pageId) ||
-          !to.params.pageId
+            !to.params.pageId
         ) {
           // same story new page
           // detroy canvas
           if (this.canvas) {
             this.canvas.dispose();
             this.canvas = null;
-            this.background = {
-              color: null,
-              image: "none"
-            };
           }
-          // reset history
-          this.$state.commit('setHistoryStates', []);
-          this.$state.commit('setHistoryRestoreIndex', -1)
-          // set activePage
-          const payload = {
-            user: this.user,
-            storyKey: this.$route.params.id,
-            pageKey: this.$route.params.pageId
-              ? this.$route.params.pageId
-              : null
-          };
-          this.$store.dispatch("setPage", payload);
         }
       },
       deep: true
     },
-    brush: {
-      handler: function(newBrush, oldVal) {
-        if (this.canvas.freeDrawingBrush.width !== newBrush.width) {
-          this.canvas.freeDrawingBrush.width = newBrush.width;
+
+    settings: {
+      handler: function(newSettings, oldSettings) {
+        if (this.settings.color !== this.color) {
+          this.color = this.settings.color;
         }
       },
       deep: true
     },
-    color: {
-      handler: function(newColor, oldColor) {
-        this.canvas.freeDrawingBrush.color = newColor;
-        if (this.modes.mode === "page" && this.modes.subMode === 'backgroundColor') {
-          this.background.color = newColor;
-          this.addHistory();
-        } else if (this.modes.mode === 'draw') {
-          if (this.canvas.getActiveObject()) {
-            const textObj = this.canvas.getActiveObject();
-            textObj.setSelectionStyles({'fill': newColor})
+
+    modes: {
+      handler: function(newMode, oldMode) {
+
+      },
+      deep: true
+    },
+
+    toolAction: {
+      handler: function(newAction, oldAction) {
+        console.log('mode=', this.modes.mode, ' type=', this.type)
+        if (this.modes.mode === this.type) {
+          if (this.toolAction === 'clearCanvas') {
+            this.clearCanvas();
           }
-          this.canvas.renderAll();
-          this.addHistory();
+          if (this.toolAction === 'deleteObj') {
+            this.deleteObj();
+          }
         }
+
       }
     },
-    text: {
-      handler: function(newText, oldText) {
-        if (this.canvas.getActiveObject()) {
-          const textObj = this.canvas.getActiveObject();
-          textObj.setSelectionStyles({'fontSize': this.text.size});''
-          this.canvas.renderAll();
-          this.addHistory();
-        }
-      },
-      deep: true
-    },
+
     insertImage: {
       handler: function(newImage, oldImage) {
         this.$store.commit('setLoading', false);
+        const newSetting = {
+          showImageModal: false,
+        };
+        this.$store.commit('setSettings', newSetting);
         if (newImage && this.modes.mode === "photo") {
           this.canvasInsertImage(newImage);
-        } else if (newImage && this.modes.subMode === "background") {
-          this.backgroundAddImage(newImage);
         }
       }
     },
+
     activePage: {
       handler: function(newPage, oldPage) {
-        if (!this.canvas && newPage && newPage.canvasJson) {
-          this.background.color = this.activePage.background.color;
-          this.background.image = this.activePage.background.image;
+        if (!this.canvas && newPage && newPage.photoLayer.photoCanvasJson) {
           this.canvasInit();
           this.canvas.forEachObject(function(object) {
             object.selectable = true;
           });
-          this.setFreeBrush();
           const _this = this;
-          this.canvas.loadFromJSON(this.activePage.canvasJson, function() {
+          this.canvas.loadFromJSON(this.activePage.photoLayer.photoCanvasJson, function() {
             _this.canvas.renderAll.bind(_this.canvas);
-            _this.setDefaultZoom();
-            _this.addHistory();
           });
         } else if (!this.canvas) {
-          this.background.color = this.activePage.background.color;
-          this.background.image = this.activePage.background.image;
           this.canvasInit();
-          this.setDefaultZoom();
-          this.addHistory();
         }
       },
       deep: true
@@ -700,17 +491,6 @@ export default {
   top: 0;
   left: 0;
   width: 842px;
-}
-.canvas-bg-img {
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  width: 100%;
-  z-index: 1;
-  background: #fff;
-  background-repeat: no-repeat;
-  background-size: cover;
-  background-position: center center;
 }
 
 #storyCanvas {

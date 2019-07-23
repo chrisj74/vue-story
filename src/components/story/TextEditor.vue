@@ -36,10 +36,14 @@
         :drag-handle="'.drag-handle'"
         :active="active"
         :class="{print: print}">
-        <quill-editor :content="editorContent"
+        <quill-editor
+          :content="editorContent"
           ref="textLayerEditor"
+          @ready="onEditorReady($event)"
           @change="onEditorChange($event)"
-          :options="editorConfig" class="editor" v-if="active">
+          :options="editorConfig"
+          class="editor"
+          v-if="active && editorContent">
         </quill-editor>
         <div v-else v-html="storeContent" class="text-render ql-editor ql-container"></div>
         <div class="drag-handle" v-if="active"><i class="mdi mdi-cursor-move"></i></div>
@@ -75,6 +79,7 @@ export default {
               }
             }
           },
+          cursors: true,
           toolbar: '#toolbar',
           syntax: {
             highlight: text => hljs.highlightAuto(text).value
@@ -82,15 +87,21 @@ export default {
         }
       },
       cursorSelection: null,
+      contentSet: false,
     }
   },
   mounted() {
-    /** Need to hydrate local prop from store, binding to store cuases cursor to move to start after keystroke */
-    this.editorContent = this.storeContent;
+
+    console.log('mounted=', this.editor);
+
+    if (this.storeContent !== this.editorContent) {
+      console.log('update from store');
+      this.editorContent = _.cloneDeep(this.storeContent);
+    }
   },
   computed: {
     editor() {
-      return this.$refs.textLayerEditor.quill
+      return this.$refs.textLayerEditor ? this.$refs.textLayerEditor.quill : null;
     },
     user() {
       return this.$store.getters.user;
@@ -110,12 +121,21 @@ export default {
     storeContent() {
         return this.$store.getters.getPageText;
     },
-    draggableDimensions(){
+    draggableDimensions() {
       return this.$store.getters.getPageTextDimensions;
     },
+    modes() {
+      return this.$store.getters.getModes;
+    }
   },
   methods: {
     onEditorChange: _.debounce(function(event) {
+      console.log('onEditorChange contentSet=', this.contentSet);
+      if (!this.contentSet) {
+        this.contentSet = true;
+        event.quill.focus();
+        event.quill.setSelection(this.editorContent.length, 0, 'api');
+      }
       if (this.user && event.html !== this.editorContent) {
             const payload = {
                 user: this.user,
@@ -129,9 +149,16 @@ export default {
                   text: event.html
                 }
             };
+            console.log('updatePageText');
             this.$store.dispatch('updatePageText', payload)
         }
     }, 500),
+
+    onEditorReady(quill) {
+      console.log('onready', this.editorContent.length);
+      quill.setSelection(this.editorContent.length, 0, 'api');
+    },
+
     onResize: _.debounce(function (x, y, width, height) {
       if (this.user) {
         const payload = {
@@ -171,6 +198,13 @@ export default {
   watch: {
     editorContent: {
       handler: function(from, to) {
+        /* if (this.editor && !this.editor.cursors) {
+          console.log('no cursor yet');
+          const cursors = this.editor.getModule('cursors');
+          console.log('module =', cursors);
+          cursors.createCursor(1, 'User 1', 'red');
+          console.log('this.editor.cursors=', this.editor.cursors);
+        } */
         // console.log('watcher', this.cursorSelection.index);
         // this.editor.setSelection(this.cursorSelection);
         /* this.$nextTick(() => {
@@ -179,7 +213,31 @@ export default {
           editorToolbar[0].style.transform = 'scale(' + (1 / this.zoom) + ')';
         }); */
       }
-    }
+    },
+    storeContent: {
+      handler: function(to, from) {
+        if (this.storeContent !== this.editorContent) {
+          console.log('update from store');
+          this.editorContent = _.cloneDeep(this.storeContent);
+        }
+      },
+      deep: true
+    },
+    /* active: {
+      handler: function(to, from) {
+        console.log('from=', from, ' to=', to);
+        if (to) {
+          console.log('isactive');
+          // text has become active move cursor to end
+          this.$nextTick(() => {
+            console.log('this.editor =', this.editor);
+            this.editor.setSelection(5, 1, 'api');
+          });
+
+        }
+      },
+      deep: true
+    }*/
   }
 }
 </script>

@@ -1,6 +1,7 @@
 // import something here
 import VueQuillEditor from 'vue-quill-editor';
 import BlotFormatter from 'quill-blot-formatter';
+import QuillCursors from 'quill-cursors';
 
 // require styles
 import 'quill/dist/quill.core.css'
@@ -10,4 +11,5 @@ import 'quill/dist/quill.bubble.css'
 export default ({ app, router, Vue }) => {
   Vue.use(VueQuillEditor);
   VueQuillEditor.Quill.register('modules/blotFormatter', BlotFormatter);
+  VueQuillEditor.Quill.register('modules/cursors', QuillCursors);
 };
