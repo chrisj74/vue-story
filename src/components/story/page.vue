@@ -1,58 +1,61 @@
 <template>
   <div class="main-content-wrapper">
     <!-- MAIN TOOLS -->
-    <div class="tools" :style="{top: toolsPos.top, left: toolsPos.left}">
-      <!-- HISTORY -->
-      <q-btn icon="mdi-undo" round @click="undo()" :disable="!canUndo" :size="$q.screen.lt.sm ? 'sm' : 'md'"/>
-      <q-btn icon="mdi-redo" round @click="redo()" :disable="!canRedo" :size="$q.screen.lt.sm ? 'sm' : 'md'"/>
-      <!-- PHOTO -->
-      <q-btn
-        icon="mdi-camera"
-        :color="modes.mode === 'photo' ? 'primary' : 'dark'"
-        round
-        :size="$q.screen.lt.sm ? 'sm' : 'md'"
-        @click="setPhoto()"
-      >
-        <q-tooltip>
-          Add an image
-        </q-tooltip>
-      </q-btn>
-      <!-- PAGE -->
-      <q-btn
-        icon="mdi-file-image"
-        :color="modes.mode === 'page' ? 'primary' : 'dark'"
-        round
-        :size="$q.screen.lt.sm ? 'sm' : 'md'"
-        @click="setPage()"
-      />
-      <!-- DRAW -->
-      <q-btn
-        icon="mdi-pencil"
-        :color="modes.mode === 'draw' ? 'primary' : 'dark'"
-        round
-        :size="$q.screen.lt.sm ? 'sm' : 'md'"
-        @click="setDraw()"
-      />
-      <!-- SHAPE -->
-      <q-btn
-        icon="mdi-shape"
-        :color="modes.mode === 'shape' ? 'primary' : 'dark'"
-        round
-        :size="$q.screen.lt.sm ? 'sm' : 'md'"
-        @click="setShape()"
-      />
-    </div>
-    <!-- PAGE TEXT EDITOR -->
-    <text-editor v-if="activePage && pageDimensions" :print="false" :active="modes.mode === 'page' && modes.subMode === 'text'" :zoom="pageDimensions.zoom" :pageWidth="activePage.pageSize.width" :pageHeight="activePage.pageSize.height" ></text-editor>
-
-    <!-- TEXT LAYER -->
-    <!-- <text-editor v-if="activePage" :print="false" :active="true" :zoom="page.zoom" :pageWidth="activePage.pageSize.width" :pageHeight="activePage.pageSize.height" ></text-editor> -->
+    <main-tools></main-tools>
 
     <!-- MAIN CONTENT -->
     <div class="main-content">
-      <!-- Canvas -->
-      <!-- TODO  -->
       <div class="page-ref" ref="page">
+        <!-- PAGE TEXT EDITOR -->
+        <div
+          v-for="(textLayer, layerIndex) in activePage.textLayer"
+          class="text-toolbar-wrapper"
+          :style="{width: (pageDimensions.width) + 'px', left: (91)}">
+          <div :id="'toolbar'+layerIndex" v-if="textLayerActive" :style="{width: (pageDimensions.width) + 'px'}" v-show="settings.activeEditor === layerIndex">
+            <span class="ql-format-group">
+              <button type="button" class="ql-bold"></button>
+              <button type="button" class="ql-italic"></button>
+              <button type="button" class="ql-underline" v-if="$q.screen.gt.sm"></button>
+              <button type="button" class="ql-blockquote" v-if="$q.screen.gt.sm"></button>
+              <select class="ql-align"></select>
+
+              <button type="button" class="ql-list" value="ordered"></button>
+              <button type="button" class="ql-list" value="bullet"></button>
+
+              <select class="ql-size"></select>
+              <select class="ql-font" v-if="$q.screen.gt.sm"></select>
+
+              <select class="ql-color"></select>
+              <select class="ql-background"></select>
+
+              <button class="ql-link"></button>
+              <button class="ql-video"></button>
+            </span>
+          </div>
+        </div>
+        <div
+          v-if="pageDimensions"
+          :style="{
+          transform: 'scale('+pageDimensions.zoom+')',
+          height: (activePage.pageSize.height - 50)+'px',
+          width: activePage.pageSize.width+'px',
+          pointerEvents: textLayerActive ? 'all' : 'none',
+          userSelect: textLayerActive ? 'all' : 'none'}"
+          class="text-layer">
+          <template v-for="(textLayer, index) in activePage.textLayer">
+            <text-editor
+              v-if="textLayer.width"
+              :key="index"
+              :print="false"
+              :active="textLayerActive"
+              :zoom="pageDimensions.zoom"
+              :pageWidth="activePage.pageSize.width"
+              :pageHeight="activePage.pageSize.height"
+              :textLayerIndex="index" >
+            </text-editor>
+          </template>
+        </div>
+        <!-- Canvas -->
         <div v-if="pageDimensions" class="canvas-wrapper" :style="{width: pageDimensions.width+'px', height: pageDimensions.height+'px'}">
           <div class="canvas-bg-img-wrapper" :style="{width: pageDimensions.width+'px', height: pageDimensions.height+'px'}">
             <div v-if="background.color" class="canvas-bg-img" :style="{
@@ -68,195 +71,10 @@
           </div>
         </div>
       </div>
-
-      <!-- EXTRA TOOLS -->
-      <div class="extra-tools" v-if="pageDimensions" key="extra-tools" :style="{top: extraToolsPos.top, right: extraToolsPos.right}">
-        <!-- COLORS -->
-        <swatches
-          :value="color"
-          @input="updateColor"
-          colors="text-advanced"
-          :popover-to="screen.width > screen.height ? 'left' : 'right'"
-          :trigger-style="{ width: '30px', height: '30px', borderRadius: '50%' }"
-          :disabled="modes.mode === 'page' && modes.subMode === 'text'"
-        ></swatches>
-        <!-- PAGE TOOLS -->
-          <!-- TEXT -->
-          <q-btn
-            v-if="modes.mode === 'page'"
-            icon="mdi-format-text"
-            :color="modes.subMode === 'text' ? 'primary' : 'dark'"
-            round
-            size="sm"
-            @click="setText()"
-          />
-          <!-- BG COLOR -->
-          <q-btn
-            v-if="modes.mode === 'page'"
-            icon="mdi-format-color-fill"
-            :color="modes.subMode === 'backgroundColor' ? 'primary' : 'dark'"
-            round
-            size="sm"
-            @click="backgroundColor()"
-          />
-          <!-- BG IMAGE -->
-          <q-btn
-            v-if="modes.mode === 'page'"
-            key="bgImageButton"
-            icon="mdi-image-plus"
-            size="sm"
-            :color="'dark'"
-            round
-            @click="addBgPhoto()"
-          />
-          <!-- REMOVE BG IMAGE -->
-          <q-btn
-            v-if="modes.mode === 'page'"
-            key="bgImageRemoveButton"
-            icon="mdi-image-off"
-            size="sm"
-            :color="'negative'"
-            round
-            @click="backgroundRemoveImage()"
-          />
-        <!-- SHAPE TOOLS -->
-        <template v-if="modes.mode === 'shape'">
-          <!-- MOVE -->
-          <q-btn
-            icon="mdi-cursor-move"
-            :color="modes.subMode === 'select' ? 'primary' : 'dark'"
-            round
-            size="sm"
-            @click="setSelect()"
-          />
-          <!-- RULER -->
-          <q-btn
-            icon="mdi-ruler"
-            :color="modes.subMode === 'line' ? 'primary' : 'dark'"
-            round @click="line()"
-            size="sm"
-          />
-          <!-- FILL OBJ -->
-          <q-btn
-            icon="mdi-format-color-fill"
-            :color="modes.subMode === 'fill' ? 'primary' : 'dark'"
-            round
-            size="sm"
-            @click="fillColor()"
-            :disabled="!isSelected"
-          />
-
-          <!-- TEXT -->
-          <q-btn
-            icon="mdi-format-text"
-            :color="modes.subMode === 'text' ? 'primary' : 'dark'"
-            round
-            size="sm"
-            @click="canvasText()"
-          />
-          <!-- TEXT SIZE -->
-          <div class="tool-slider" v-if="modes.mode === 'shape' && (modes.subMode === 'text' || modes.subMode === 'selectText')">
-            <q-btn size="sm" color="primary" icon="mdi-format-size" round @click="toggleTextSize()"/>
-            <div class="q-slider-wrap" v-if="showTextSize">
-              <q-slider v-model="text.size" :min="5" :max="100" :step="1" label snap/>
-            </div>
-          </div>
-          <!-- LINE WIDTH -->
-          <div class="tool-slider" v-if="modes.mode === 'shape' && modes.subMode === 'line'">
-            <q-btn
-              size="sm"
-              icon="mdi-signal"
-              round
-              :color="showLineWidth ? 'primary' : 'dark'"
-              @click="toggleLineWidth()"
-            />
-            <div class="q-slider-wrap" v-if="showLineWidth">
-              <q-slider v-model="lineObj.width" :min="1" :max="20" :step="1" label snap/>
-            </div>
-          </div>
-          <!-- DELETE OBJ -->
-          <q-btn
-            size="sm"
-            color="negative"
-            icon="mdi-delete"
-            round
-            @click="deleteObj()"
-            :disabled="!settings.isSelected"
-          />
-          <!-- CLEAR -->
-          <q-btn icon="mdi-close" round @click="clearCanvas()" size="sm"/>
-        </template>
-
-        <!-- PHOTO TOOLS -->
-        <template v-if="modes.mode === 'photo'">
-          <!-- Add photo -->
-          <q-btn
-            icon="mdi-camera"
-            :color="modes.mode === 'photo' ? 'primary' : 'dark'"
-            round
-            size="sm"
-            @click="addPhoto()"
-          >
-            <q-tooltip>
-              Add an image
-            </q-tooltip>
-          </q-btn>
-
-          <!-- DELETE OBJ -->
-          <q-btn
-            size="sm"
-            color="negative"
-            icon="mdi-delete"
-            round
-            @click="deleteObj()"
-            :disabled="!settings.isSelected"
-          />
-        </template>
-
-        <!-- DRAW TOOLS -->
-        <template v-if="modes.mode === 'draw'">
-          <!-- BRUSH -->
-          <q-btn
-            key="pencil"
-            icon="mdi-pencil"
-            size="sm"
-            :color="modes.subMode === 'brush'? 'primary' : 'dark'"
-            round
-            @click="setDraw()"
-          />
-          <!-- ERASER -->
-          <q-btn
-            key="eraser"
-            size="sm"
-            :color="modes.subMode === 'eraser' ? 'primary' : 'dark'"
-            icon="mdi-eraser"
-            round
-            @click="setEraser()"
-          />
-          <!-- BRUSH SIZE -->
-          <div class="tool-slider" v-if="modes.subMode === 'brush' || modes.subMode === 'eraser'">
-            <q-btn
-              size="sm"
-              icon="mdi-signal"
-              round
-              :color="settings.showBrushWidth ? 'primary' : 'dark'"
-              @click="toggleBrushWidth()"
-            />
-            <div class="q-slider-wrap" v-if="settings.showBrushWidth">
-              <q-slider v-model="settings.brushWidth" :min="1" :max="50" :step="1" label snap @change="updateBrushWidth(newVal)"/>
-            </div>
-          </div>
-          <!-- CLEAR -->
-          <q-btn
-            size="sm"
-            :color="'dark'"
-            icon="mdi-close"
-            round
-            @click="clearDrawing()"
-          />
-        </template>
-      </div>
     </div>
+
+    <!-- EXTRA TOOLS -->
+    <extra-tools></extra-tools>
 
     <!-- IMAGE MODAL -->
     <q-modal
@@ -282,11 +100,13 @@ import AddImage from "./PixabaySearch";
 import TextEditor from "./TextEditor";
 // import FabricCanvas from './FabricCanvas';
 import DrawingCanvas from './DrawingCanvas';
-import FabricCanvas from './FabricCanvas'
+import FabricCanvas from './FabricCanvas';
+import MainTools from './MainTools';
+import ExtraTools from './ExtraTools';
 
 export default {
   name: "Page",
-  components: { Swatches, AddImage, TextEditor, DrawingCanvas, FabricCanvas },
+  components: { Swatches, AddImage, TextEditor, DrawingCanvas, FabricCanvas, MainTools, ExtraTools },
   data() {
     return {
       background: {
@@ -353,50 +173,12 @@ export default {
     settings() {
       return this.$store.getters.getSettings;
     },
-    toolsPos() {
-      let pos = {
-        top: 0,
-        right: 0
-      };
-      if (this.pageDimensions) {
-        if (this.screen.width < this.screen.height) {
-          // Portrait
-          pos = {
-            top: 0,
-            left: 0,
-          }
-        } else {
-          // landscape
-          pos = {
-            top: '45px',
-            left: this.pageDimensions.width+'px',
-          }
-        }
-      }
-      return pos;
+    toolAction() {
+      return this.$store.getters.getToolAction;
     },
-    extraToolsPos() {
-      let pos = {
-        top: 0,
-        right: 0
-      };
-      if (this.pageDimensions) {
-        if (this.screen.width < this.screen.height) {
-          // Portrait
-          pos = {
-            top: (this.pageDimensions.height + 10) + 'px',
-            right: 0,
-          }
-        } else {
-          // landscape
-          pos = {
-            top: '50px',
-            right: (this.screen.width - (this.pageDimensions.width + 300)) + 'px',
-          }
-        }
-      }
-      return pos;
-    },
+    textLayerActive() {
+      return this.modes.mode === 'page' && this.modes.subMode === 'text'
+    }
   },
   mounted() {
     /** Set page from route */
@@ -448,7 +230,8 @@ export default {
     setDefaultZoom() {
       // this.setPageSize();
       const maxHeightRatio = this.$refs.page.clientHeight / this.activePage.pageSize.height;
-      const maxWidthRatio = this.$refs.page.clientWidth / this.activePage.pageSize.width;
+      let maxWidthRatio = this.$refs.page.clientWidth / this.activePage.pageSize.width;
+      maxWidthRatio = maxWidthRatio > 1.5 ? 1.5 : maxWidthRatio;
       let dimensions;
       if (maxHeightRatio < maxWidthRatio) {
         dimensions = {
@@ -463,6 +246,12 @@ export default {
           zoom: maxWidthRatio,
         }
       }
+      dimensions = {
+        height: (this.activePage.pageSize.height * maxWidthRatio),
+        width: (this.activePage.pageSize.width * maxWidthRatio),
+        zoom: maxWidthRatio,
+      }
+
       this.$store.commit('setPageDimensions', dimensions);
     },
 
@@ -554,6 +343,26 @@ export default {
     },
 
     /** ACTIONS */
+
+    addTextBlock() {
+      const payload = {
+        user: this.user,
+        storyKey: this.$route.params.id,
+        pageKey: this.activePage.id,
+        index: this.activePage.textLayer.length,
+        textLayer:  {
+          text: '',
+          x: 50,
+          y: 25,
+          width: (200),
+          height: (200)
+        }
+      };
+      console.log('addTextBlock payload =', payload);
+      this.$store.dispatch('updatePageText', payload);
+      this.$store.commit('setToolAction', null);
+    },
+
     updateBrushWidth(newVal) {
       const payload = {
         brushWidth: newVal
@@ -683,6 +492,16 @@ export default {
       deep: true
     },
 
+    toolAction: {
+      handler: function(newAction, oldAction) {
+        console.log('page watcher toolaction=', this.toolAction);
+        if (this.toolAction === 'addTextBlock') {
+          this.addTextBlock();
+        }
+      },
+      deep: true
+    },
+
     color: {
       handler: function(newColor, oldColor) {
         if (this.modes.mode === "page" && this.modes.subMode === 'backgroundColor') {
@@ -700,6 +519,7 @@ export default {
         }
       }
     },
+
     activePage: {
       handler: function(newPage, oldPage) {
         if (!this.pageDimensions && this.activePage.pageSize) {
@@ -714,6 +534,7 @@ export default {
       },
       deep: true
     },
+
     history: {
       handler: function(newH, oldH) {
         this.canUndo = this.history.restoreIndex > 0;
@@ -721,6 +542,7 @@ export default {
       },
       deep: true
     },
+
     user: {
       handler: function(newUser) {
         if (!this.story) {
@@ -745,9 +567,10 @@ export default {
   flex-direction: column;
   align-items: stretch;
   justify-content: stretch;
-  margin-right: 90px;
-  width: calc(100vw - 240px);
+  margin: 35px 0 0 0;
+  width: calc(100vw - 200px);
   position: relative;
+  z-index: 1;
 }
 .main-content {
   width: 100%;
@@ -757,22 +580,27 @@ export default {
   align-items: flex-start;
   flex-grow: 1;
   position: relative;
+  height: calc(100vh - 20px);
+  overflow: auto;
 }
 
 .page-ref {
   display: flex;
-  height: calc(100vh - 20px);
-  overflow: hidden;
-  max-width: calc(100vw - 190px);
+  max-width: calc(100vw - 150px);
   flex-grow: 2;
 }
 
+.text-layer {
+  position: absolute;
+  z-index: 100;
+  top: 40px;
+  left: 0;
+  transform-origin: top left;
+}
 
 .canvas-wrapper {
   position: relative;
   overflow: hidden;
-  /* max-height: calc(100vh - 70px);
-    overflow: hidden; */
 }
 .canvas-bg-img-wrapper {
   position: absolute;
@@ -793,11 +621,11 @@ export default {
   background-position: center center;
 }
 
-.color-picker-input {
+/* .color-picker-input {
   visibility: none;
-}
+} */
 
-.tools {
+/* .tools {
   position: absolute;
   z-index: 3;
   display: flex;
@@ -807,8 +635,8 @@ export default {
 .tools > * {
   margin-right: 5px;
   margin-bottom: 5px;
-}
-
+} */
+/*
 .extra-tools {
   width: 60px;
   display: flex;
@@ -820,19 +648,6 @@ export default {
 
 .extra-tools > * {
   margin-bottom: 5px;
-}
-
-.pan-controls {
-  display: inline-flex;
-  display: none;
-  font-size: 2em;
-  position: absolute;
-  bottom: 10px;
-  right: 10px;
-  z-index: 999;
-  flex-direction: column;
-  align-items: center;
-  background: rgba(255, 255, 255, 0.8);
 }
 
 .color-btn {
@@ -853,7 +668,7 @@ export default {
   right: 60px;
   top: 0;
   z-index: 1000;
-}
+} */
 
 .text-modal {
   display: flex;
@@ -873,13 +688,13 @@ export default {
     max-width: calc(100vw - 10px);
     height: calc(100vh - 220px);
   }
-  .tools {
+/*   .tools {
     display: flex;
     justify-content: center;
     position: relative;
     flex-direction: row;
-  }
-  .extra-tools {
+  } */
+  /* .extra-tools {
     flex-direction: row;
     width: 100%;
   }
@@ -889,23 +704,23 @@ export default {
     right: auto;
     top: -30px;
     z-index: 1000;
-  }
+  } */
 }
 @media(max-width: $breakpoint-md) and (orientation: landscape) {
-  .page-ref {
+ /*  .page-ref {
     height: calc(100vh - 20px);
-  }
-  .tools {
+  } */
+/*   .tools {
     margin-top: -25px;
-  }
+  } */
 }
 @media(max-width: $breakpoint-md) and (orientation: portrait) {
   .main-content-wrapper {
     max-height: calc(100vh - 170px);
     overflow: hidden;
   }
-  .page-ref {
+  /* .page-ref {
     height: calc(100vh - 250px);
-  }
+  } */
 }
 </style>

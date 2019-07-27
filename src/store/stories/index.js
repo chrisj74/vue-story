@@ -41,6 +41,7 @@ export default {
       color: '#000000',
       isSelected: false,
       showImageModal: false,
+      activeEditor: 0
     },
     history: {
       undo: false,
@@ -68,18 +69,15 @@ export default {
       let pageVal = _.cloneDeep(state.page)
       pageVal = _.merge(pageVal, payload);
       state.page = pageVal;
-      console.log('page set');
       /** Update history */
       pageVal.modes = _.cloneDeep(state.modes);
       if (state.history.restoreIndex === state.history.states.length - 1) {
-        console.log('need to add');
         state.history.states.push(pageVal);
       } else {
         state.history.states = state.history.states.slice(0, state.history.restoreIndex + 1);
         state.history.states.push(pageVal);
       }
       state.history.restoreIndex = state.history.restoreIndex + 1;
-      console.log('history set');
     },
     clearImageSearchResults(state) {
       state.imageSearchResults.str = '';
@@ -116,13 +114,11 @@ export default {
       state.history.states = payload;
     },
     setHistorySliceStates(state, payload) {
-      console.log('historySlice state=', state.history);
       state.history.states = state.history.states.slice(0, state.history.restoreIndex + 1);
       payload.modes = _.cloneDeep(state.modes);
       state.history.states.push(payload);
     },
     setHistoryRestoreIndex(state, payload) {
-      console.log('setHistoryRestoreIndex payload=', payload);
       state.history.restoreIndex = payload;
 
     },
@@ -133,7 +129,7 @@ export default {
         modes.subMode = 'brush';
       }
       state.modes = modes;
-      state.page.drawingLayer = _.cloneDeep(state.history.states[state.history.restoreIndex]['drawingLayer']);
+      state.page = _.cloneDeep(state.history.states[state.history.restoreIndex]);
     },
     setHistoryRedo(state, payload){
       state.history.redo = payload;
@@ -142,7 +138,6 @@ export default {
       state.pageDimensions = payload;
     },
     setSettings(state, payload) {
-      console.log('setSettings payload =', payload);
       let settings = _.cloneDeep(state.settings);
       settings = _.merge(settings, payload);
       state.settings = settings;
@@ -168,13 +163,15 @@ export default {
                 .collection('pages').add({
                   order: 0,
                   photoLayer: {},
-                  textLayer: {
-                    text: '',
-                    x: 50,
-                    y: 25,
-                    width: (595 - 100),
-                    height: (842 - 100)
-                  },
+                  textLayer: [
+                    {
+                      text: ' ',
+                      x: 50,
+                      y: 25,
+                      width: (595 - 100),
+                      height: (842 - 100)
+                    }
+                  ],
                   background: {
                     color: '#ffffff',
                     image: false,
@@ -266,7 +263,14 @@ export default {
     updatePageText( {commit, state }, payload) {
       // console.log('updatePage payload =', payload);
       const newState = _.cloneDeep(state.page);
-      newState.textLayer = _.merge(newState.textLayer, payload.textLayer);
+      if (newState.textLayer[payload.index]) {
+        console.log('text index exists');
+        newState.textLayer[payload.index] = _.merge(newState.textLayer[payload.index], payload.textLayer);
+      } else {
+        console.log('newIndex');
+        newState.textLayer.push(payload.textLayer)
+      }
+
       newState.commit++;
       commit('setPage', newState);
       return new Promise((resolve, reject) => {
@@ -275,13 +279,7 @@ export default {
           .collection('users/' + payload.user.id + '/stories/' + payload.storyKey + '/pages/').doc(payload.pageKey);
           userStory.update({
             commit: newState.commit,
-            textLayer: {
-              y: payload.textLayer.y,
-              x: payload.textLayer.x,
-              width: payload.textLayer.width,
-              height: payload.textLayer.height,
-              text: payload.textLayer.text
-            }
+            textLayer: newState.textLayer
           });
         resolve();
       });
@@ -298,13 +296,13 @@ export default {
             commit: 0,
             photoLayer: null,
             drawingLayer: null,
-            textLayer: {
-              text: '',
+            textLayer: [{
+              text: ' ',
               x: 50,
               y: 25,
               width: (595 - 100),
               height: (842 -100)
-            },
+            }],
             background: {
               color: '#ffffff',
               image: false,
@@ -645,16 +643,12 @@ export default {
     getPage(state) {
       return state.page;
     },
-    getPageText(state) {
+    getPageTextLayer(state) {
       if (state.page && state.page.textLayer) {
-        return state.page.textLayer.text;
+        return state.page.textLayer;
       } else {
         return 'Loading';
       }
-
-    },
-    getPageTextDimensions(state) {
-      return state.page.textLayer;
     },
     getImageSearchResults(state) {
       return state.imageSearchResults;

@@ -38,7 +38,7 @@
 
                     <div class="text-layer">
                         <!-- TEXT EDITOR -->
-                        <text-editor :print="true" v-if="activePage && activePage.pageSize" :active="false" :zoom="1" :pageWidth="activePage.pageSize.width" :pageHeight="activePage.pageSize.height" ></text-editor>
+                        <!-- <text-editor :print="true" v-if="activePage && activePage.pageSize" :active="false" :zoom="1" :pageWidth="activePage.pageSize.width" :pageHeight="activePage.pageSize.height" ></text-editor> -->
                     </div>
                 </div>
                 <!-- <img :src="previewSrc" class=preview /> -->
@@ -498,7 +498,7 @@ export default {
 @import '~variables'
 
 .story-page {
-    padding: 10px;
+    padding: 10px 0 10px 10px;
     background: #ddd;
     flex-wrap: nowrap;
     overflow: hidden;
@@ -634,7 +634,8 @@ export default {
         flex-direction: column;
     }
     .story-page {
-        flex-direction: column
+        flex-direction: column;
+        padding: 10px;
     }
     .side-bar {
         height: calc(100vh - (50px + 100px));

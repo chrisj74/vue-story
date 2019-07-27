@@ -1,56 +1,30 @@
 <template>
-  <div class="text-wrapper">
-    <div id="toolbar" v-if="active" :style="{width: (pageWidth * zoom) + 'px'}">
-      <span class="ql-format-group">
-        <button type="button" class="ql-bold"></button>
-        <button type="button" class="ql-italic"></button>
-        <button type="button" class="ql-underline"></button>
-        <button type="button" class="ql-blockquote" v-if="$q.screen.gt.sm"></button>
-        <select class="ql-align"></select>
-
-        <button type="button" class="ql-list" value="ordered"></button>
-        <button type="button" class="ql-list" value="bullet"></button>
-
-        <select class="ql-size"></select>
-        <select class="ql-font" v-if="$q.screen.gt.sm"></select>
-
-        <select class="ql-color"></select>
-        <select class="ql-background"></select>
-
-        <button class="ql-link"></button>
-        <button class="ql-video"></button>
-      </span>
-    </div>
-
-
-    <div v-if="pageWidth" :style="{ transform: 'scale('+zoom+')', height: (pageHeight - 50)+'px', width: pageWidth+'px', pointerEvents: active ? 'all' : 'none', userSelect: active ? 'all' : 'none'}" class="text-layer">
-      <vue-draggable-resizable
-        :prevent-deactivation="true"
-        :w="draggableDimensions.width"
-        :h="draggableDimensions.height"
-        :x="draggableDimensions.x"
-        :y="draggableDimensions.y"
-        @dragstop="onDrag"
-        @resizestop="onResize"
-        :parent="true"
-        :drag-handle="'.drag-handle'"
-        :active="active"
-        :class="{print: print}">
-        <quill-editor
-          :content="editorContent"
-          ref="textLayerEditor"
-          @ready="onEditorReady($event)"
-          @change="onEditorChange($event)"
-          :options="editorConfig"
-          class="editor"
-          v-if="active && editorContent">
-        </quill-editor>
-        <div v-else v-html="storeContent" class="text-render ql-editor ql-container"></div>
-        <div class="drag-handle" v-if="active"><i class="mdi mdi-cursor-move"></i></div>
-      </vue-draggable-resizable>
-    </div>
-  </div>
-
+  <vue-draggable-resizable
+    :prevent-deactivation="true"
+    :w="storeTextLayer[layerIndex].width"
+    :h="storeTextLayer[layerIndex].height"
+    :x="storeTextLayer[layerIndex].x"
+    :y="storeTextLayer[layerIndex].y"
+    @dragstop="onDrag"
+    @resizestop="onResize"
+    :parent="true"
+    :drag-handle="'.drag-handle'"
+    :active="active"
+    :class="{print: print}"
+    >
+    <quill-editor
+      :content="editorContent"
+      ref="textLayerEditor"
+      @ready="onEditorReady($event)"
+      @change="onEditorChange($event)"
+      @focus="onEditorFocus($event)"
+      :options="editorConfig"
+      class="editor"
+      v-if="active && editorContent && editorConfig">
+    </quill-editor>
+    <div v-else v-html="storeTextLayer[layerIndex].text" class="text-render ql-editor ql-container"></div>
+    <div class="drag-handle" v-if="active"><i class="mdi mdi-cursor-move"></i></div>
+  </vue-draggable-resizable>
 </template>
 
 <script>
@@ -63,11 +37,32 @@ export default {
   components: {
     VueDraggableResizable,
   },
-  props: ['zoom','active','pageWidth','pageHeight','print'],
+  props: ['zoom','active','pageWidth','pageHeight','print','textLayerIndex'],
   data() {
     return {
+      layerIndex: this.textLayerIndex,
       editorContent: 'Loading',
-      editorConfig: {
+      editorConfig: null,
+      cursorSelection: null,
+      contentSet: false,
+    }
+  },
+  mounted() {
+
+    console.log('textLayer mounted=', this.layerIndex);
+    console.log(this.storeTextLayer[this.layerIndex].text);
+    console.log('this.editorContent=', this.editorContent);
+
+    if (this.storeTextLayer && this.storeTextLayer[this.layerIndex].text !== this.editorContent) {
+      console.log('update from store, new content =', this.storeTextLayer[this.layerIndex].text);
+      if(this.storeTextLayer[this.layerIndex].text !== '') {
+        this.editorContent = _.cloneDeep(this.storeTextLayer[this.layerIndex].text);
+      } else {
+        this.editorContent = ' ';
+      }
+
+    }
+    this.editorConfig = {
         bounds: '.draggable',
         modules: {
           blotFormatter: {
@@ -80,24 +75,12 @@ export default {
             }
           },
           cursors: true,
-          toolbar: '#toolbar',
+          toolbar: '#toolbar'+this.layerIndex,
           syntax: {
             highlight: text => hljs.highlightAuto(text).value
           }
         }
-      },
-      cursorSelection: null,
-      contentSet: false,
-    }
-  },
-  mounted() {
-
-    console.log('mounted=', this.editor);
-
-    if (this.storeContent !== this.editorContent) {
-      console.log('update from store');
-      this.editorContent = _.cloneDeep(this.storeContent);
-    }
+      };
   },
   computed: {
     editor() {
@@ -118,11 +101,8 @@ export default {
     activePage() {
       return this.$store.getters.getPage;
     },
-    storeContent() {
-        return this.$store.getters.getPageText;
-    },
-    draggableDimensions() {
-      return this.$store.getters.getPageTextDimensions;
+    storeTextLayer() {
+        return this.$store.getters.getPageTextLayer;
     },
     modes() {
       return this.$store.getters.getModes;
@@ -132,21 +112,25 @@ export default {
     onEditorChange: _.debounce(function(event) {
       console.log('onEditorChange contentSet=', this.contentSet);
       if (!this.contentSet) {
+        /** First time content loaded move cursor to the end */
         this.contentSet = true;
         event.quill.focus();
         event.quill.setSelection(this.editorContent.length, 0, 'api');
       }
       if (this.user && event.html !== this.editorContent) {
+        const textLayer = _.cloneDeep(this.storeTextLayer);
+        console.log('cloned textLayer =', textLayer);
             const payload = {
                 user: this.user,
                 storyKey: this.$route.params.id,
                 pageKey: this.activePage.id,
+                index: this.layerIndex,
                 textLayer: {
-                  x: (this.draggableDimensions.x * 1),
-                  y: (this.draggableDimensions.y * 1),
-                  width: (this.draggableDimensions.width * 1),
-                  height: (this.draggableDimensions.height * 1),
-                  text: event.html
+                  x: (textLayer[this.layerIndex].x * 1),
+                  y: (textLayer[this.layerIndex].y * 1),
+                  width: (textLayer[this.layerIndex].width * 1),
+                  height: (textLayer[this.layerIndex].height * 1),
+                  text: event.html === '' ? ' ' : event.html
                 }
             };
             console.log('updatePageText');
@@ -154,6 +138,13 @@ export default {
         }
     }, 500),
 
+    onEditorFocus(quill) {
+      console.log('editor focus!', quill);
+      const payload = {
+        activeEditor: this.layerIndex
+      };
+      this.$store.commit('setSettings', payload);
+    },
     onEditorReady(quill) {
       console.log('onready', this.editorContent.length);
       quill.setSelection(this.editorContent.length, 0, 'api');
@@ -165,12 +156,13 @@ export default {
             user: this.user,
             storyKey: this.$route.params.id,
             pageKey: this.activePage.id,
+            index: this.layerIndex,
             textLayer: {
               x: (x * 1),
               y: (y * 1),
               width: (width * 1),
               height: (height * 1),
-              text: this.editorContent
+              text: this.editorContent === '' ? ' ' : this.editorContent
             }
         };
         this.$store.dispatch('updatePageText', payload);
@@ -180,20 +172,21 @@ export default {
       // console.log('onDrag x=', x, ' y=', y);
       if (this.user) {
           const payload = {
-              user: this.user,
-              storyKey: this.$route.params.id,
-              pageKey: this.activePage.id,
-              textLayer: {
-                x: x,
-                y: y,
-                width: this.draggableDimensions.width,
-                height: this.draggableDimensions.height,
-                text: this.editorContent
-              }
+            user: this.user,
+            storyKey: this.$route.params.id,
+            pageKey: this.activePage.id,
+            index: this.layerIndex,
+            textLayer: {
+              x: x,
+              y: y,
+              width: this.storeTextLayer[this.layerIndex].width,
+              height: this.storeTextLayer[this.layerIndex].height,
+              text: this.editorContent === '' ? ' ' : this.editorContent
+            }
           };
           this.$store.dispatch('updatePageText', payload);
       }
-    }, 500)
+    }, 500),
   },
   watch: {
     editorContent: {
@@ -214,15 +207,31 @@ export default {
         }); */
       }
     },
-    storeContent: {
+    storeTextLayer: {
       handler: function(to, from) {
-        if (this.storeContent !== this.editorContent) {
+        console.log('watcher storeTextLayer index=', this.layerIndex)
+        if (this.storeTextLayer && this.layerIndex && this.storeTextLayer[this.layerIndex].text !== this.editorContent) {
           console.log('update from store');
-          this.editorContent = _.cloneDeep(this.storeContent);
+          this.editorContent = _.cloneDeep(this.storeTextLayer[this.layerIndex].text);
         }
       },
       deep: true
     },
+    layerIndex: {
+      handler: function(to, from) {
+        console.log('watcher index=', this.layerIndex)
+        if (this.storeTextLayer && this.layerIndex && this.storeTextLayer[this.layerIndex].text !== this.editorContent) {
+          console.log('update from store');
+          this.editorContent = _.cloneDeep(this.storeTextLayer[this.layerIndex].text);
+        }
+      },
+      deep: true
+    },
+    toolAction: {
+      handler: function(newAction, oldAction) {
+
+      }
+    }
     /* active: {
       handler: function(to, from) {
         console.log('from=', from, ' to=', to);
@@ -249,13 +258,7 @@ export default {
 .text-wrapper {
   position: relative;
 }
-.text-layer {
-  position: absolute;
-  z-index: 100;
-  top: 40px;
-  left: 0;
-  transform-origin: top left;
-}
+
 .text-render {
   padding: 12px 15px;
   overflow: hidden;
@@ -298,23 +301,27 @@ export default {
     font-size: 6em;
   }
 }
-#toolbar {
+.text-toolbar-wrapper {
+  position: fixed;
+  top: 45px;
+  left: 91px;
+  width: 100%;
   z-index: 101;
-  &.ql-toolbar.ql-snow  {
-    background: #fff;
-    position: absolute;
-    width: 100%;
-    top: 0;
-    left: 0;
-    display: flex;
-    flex-direction: row;
-    padding: 0;
-    .ql-formats {
+  #toolbar {
+    &.ql-toolbar.ql-snow  {
+      background: #fff;
+      position: relative;
+      width: 100%;
       display: flex;
       flex-direction: row;
-    }
-    .ql-snow .ql-picker-options {
-      z-index: 102;
+      padding: 0;
+      .ql-formats {
+        display: flex;
+        flex-direction: row;
+      }
+      .ql-snow .ql-picker-options {
+        z-index: 102;
+      }
     }
   }
 }
@@ -330,9 +337,9 @@ export default {
 .blot-formatter__proxy-image {
   z-index: 105;
 }
-@media(max-width: $breakpoint-md) and (orientation: landscape) {
-  #toolbar.ql-toolbar.ql-snow {
-    top: -10px;
+@media(orientation: portrait) {
+  .text-toolbar-wrapper {
+    left: 10px;
   }
 }
 
