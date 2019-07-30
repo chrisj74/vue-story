@@ -421,6 +421,9 @@ export default {
     top: -30px;
     z-index: 1000;
   }
+  .vue-swatches__container:not(.vue-swatches--inline) {
+    bottom: 40px;
+  }
 
 }
 

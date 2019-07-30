@@ -9,6 +9,7 @@
         <!-- PAGE TEXT EDITOR -->
         <div
           v-for="(textLayer, layerIndex) in activePage.textLayer"
+          :key="'toolbar'+layerIndex"
           class="text-toolbar-wrapper"
           :style="{width: (pageDimensions.width) + 'px', left: (91)}">
           <div :id="'toolbar'+layerIndex" v-if="textLayerActive" :style="{width: (pageDimensions.width) + 'px'}" v-show="settings.activeEditor === layerIndex">
@@ -358,7 +359,6 @@ export default {
           height: (200)
         }
       };
-      console.log('addTextBlock payload =', payload);
       this.$store.dispatch('updatePageText', payload);
       this.$store.commit('setToolAction', null);
     },
@@ -391,6 +391,7 @@ export default {
           user: this.user,
           storyKey: this.$route.params.id,
           pageKey: this.activePage.id,
+          restoreIndex: true,
           page: {
             background: {
               color: this.background.color,
@@ -399,55 +400,6 @@ export default {
           }
         };
         this.$store.dispatch("updatePage", payload);
-      }
-    },
-
-    addHistory() {
-      const snapshot = {
-        drawingLayer: this.activePage.drawingLayer,
-        background: {
-          color: this.background.color,
-          image: this.background.image
-        }
-      };
-      if (this.history.restoreIndex === this.history.states.length - 1) {
-        this.$store.dispatch('historyAdd', snapshot);
-      } else {
-        this.$store.dispatch('historySlice', snapshot);
-      }
-      this.saveStory();
-    },
-
-    undo() {
-      if (this.history.restoreIndex > 0) {
-        this.$store.commit('setHistoryRestoreIndex', this.history.restoreIndex - 1);
-        this.$store.commit('setHistoryUndo');
-        // this.restoreIndex--;
-
-        this.saveStory();
-        if (this.history.states.length === this.history.restoreIndex + 1) {
-          this.canredo = false;
-        } else {
-          this.canRedo = true;
-        }
-        if (this.history.restoreIndex === 0) {
-          this.canUndo = false;
-        }
-      }
-    },
-
-    redo() {
-      if (this.history.restoreIndex < this.history.states.length - 1) {
-        this.$store.commit('setHistoryRestoreIndex', this.history.restoreIndex + 1);
-        this.$store.commit('setHistoryUndo');
-        this.saveStory();
-        if (this.history.states.length === this.history.restoreIndex + 1) {
-          this.canRedo = false;
-          this.canUndo = true;
-        }
-      } else {
-        this.canUndo = true;
-        this.canRedo = false;
       }
     },
 
@@ -474,6 +426,7 @@ export default {
             from.params.pageId != to.params.pageId) ||
           !to.params.pageId
         ) {
+          console.log('changed page');
           // same story new page
           // reset history
           this.$store.commit('setHistoryStates', []);
@@ -494,7 +447,6 @@ export default {
 
     toolAction: {
       handler: function(newAction, oldAction) {
-        console.log('page watcher toolaction=', this.toolAction);
         if (this.toolAction === 'addTextBlock') {
           this.addTextBlock();
         }
@@ -529,7 +481,7 @@ export default {
           || this.background.image !== this.activePage.background.image) {
           this.background.color = this.activePage.background.color;
           this.background.image = this.activePage.background.image;
-          this.saveStory();
+          // this.saveStory();
         }
       },
       deep: true
@@ -621,54 +573,31 @@ export default {
   background-position: center center;
 }
 
-/* .color-picker-input {
-  visibility: none;
-} */
-
-/* .tools {
-  position: absolute;
-  z-index: 3;
-  display: flex;
-  flex-direction: column;
+.text-toolbar-wrapper {
+  position: fixed;
+  top: 45px;
+  left: 91px;
+  width: 100%;
+  z-index: 101;
+  background: #fff;
+  > * {
+    &.ql-toolbar.ql-snow  {
+      background: #fff;
+      position: relative;
+      width: 100%;
+      display: flex;
+      flex-direction: row;
+      padding: 0;
+      .ql-formats {
+        display: flex;
+        flex-direction: row;
+      }
+      .ql-snow .ql-picker-options {
+        z-index: 102;
+      }
+    }
+  }
 }
-
-.tools > * {
-  margin-right: 5px;
-  margin-bottom: 5px;
-} */
-/*
-.extra-tools {
-  width: 60px;
-  display: flex;
-  position: absolute;
-  z-index: 3;
-  flex-direction: column;
-  justify-content: center;
-}
-
-.extra-tools > * {
-  margin-bottom: 5px;
-}
-
-.color-btn {
-  width: 42px;
-  height: 42px;
-  border: none;
-  padding: 0;
-  border-radius: 50%;
-  cursor: pointer;
-}
-
-.tool-slider {
-  position: relative;
-}
-.tool-slider .q-slider-wrap {
-  position: absolute;
-  width: 200px;
-  right: 60px;
-  top: 0;
-  z-index: 1000;
-} */
 
 .text-modal {
   display: flex;
@@ -688,23 +617,9 @@ export default {
     max-width: calc(100vw - 10px);
     height: calc(100vh - 220px);
   }
-/*   .tools {
-    display: flex;
-    justify-content: center;
-    position: relative;
-    flex-direction: row;
-  } */
-  /* .extra-tools {
-    flex-direction: row;
-    width: 100%;
+  .text-toolbar-wrapper {
+    left: 10px;
   }
-  .tool-slider .q-slider-wrap {
-    width: 200px;
-    left: -20px;
-    right: auto;
-    top: -30px;
-    z-index: 1000;
-  } */
 }
 @media(max-width: $breakpoint-md) and (orientation: landscape) {
  /*  .page-ref {

@@ -4,6 +4,7 @@ import * as axios from 'axios';
 
 export default {
   state: {
+    nextPage: null,
     stories: [
 
     ],
@@ -66,18 +67,25 @@ export default {
       state.pages = payload;
     },
     setPage (state, payload) {
-      let pageVal = _.cloneDeep(state.page)
-      pageVal = _.merge(pageVal, payload);
-      state.page = pageVal;
-      /** Update history */
-      pageVal.modes = _.cloneDeep(state.modes);
-      if (state.history.restoreIndex === state.history.states.length - 1) {
-        state.history.states.push(pageVal);
+      let pageVal;
+      if (state.page.id === payload.page.id) {
+        pageVal = _.cloneDeep(state.page)
+        pageVal = _.merge(pageVal, payload.page);
       } else {
-        state.history.states = state.history.states.slice(0, state.history.restoreIndex + 1);
-        state.history.states.push(pageVal);
+        pageVal = payload.page
       }
-      state.history.restoreIndex = state.history.restoreIndex + 1;
+      state.page = pageVal;
+      if (payload.restoreIndex) {
+        /** Update history if it's not part of undo/redo */
+        pageVal.modes = _.cloneDeep(state.modes);
+        if (state.history.restoreIndex === state.history.states.length - 1) {
+          state.history.states.push(pageVal);
+        } else {
+          state.history.states = state.history.states.slice(0, state.history.restoreIndex + 1);
+          state.history.states.push(pageVal);
+        }
+        state.history.restoreIndex = state.history.restoreIndex + 1;
+      }
     },
     clearImageSearchResults(state) {
       state.imageSearchResults.str = '';
@@ -144,6 +152,9 @@ export default {
     },
     setToolAction(state, payload) {
       state.toolAction = payload;
+    },
+    setNextPage(state, payload) {
+      state.nextPage = payload;
     }
   },
   actions: {
@@ -228,11 +239,11 @@ export default {
     },
 
     updatePage( {commit, state }, payload) {
-      console.log('updatePage payload =', payload);
       const statePage = _.cloneDeep(state.page);
       const newState = _.merge(statePage, payload.page);
       newState.commit++;
-      commit('setPage', newState);
+      console.log('updatePage id=', newState.id);
+      commit('setPage', {page: newState, restoreIndex: payload.restoreIndex});
       return new Promise((resolve, reject) => {
         const userStory = firebase
           .firestore()
@@ -255,6 +266,12 @@ export default {
               photoLayer: payload.page.photoLayer
             });
           }
+          if (payload.page.textLayer){
+            userStory.update({
+              commit: newState.commit,
+              textLayer: payload.page.textLayer
+            });
+          }
         resolve();
       });
     },
@@ -264,15 +281,13 @@ export default {
       // console.log('updatePage payload =', payload);
       const newState = _.cloneDeep(state.page);
       if (newState.textLayer[payload.index]) {
-        console.log('text index exists');
         newState.textLayer[payload.index] = _.merge(newState.textLayer[payload.index], payload.textLayer);
       } else {
-        console.log('newIndex');
         newState.textLayer.push(payload.textLayer)
       }
 
       newState.commit++;
-      commit('setPage', newState);
+      commit('setPage', {page: newState, restoreIndex: true});
       return new Promise((resolve, reject) => {
         const userStory = firebase
           .firestore()
@@ -294,8 +309,8 @@ export default {
           .collection('users/' + payload.user.id + '/stories/' + payload.storyKey + '/pages/');
           userStory.add({
             commit: 0,
-            photoLayer: null,
-            drawingLayer: null,
+            photoLayer: {},
+            drawingLayer: {},
             textLayer: [{
               text: ' ',
               x: 50,
@@ -449,15 +464,22 @@ export default {
     },
 
     setPage({ commit, state }, payload) {
-      // console.log('setPage payload=', payload);
+      const _payload = payload;
+      commit('setNextPage', _payload.pageKey)
       firebase
         .firestore()
-        .collection('users/' + payload.user.id + '/stories/' + payload.storyKey + '/pages').orderBy('order', 'asc')
+        .collection('users/' + _payload.user.id + '/stories/' + _payload.storyKey + '/pages').orderBy('order', 'asc')
         .onSnapshot(function(querySnapshot) {
           let page;
-          if (payload.pageKey) {
+          if (state.nextPage) {
             querySnapshot.docs.forEach(doc => {
-              if (doc.id === payload.pageKey && (!state.page || doc.data().commit > state.page.commit || state.page.commit == 0))
+              if (
+                (doc.id === state.nextPage)
+                && (!state.page
+                  || state.page.id !== doc.id
+                  || doc.data().commit > state.page.commit
+                  || state.page.commit == 0)
+                ) {
                 page = {
                   photoLayer: doc.data().photoLayer,
                   textLayer: doc.data().textLayer,
@@ -470,10 +492,15 @@ export default {
                   order: doc.data().order,
                   commit: doc.data().commit,
                 };
-                commit('setPage', page);
+                page = _.cloneDeep(page);
+                commit('setPage', {page: page, restoreIndex: true});
+              }
             });
 
-          } else if (!state.page || querySnapshot.docs[0].data().commit > state.page.commit || state.page.commit == 0) {
+          } else if (!state.page
+            || state.page.id !== querySnapshot.docs[0].id
+            || querySnapshot.docs[0].data().commit > state.page.commit
+            || state.page.commit == 0) {
             /** cater for index without id */
             console.log('pass test no id');
             page = {
@@ -488,7 +515,8 @@ export default {
               order: querySnapshot.docs[0].data().order,
               commit: querySnapshot.docs[0].data().commit,
             };
-            commit('setPage', page);
+            page = _.cloneDeep(page);
+            commit('setPage', {page: page, restoreIndex: true});
           }
 
       });
@@ -621,7 +649,6 @@ export default {
     },
 
     historySlice({ commit, state }, payload) {
-      console.log('historySlice', payload);
       commit('setHistorySliceStates', payload);
       commit('setHistoryRestoreIndex', state.history.restoreIndex + 1);
     },
@@ -666,7 +693,6 @@ export default {
       return state.history;
     },
     getPageDimensions(state) {
-      console.log('getPageDimensions=', state.pageDimensions);
       return state.pageDimensions;
     },
     getSettings(state) {

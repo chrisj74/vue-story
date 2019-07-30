@@ -116,7 +116,19 @@ export default {
       this.$store.commit('setSubMode', "text");
     },
 
+    saveStory() {
+      const payload = {
+          user: this.user,
+          storyKey: this.$route.params.id,
+          pageKey: this.activePage.id,
+          page: _.cloneDeep(this.activePage),
+          restoreIndex: false,
+        };
+        this.$store.dispatch("updatePage", payload);
+    },
+
     undo() {
+      console.log('undo, this.history.restoreIndex=', this.history.restoreIndex);
       if (this.history.restoreIndex > 0) {
         this.$store.commit('setHistoryRestoreIndex', this.history.restoreIndex - 1);
         this.$store.commit('setHistoryUndo');

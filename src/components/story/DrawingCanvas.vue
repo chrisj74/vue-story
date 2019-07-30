@@ -85,7 +85,6 @@ export default {
     });
 
     if (!this.drawingPad && this.pageDimensions) {
-      console.log('munted init pad');
       this.initCanvas();
     }
   },
@@ -120,7 +119,7 @@ export default {
       this.ctx = this.drawingCanvas.getContext("2d");
       this.drawingCanvas.width = this.pageDimensions.width * ratio;
       this.drawingCanvas.height = this.pageDimensions.height  * ratio;
-
+      console.log('resizeCanvas, json=', this.activePage.drawingLayer.drawingJson);
       this.drawingPad.fromDataURL(this.activePage.drawingLayer.drawingJson);
       this.dataCache = this.activePage.drawingLayer.drawingJson;
 
@@ -140,6 +139,7 @@ export default {
           user: this.user,
           storyKey: this.$route.params.id,
           pageKey: this.activePage.id,
+          restoreIndex: true,
           page: {
             background: this.activePage.background,
             drawingLayer: {
@@ -151,23 +151,6 @@ export default {
         };
         this.$store.dispatch("updatePage", payload);
       }
-    },
-
-    addHistory() {
-      const snapshot = {
-        background: this.activePage.background,
-        drawingLayer: {
-          drawingJson: this.dataCache,
-          penWidth: this.pen.penWidth,
-          penColor: this.pen.penColor,
-        }
-      };
-      if (this.history.restoreIndex === this.history.states.length - 1) {
-        this.$store.dispatch('historyAdd', snapshot);
-      } else {
-        this.$store.dispatch('historySlice', snapshot);
-      }
-      this.saveStory();
     },
   },
   watch: {
@@ -182,7 +165,6 @@ export default {
             this.initCanvas();
           } else {
             this.drawingPad.clear();
-            this.resizeCanvas();
           }
         }
       },
@@ -190,12 +172,9 @@ export default {
     },
     activePage: {
       handler: function(newPage, oldPage) {
-        console.log('drawing active page handler');
         if (!this.drawingPad && this.pageDimensions) {
-          console.log('watcher init pad');
           this.initCanvas();
-        } else if (this.activePage.drawingLayer && this.dataCache && (this.activePage.drawingLayer.drawingJson !== this.dataCache)) {
-          console.log('watcher load canvas from firebase');
+        } else if (newPage.drawingLayer && (newPage.drawingLayer.drawingJson !== this.dataCache)) {
           this.resizeCanvas();
         }
 
@@ -204,8 +183,8 @@ export default {
     },
     settings: {
       handler: function(newSettings, oldSettings) {
-        if (this.settings.brushWidth !== this.drawingPad.maxWidth) {
-          this.drawingPad.maxWidth = this.settings.brushWidth;
+        if (this.settings.brushWidth * this.pageDimensions.zoom !== this.drawingPad.maxWidth) {
+          this.drawingPad.maxWidth = this.settings.brushWidth * this.pageDimensions.zoom;
         }
         if (this.settings.color !== this.drawingPad.penColor) {
           this.drawingPad.penColor = this.settings.color;
@@ -216,11 +195,9 @@ export default {
     modes: {
       handler: function(newMode, oldMode) {
         if (this.modes.subMode === 'eraser' && this.drawingCanvas) {
-          console.log('eraser');
           var ctx = this.drawingCanvas.getContext('2d');
           ctx.globalCompositeOperation = 'destination-out';
         } else if (this.modes.subMode === 'brush' && this.drawingCanvas) {
-          console.log('brush');
           var ctx = this.drawingCanvas.getContext('2d');
           ctx.globalCompositeOperation = 'source-over';
         }

@@ -5,6 +5,7 @@
     :h="storeTextLayer[layerIndex].height"
     :x="storeTextLayer[layerIndex].x"
     :y="storeTextLayer[layerIndex].y"
+    :scaling="pageDimensions.zoom"
     @dragstop="onDrag"
     @resizestop="onResize"
     :parent="true"
@@ -48,13 +49,7 @@ export default {
     }
   },
   mounted() {
-
-    console.log('textLayer mounted=', this.layerIndex);
-    console.log(this.storeTextLayer[this.layerIndex].text);
-    console.log('this.editorContent=', this.editorContent);
-
     if (this.storeTextLayer && this.storeTextLayer[this.layerIndex].text !== this.editorContent) {
-      console.log('update from store, new content =', this.storeTextLayer[this.layerIndex].text);
       if(this.storeTextLayer[this.layerIndex].text !== '') {
         this.editorContent = _.cloneDeep(this.storeTextLayer[this.layerIndex].text);
       } else {
@@ -106,20 +101,24 @@ export default {
     },
     modes() {
       return this.$store.getters.getModes;
-    }
+    },
+    pageDimensions() {
+      return this.$store.getters.getPageDimensions;
+    },
   },
   methods: {
     onEditorChange: _.debounce(function(event) {
-      console.log('onEditorChange contentSet=', this.contentSet);
       if (!this.contentSet) {
         /** First time content loaded move cursor to the end */
         this.contentSet = true;
         event.quill.focus();
-        event.quill.setSelection(this.editorContent.length, 0, 'api');
+        const range = this.cursorSelection ? this.cursorSelection : {index: this.editorContent.length, length:0};
+        event.quill.setSelection(range, 'api');
+        this.cursorSlection = null;
       }
       if (this.user && event.html !== this.editorContent) {
+        this.editorContent = event.html;
         const textLayer = _.cloneDeep(this.storeTextLayer);
-        console.log('cloned textLayer =', textLayer);
             const payload = {
                 user: this.user,
                 storyKey: this.$route.params.id,
@@ -133,20 +132,18 @@ export default {
                   text: event.html === '' ? ' ' : event.html
                 }
             };
-            console.log('updatePageText');
             this.$store.dispatch('updatePageText', payload)
         }
     }, 500),
 
     onEditorFocus(quill) {
-      console.log('editor focus!', quill);
       const payload = {
         activeEditor: this.layerIndex
       };
       this.$store.commit('setSettings', payload);
     },
     onEditorReady(quill) {
-      console.log('onready', this.editorContent.length);
+      this.contentSet = true;
       quill.setSelection(this.editorContent.length, 0, 'api');
     },
 
@@ -209,20 +206,27 @@ export default {
     },
     storeTextLayer: {
       handler: function(to, from) {
-        console.log('watcher storeTextLayer index=', this.layerIndex)
-        if (this.storeTextLayer && this.layerIndex && this.storeTextLayer[this.layerIndex].text !== this.editorContent) {
-          console.log('update from store');
+        /* console.log('storeTextLayer watcher=');
+        console.log('store text=', this.storeTextLayer[this.layerIndex].text);
+        console.log('this.editorContent=', this.editorContent);
+        console.log('this.layerIndex=', isNaN(this.layerIndex)) */
+        if (this.storeTextLayer && !isNaN(this.layerIndex) && this.storeTextLayer[this.layerIndex].text !== this.editorContent) {
+          /* console.log('update text from store');
+          console.log('this.editor=selection.cursor.selection.lastRange', this.editor.selection.cursor.selection.lastRange); */
+          this.cursorSelection = this.editor.selection.cursor.selection.lastRange;
+          this.contentSet = false;
           this.editorContent = _.cloneDeep(this.storeTextLayer[this.layerIndex].text);
+
+          // this.editor.setSelection(lastRange, 'api');
         }
       },
       deep: true
     },
     layerIndex: {
       handler: function(to, from) {
-        console.log('watcher index=', this.layerIndex)
         if (this.storeTextLayer && this.layerIndex && this.storeTextLayer[this.layerIndex].text !== this.editorContent) {
-          console.log('update from store');
           this.editorContent = _.cloneDeep(this.storeTextLayer[this.layerIndex].text);
+          this.editor.setSelection(this.editorContent.length, 0, 'api');
         }
       },
       deep: true
@@ -301,30 +305,7 @@ export default {
     font-size: 6em;
   }
 }
-.text-toolbar-wrapper {
-  position: fixed;
-  top: 45px;
-  left: 91px;
-  width: 100%;
-  z-index: 101;
-  #toolbar {
-    &.ql-toolbar.ql-snow  {
-      background: #fff;
-      position: relative;
-      width: 100%;
-      display: flex;
-      flex-direction: row;
-      padding: 0;
-      .ql-formats {
-        display: flex;
-        flex-direction: row;
-      }
-      .ql-snow .ql-picker-options {
-        z-index: 102;
-      }
-    }
-  }
-}
+
 .vdr {
   border: dashed 1px rgba(0,0,0,0.2);
   &.active {
@@ -337,10 +318,6 @@ export default {
 .blot-formatter__proxy-image {
   z-index: 105;
 }
-@media(orientation: portrait) {
-  .text-toolbar-wrapper {
-    left: 10px;
-  }
-}
+
 
 </style>

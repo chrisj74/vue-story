@@ -75,8 +75,8 @@ export default {
         this.canvasInit();
         this.canvas.loadFromJSON(this.activePage.photoLayer.photoCanvasJson, function() {
           _this.canvas.renderAll.bind(_this.canvas);
+          _this.setSize();
         });
-        this.setSize();
       }
     }
     /** Trigger canvas resize on browser resize */
@@ -234,6 +234,10 @@ export default {
       this.canvas.setHeight(this.canvas.height * this.pageDimensions.zoom);
       this.canvas.setWidth(this.canvas.width * this.pageDimensions.zoom);
       this.canvas.setZoom(this.pageDimensions.zoom);
+      const _this = this;
+      this.canvas.forEachObject(function(object) {
+        object.cornerSize = 20 / _this.pageDimensions.zoom;
+      });
     },
 
     setSelect() {
@@ -318,6 +322,7 @@ export default {
           user: this.user,
           storyKey: this.$route.params.id,
           pageKey: this.activePage.id,
+          restoreIndex: true,
           page: {
             photoLayer: {
               photoCanvasJson: JSON.stringify(jsonObj),
@@ -328,30 +333,14 @@ export default {
       }
     },
 
-    addHistory() {
-      const snapshot = {
-        photoLayer: {
-          photoCanvasJson: this.canvas.toJSON(["globalCompositeOperation"]),
-        }
-      };
-      if (this.history.restoreIndex === this.history.states.length - 1) {
-        this.$store.dispatch('historyAdd', snapshot);
-      } else {
-        this.$store.dispatch('historySlice', snapshot);
-      }
-      this.saveStory();
-    },
-
     clearCanvas() {
       this.canvas.clear();
       this.saveStory();
       this.$store.commit('setToolAction', null);
     },
 
-
     deleteObj() {
       const activeObject = this.canvas.getActiveObject();
-      console.log('activeObject =', activeObject );
       if (activeObject && !activeObject.isEditing) {
         this.canvas.remove(activeObject);
         this.canvas.renderAll.bind(this.canvas);
@@ -398,7 +387,6 @@ export default {
 
     toolAction: {
       handler: function(newAction, oldAction) {
-        console.log('mode=', this.modes.mode, ' type=', this.type)
         if (this.modes.mode === this.type) {
           if (this.toolAction === 'clearCanvas') {
             this.clearCanvas();
