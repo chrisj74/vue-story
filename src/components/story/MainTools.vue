@@ -3,6 +3,18 @@
     <!-- HISTORY -->
     <q-btn icon="mdi-undo" round @click="undo()" :disable="!canUndo" :size="$q.screen.lt.sm ? 'sm' : 'md'"/>
     <q-btn icon="mdi-redo" round @click="redo()" :disable="!canRedo" :size="$q.screen.lt.sm ? 'sm' : 'md'"/>
+    <!-- TEXT -->
+    <q-btn
+      icon="mdi-format-text"
+      :color="modes.mode === 'text' ? 'primary' : 'dark'"
+      round
+      :size="$q.screen.lt.sm ? 'sm' : 'md'"
+      @click="setText()"
+    >
+      <q-tooltip>
+        Text Mode
+      </q-tooltip>
+    </q-btn>
     <!-- PHOTO -->
     <q-btn
       icon="mdi-camera"
@@ -12,17 +24,9 @@
       @click="setPhoto()"
     >
       <q-tooltip>
-        Add an image
+        Image Mode
       </q-tooltip>
     </q-btn>
-    <!-- PAGE -->
-    <q-btn
-      icon="mdi-file-image"
-      :color="modes.mode === 'page' ? 'primary' : 'dark'"
-      round
-      :size="$q.screen.lt.sm ? 'sm' : 'md'"
-      @click="setPage()"
-    />
     <!-- DRAW -->
     <q-btn
       icon="mdi-pencil"
@@ -31,14 +35,26 @@
       :size="$q.screen.lt.sm ? 'sm' : 'md'"
       @click="setDraw()"
     />
-    <!-- SHAPE -->
+    <!-- PAGE -->
     <q-btn
+      icon="mdi-file-image"
+      :color="modes.mode === 'page' ? 'primary' : 'dark'"
+      round
+      :size="$q.screen.lt.sm ? 'sm' : 'md'"
+      @click="setPage()"
+    >
+      <q-tooltip>
+        Page Mode
+      </q-tooltip>
+    </q-btn>
+    <!-- SHAPE -->
+    <!-- <q-btn
       icon="mdi-shape"
       :color="modes.mode === 'shape' ? 'primary' : 'dark'"
       round
       :size="$q.screen.lt.sm ? 'sm' : 'md'"
       @click="setShape()"
-    />
+    /> -->
   </div>
 </template>
 
@@ -96,6 +112,11 @@ export default {
     console.log('main tools loaded');
   },
   methods: {
+    setText() {
+      this.$store.commit('setMode', "text");
+      this.$store.commit('setSubMode', "text");
+    },
+
     setPhoto() {
       this.$store.commit('setMode', "photo");
       this.$store.commit('setSubMode', "select");

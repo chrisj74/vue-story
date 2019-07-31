@@ -213,7 +213,9 @@ export default {
         if (this.storeTextLayer && !isNaN(this.layerIndex) && this.storeTextLayer[this.layerIndex].text !== this.editorContent) {
           /* console.log('update text from store');
           console.log('this.editor=selection.cursor.selection.lastRange', this.editor.selection.cursor.selection.lastRange); */
-          this.cursorSelection = this.editor.selection.cursor.selection.lastRange;
+          if (this.editor) {
+            this.cursorSelection = this.editor.selection.cursor.selection.lastRange;
+          }
           this.contentSet = false;
           this.editorContent = _.cloneDeep(this.storeTextLayer[this.layerIndex].text);
 

@@ -8,65 +8,84 @@
       colors="text-advanced"
       :popover-to="screen.width > screen.height ? 'left' : 'right'"
       :trigger-style="{ width: '30px', height: '30px', borderRadius: '50%' }"
-      :disabled="modes.mode === 'page' && modes.subMode === 'text'"
+      :disabled="modes.mode === 'text' && modes.subMode === 'text'"
     ></swatches>
+    <!-- TEXT -->
+      <template v-if="modes.mode === 'text'">
+        <q-btn
+          icon="mdi-format-text"
+          :color="modes.subMode === 'text' ? 'primary' : 'dark'"
+          round
+          size="sm"
+          @click="setText()"
+        />
+        <!-- ADD TEXT BLOCK -->
+        <q-btn
+          key="addTextBlock"
+          icon="mdi-plus-circle"
+          size="sm"
+          :color="'primary'"
+          round
+          @click="addTextBlock()"
+        >
+          <q-tooltip>
+            Add text block
+          </q-tooltip>
+        </q-btn>
+        <!-- DELETE OBJ -->
+        <q-btn
+          size="sm"
+          color="negative"
+          icon="mdi-delete"
+          round
+          @click="deleteTextBlock()"
+        >
+          <q-tooltip>
+            Delete text block
+          </q-tooltip>
+        </q-btn>
+      </template>
     <!-- PAGE TOOLS -->
-      <!-- TEXT -->
-      <q-btn
-        v-if="modes.mode === 'page'"
-        icon="mdi-format-text"
-        :color="modes.subMode === 'text' ? 'primary' : 'dark'"
-        round
-        size="sm"
-        @click="setText()"
-      />
-      <!-- BG COLOR -->
-      <q-btn
-        v-if="modes.mode === 'page'"
-        icon="mdi-format-color-fill"
-        :color="modes.subMode === 'backgroundColor' ? 'primary' : 'dark'"
-        round
-        size="sm"
-        @click="backgroundColor()"
-      />
-      <!-- BG IMAGE -->
-      <q-btn
-        v-if="modes.mode === 'page'"
-        key="bgImageButton"
-        icon="mdi-image-plus"
-        size="sm"
-        :color="'dark'"
-        round
-        @click="addBgPhoto()"
-      />
-      <!-- REMOVE BG IMAGE -->
-      <q-btn
-        v-if="modes.mode === 'page'"
-        key="bgImageRemoveButton"
-        icon="mdi-image-off"
-        size="sm"
-        :color="'negative'"
-        round
-        @click="backgroundRemoveImage()"
-      />
-      <!-- ADD TEXT BLOCK -->
-      <q-btn
-        v-if="modes.mode === 'page'"
-        key="addTextBlock"
-        icon="mdi-plus-circle"
-        size="sm"
-        :color="'primary'"
-        round
-        @click="addTextBlock()"
-      />
-      <!-- DELETE OBJ -->
-      <q-btn
-        size="sm"
-        color="negative"
-        icon="mdi-delete"
-        round
-        @click="deleteTextBlock()"
-      />
+      <template v-if="modes.mode === 'page'">
+        <!-- BG COLOR -->
+        <q-btn
+          icon="mdi-format-color-fill"
+          :color="modes.subMode === 'backgroundColor' ? 'primary' : 'dark'"
+          round
+          size="sm"
+          @click="backgroundColor()"
+        >
+          <q-tooltip>
+            Change background color
+          </q-tooltip>
+        </q-btn>
+        <!-- BG IMAGE -->
+        <q-btn
+          key="bgImageButton"
+          icon="mdi-image-plus"
+          size="sm"
+          :color="'dark'"
+          round
+          @click="addBgPhoto()"
+        >
+          <q-tooltip>
+            Add a background image
+          </q-tooltip>
+        </q-btn>
+        <!-- REMOVE BG IMAGE -->
+        <q-btn
+          key="bgImageRemoveButton"
+          icon="mdi-image-off"
+          size="sm"
+          :color="'negative'"
+          round
+          @click="backgroundRemoveImage()"
+        >
+          <q-tooltip>
+            Remove background image
+          </q-tooltip>
+        </q-btn>
+      </template>
     <!-- SHAPE TOOLS -->
     <template v-if="modes.mode === 'shape'">
       <!-- MOVE -->
@@ -158,7 +177,11 @@
         round
         @click="deleteObj()"
         :disabled="!settings.isSelected"
-      />
+      >
+        <q-tooltip>
+          Delete image
+        </q-tooltip>
+      </q-btn>
     </template>
 
     <!-- DRAW TOOLS -->
@@ -171,7 +194,11 @@
         :color="modes.subMode === 'brush'? 'primary' : 'dark'"
         round
         @click="setDraw()"
-      />
+      >
+        <q-tooltip>
+          Use pen
+        </q-tooltip>
+      </q-btn>
       <!-- ERASER -->
       <q-btn
         key="eraser"
@@ -180,7 +207,11 @@
         icon="mdi-eraser"
         round
         @click="setEraser()"
-      />
+      >
+        <q-tooltip>
+          Use eraser
+        </q-tooltip>
+      </q-btn>
       <!-- BRUSH SIZE -->
       <div class="tool-slider" v-if="modes.subMode === 'brush' || modes.subMode === 'eraser'">
         <q-btn
@@ -189,7 +220,11 @@
           round
           :color="settings.showBrushWidth ? 'primary' : 'dark'"
           @click="toggleBrushWidth()"
-        />
+        >
+          <q-tooltip>
+            Change pen width
+          </q-tooltip>
+        </q-btn>
         <div class="q-slider-wrap" v-if="settings.showBrushWidth">
           <q-slider v-model="settings.brushWidth" :min="1" :max="50" :step="1" label snap @change="updateBrushWidth(newVal)"/>
         </div>
@@ -201,7 +236,11 @@
         icon="mdi-close"
         round
         @click="clearDrawing()"
-      />
+      >
+        <q-tooltip>
+          Clear drawing
+        </q-tooltip>
+      </q-btn>
     </template>
   </div>
 </template>

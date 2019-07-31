@@ -9,11 +9,27 @@
                 </div>
 
                 <!-- List thumbs -->
-                <div id="thumb-wrapper" v-if="isActiveRoute()">
+                <div id="thumb-wrapper" >
                     <draggable v-model="pages" :disabled="!isEdit">
-                        <div class="thumb" v-for="(page, index) of pages" :key="page.id" :id="'thumb'+page.id" :style="{backgroundColor: thumbBgColor(page)}" :class="{'active-thumb': activePage && page.id === activePage.id}">
+                        <div class="thumb" v-for="(page, index) of pages" :key="page.id" :id="'thumb'+page.id" :style="{backgroundColor: thumbBgColor(page.page)}" :class="{'active-thumb': activePage && page.id === activePage.id}">
                             <router-link :to="'/story/'+$route.params.id+'/'+page.id">
-                                <img :src="getThumb(page)" style="max-width: 100%" />
+                                <img :src="getThumbDrawing(page.page)" style="max-width: 100%" class="thumb-drawing" />
+                                <img :src="getThumbPhoto(page.page)" style="max-width: 100%" class="thumb-photo" />
+                                <div class="thumb-text"
+                                    :style="{
+                                        width: page.pageSize.width + 'px',
+                                        height: page.pageSize.height + 'px',
+                                    }">
+                                    <div v-for="(pageText, tIndex) of page.page.textLayer" :key="page.id+'text'+tIndex"
+                                        :style="{
+                                            top: pageText.y + 'px',
+                                            left: pageText.x + 'px',
+                                            width: pageText.width +'px',
+                                            height: pageText.height + 'px'
+                                        }"
+                                        class="thumb-text-block text-render" v-html="pageText.text">
+                                    </div>
+                                </div>
                             </router-link>
                             <div v-if="isEdit" class="delete-page" @click="deletePage(page.id, pages[index-1].id)"><q-icon v-if="index !== 0" size="sm" color="negative" name="mdi-delete" /></div>
                         </div>
@@ -253,20 +269,25 @@ export default {
                 return false;
             }
         },
-        getThumb(page) {
-            const isActive = this.activePage && this.activePage.id === page.id ? true : false;
-            if (isActive) {
-                return this.previewSrc;
-            } else {
-                return page.thumb + '&rnd=' + this.imageKey;
-            }
-            return isActive;
-        },
         thumbBgColor(page) {
             if (this.activePage && page.id === this.activePage.id) {
                 return this.activePage.background.color;
             } else {
                 return page.background.color;
+            }
+        },
+        getThumbDrawing(page) {
+            if (this.activePage && page.id === this.activePage.id) {
+                return this.activePage.drawingLayer['drawingCanvasImage'];
+            } else {
+                return page.drawingLayer['drawingCanvasImage'];
+            }
+        },
+        getThumbPhoto(page) {
+            if (this.activePage && page.id === this.activePage.id) {
+                return this.activePage.photoLayer['photoCanvasImage'];
+            } else {
+                return page.photoLayer['photoCanvasImage'];
             }
         },
         canvasInit() {
@@ -550,6 +571,25 @@ export default {
     border: solid 3px #aeaeae;
     -webkit-transition: border-color 1s; /* Safari */
     transition: border-color 1s;
+    position: relative;
+    .thumb-drawing {
+        position: absolute;
+        z-index: 3;
+    }
+    .thumb-photo {
+        position: absolute;
+        z-index: 2;
+    }
+    .thumb-text {
+        position: absolute;
+        z-index: 4;
+        transform: scale(0.1);
+        transform-origin: top left;
+        overflow: hidden;
+        .thumb-text-block {
+            position: absolute;
+        }
+    }
 }
 .delete-page {
     opacity: 0.5;

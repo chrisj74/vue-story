@@ -119,9 +119,8 @@ export default {
       this.ctx = this.drawingCanvas.getContext("2d");
       this.drawingCanvas.width = this.pageDimensions.width * ratio;
       this.drawingCanvas.height = this.pageDimensions.height  * ratio;
-      console.log('resizeCanvas, json=', this.activePage.drawingLayer.drawingJson);
-      this.drawingPad.fromDataURL(this.activePage.drawingLayer.drawingJson);
-      this.dataCache = this.activePage.drawingLayer.drawingJson;
+      this.drawingPad.fromDataURL(this.activePage.drawingLayer.drawingCanvasImage);
+      this.dataCache = this.activePage.drawingLayer.drawingCanvasImage;
 
       this.ctx.scale(ratio, ratio);
     },
@@ -143,7 +142,7 @@ export default {
           page: {
             background: this.activePage.background,
             drawingLayer: {
-              drawingJson: this.dataCache,
+              drawingCanvasImage: this.dataCache,
               penWidth: this.pen.penWidth,
               penColor: this.pen.penColor,
             }
@@ -174,7 +173,7 @@ export default {
       handler: function(newPage, oldPage) {
         if (!this.drawingPad && this.pageDimensions) {
           this.initCanvas();
-        } else if (newPage.drawingLayer && (newPage.drawingLayer.drawingJson !== this.dataCache)) {
+        } else if (newPage.drawingLayer && (newPage.drawingLayer.drawingCanvasImage !== this.dataCache)) {
           this.resizeCanvas();
         }
 

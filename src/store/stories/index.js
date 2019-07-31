@@ -33,7 +33,7 @@ export default {
     insertImage: null,
     pdfImages: null,
     modes: {
-      mode: 'page',
+      mode: 'text',
       subMode: 'text',
     },
     settings: {
@@ -427,14 +427,26 @@ export default {
         .onSnapshot(function(querySnapshot) {
           const pages = [];
           querySnapshot.forEach(function(doc) {
-              pages.push({
+            pages.push({
+              id: doc.id,
+              order: doc.data().order,
+              thumb: doc.data().thumb,
+              preview: doc.data().preview,
+              background: doc.data().background,
+              pageSize: doc.data().pageSize,
+              page: {
+                photoLayer: doc.data().photoLayer,
+                textLayer: doc.data().textLayer,
                 id: doc.id,
-                order: doc.data().order,
                 thumb: doc.data().thumb,
                 preview: doc.data().preview,
                 background: doc.data().background,
+                drawingLayer: doc.data().drawingLayer,
                 pageSize: doc.data().pageSize,
-              });
+                order: doc.data().order,
+                commit: doc.data().commit,
+              }
+            });
 
           });
           commit('setPages', pages);

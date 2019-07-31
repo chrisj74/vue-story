@@ -236,7 +236,7 @@ export default {
       this.canvas.setZoom(this.pageDimensions.zoom);
       const _this = this;
       this.canvas.forEachObject(function(object) {
-        object.cornerSize = 20 / _this.pageDimensions.zoom;
+        object.cornerSize = 30 / _this.pageDimensions.zoom;
       });
     },
 
@@ -263,15 +263,6 @@ export default {
       this.canvas.isDrawingMode = false;
     },
 
-    addPhoto() {
-      this.$store.commit('setMode', "photo");
-      this.imageModal = true;
-      this.canvas.isDrawingMode = false;
-      this.canvas.forEachObject(function(object) {
-        object.selectable = true;
-      });
-    },
-
     canvasText() {
       this.$store.commit('setSubMode', "text");
       this.canvas.isDrawingMode = false;
@@ -290,6 +281,7 @@ export default {
       fabric.Image.fromURL(
         imageObj.webformatURL,
         function(myImg) {
+          myImg.lockUniScaling = true;
           myImg.set({
             left: canvas.width / 4,
             top: 100,
@@ -298,6 +290,7 @@ export default {
           });
           myImg.scaleToWidth(canvas.width / 2);
           canvas.add(myImg);
+          canvas.renderAll();
           _this.saveStory();
         },
         { crossOrigin: "Anonymous" }
@@ -326,6 +319,7 @@ export default {
           page: {
             photoLayer: {
               photoCanvasJson: JSON.stringify(jsonObj),
+              photoCanvasImage: this.canvas.toDataURL(),
             }
           }
         };
@@ -342,8 +336,9 @@ export default {
     deleteObj() {
       const activeObject = this.canvas.getActiveObject();
       if (activeObject && !activeObject.isEditing) {
+        console.log('remove image');
         this.canvas.remove(activeObject);
-        this.canvas.renderAll.bind(this.canvas);
+        this.canvas.renderAll();
       }
       this.saveStory();
       this.$store.commit('setToolAction', null);

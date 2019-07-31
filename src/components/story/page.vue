@@ -178,7 +178,7 @@ export default {
       return this.$store.getters.getToolAction;
     },
     textLayerActive() {
-      return this.modes.mode === 'page' && this.modes.subMode === 'text'
+      return this.modes.mode === 'text' && this.modes.subMode === 'text'
     }
   },
   mounted() {
@@ -636,21 +636,9 @@ export default {
     left: 10px;
   }
 }
-@media(max-width: $breakpoint-md) and (orientation: landscape) {
- /*  .page-ref {
-    height: calc(100vh - 20px);
-  } */
-/*   .tools {
-    margin-top: -25px;
-  } */
-}
 @media(max-width: $breakpoint-md) and (orientation: portrait) {
   .main-content-wrapper {
     max-height: calc(100vh - 170px);
-    overflow: hidden;
   }
-  /* .page-ref {
-    height: calc(100vh - 250px);
-  } */
 }
 </style>
