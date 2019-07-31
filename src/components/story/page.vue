@@ -363,6 +363,19 @@ export default {
       this.$store.commit('setToolAction', null);
     },
 
+    deleteTextBlock() {
+      console.log('PAGE deltext this.settings.activeEditor=', this.settings.activeEditor);
+      const payload = {
+        user: this.user,
+        storyKey: this.$route.params.id,
+        pageKey: this.activePage.id,
+        index: this.settings.activeEditor,
+        textLayer:  null
+      };
+      this.$store.dispatch('updatePageText', payload);
+      this.$store.commit('setToolAction', null);
+    },
+
     updateBrushWidth(newVal) {
       const payload = {
         brushWidth: newVal
@@ -426,7 +439,6 @@ export default {
             from.params.pageId != to.params.pageId) ||
           !to.params.pageId
         ) {
-          console.log('changed page');
           // same story new page
           // reset history
           this.$store.commit('setHistoryStates', []);
@@ -449,6 +461,9 @@ export default {
       handler: function(newAction, oldAction) {
         if (this.toolAction === 'addTextBlock') {
           this.addTextBlock();
+        }
+        if (this.toolAction === 'deleteTextBlock') {
+          this.deleteTextBlock();
         }
       },
       deep: true

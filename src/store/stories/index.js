@@ -69,7 +69,10 @@ export default {
     setPage (state, payload) {
       let pageVal;
       if (state.page.id === payload.page.id) {
-        pageVal = _.cloneDeep(state.page)
+        pageVal = _.cloneDeep(state.page);
+        if(payload.page.textLayer.length !== pageVal.textLayer.length) {
+          pageVal.textLayer = payload.page.textLayer;
+        }
         pageVal = _.merge(pageVal, payload.page);
       } else {
         pageVal = payload.page
@@ -180,7 +183,7 @@ export default {
                       x: 50,
                       y: 25,
                       width: (595 - 100),
-                      height: (842 - 100)
+                      height: (150)
                     }
                   ],
                   background: {
@@ -281,7 +284,11 @@ export default {
       // console.log('updatePage payload =', payload);
       const newState = _.cloneDeep(state.page);
       if (newState.textLayer[payload.index]) {
-        newState.textLayer[payload.index] = _.merge(newState.textLayer[payload.index], payload.textLayer);
+        if (payload.textLayer) {
+          newState.textLayer[payload.index] = _.merge(newState.textLayer[payload.index], payload.textLayer);
+        } else {
+          newState.textLayer.splice(payload.index, 1);
+        }
       } else {
         newState.textLayer.push(payload.textLayer)
       }
@@ -316,7 +323,7 @@ export default {
               x: 50,
               y: 25,
               width: (595 - 100),
-              height: (842 -100)
+              height: (150)
             }],
             background: {
               color: '#ffffff',

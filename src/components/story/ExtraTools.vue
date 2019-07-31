@@ -59,6 +59,14 @@
         round
         @click="addTextBlock()"
       />
+      <!-- DELETE OBJ -->
+      <q-btn
+        size="sm"
+        color="negative"
+        icon="mdi-delete"
+        round
+        @click="deleteTextBlock()"
+      />
     <!-- SHAPE TOOLS -->
     <template v-if="modes.mode === 'shape'">
       <!-- MOVE -->
@@ -246,28 +254,6 @@ export default {
     settings() {
       return this.$store.getters.getSettings;
     },
-    extraToolsPos() {
-      let pos = {
-        top: 0,
-        right: 0
-      };
-      if (this.pageDimensions) {
-        if (this.screen.width < this.screen.height) {
-          // Portrait
-          pos = {
-            top: (this.pageDimensions.height + 10) + 'px',
-            right: 0,
-          }
-        } else {
-          // landscape
-          pos = {
-            top: '50px',
-            right: (this.screen.width - (this.pageDimensions.width + 200)) + 'px',
-          }
-        }
-      }
-      return pos;
-    },
   },
   methods: {
     fillColor() {
@@ -320,8 +306,11 @@ export default {
 
     /** ACTIONS */
     addTextBlock() {
-      console.log('extraTools addTextBlock');
       this.$store.commit('setToolAction', 'addTextBlock');
+    },
+
+    deleteTextBlock() {
+      this.$store.commit('setToolAction', 'deleteTextBlock');
     },
 
     updateBrushWidth(newVal) {
