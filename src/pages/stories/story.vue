@@ -2,16 +2,25 @@
     <div>
         <q-page class="story-page row justify-center">
             <!-- Thumbs -->
-            <div class="thumbs">
-                <div class="actiion-buttons">
+            <div class="thumbs" :class="{'active': settings.showThumbs}">
+                <div class="action-buttons">
                     <q-btn size="sm" :round="true" @click="isEdit = !isEdit" :icon="isEdit? 'mdi-check-outline' : 'mdi-pencil'"></q-btn>
                     <q-btn size="sm" :round="true" @click="getPageImages()" icon="mdi-cloud-download"></q-btn>
                 </div>
 
                 <!-- List thumbs -->
                 <div id="thumb-wrapper" >
-                    <draggable v-model="pages" :disabled="!isEdit">
-                        <div class="thumb" v-for="(page, index) of pages" :key="page.id" :id="'thumb'+page.id" :style="{backgroundColor: thumbBgColor(page.page)}" :class="{'active-thumb': activePage && page.id === activePage.id}">
+                    <draggable class="thumb-draggable" v-model="pages" :disabled="!isEdit">
+                        <div
+                            class="thumb" v-for="(page, index) of pages" :key="page.id"
+                            :id="'thumb'+page.id"
+                            :style="{
+                                backgroundColor: thumbBgColor(page.page),
+                                backgroundImage: thumbBgImage(page.page),
+                                width: (page.pageSize.width * 0.1) + 'px',
+                                height: (page.pageSize.height * 0.1) + 'px'
+                            }"
+                            :class="{'active-thumb': activePage && page.id === activePage.id}">
                             <router-link :to="'/story/'+$route.params.id+'/'+page.id">
                                 <img :src="getThumbDrawing(page.page)" style="max-width: 100%" class="thumb-drawing" />
                                 <img :src="getThumbPhoto(page.page)" style="max-width: 100%" class="thumb-photo" />
@@ -39,28 +48,11 @@
                 <div class="add-page">
                     <q-btn color="primary" icon="mdi-plus-circle" :size="$q.screen.lt.sm ? 'md' : 'lg'" round @click="addPage()" />
                 </div>
-                <!-- Thumb canvas -->
-                <div class="thumb-generator" ref="thumbGenerator">
-                    <div v-if="activePage && activePage.pageSize" class="canvas-bg-img-wrapper" :style="{width: activePage.pageSize.width+'px', height: activePage.pageSize.height+'px'}">
-                        <div v-if="activePage && activePage.background" class="canvas-bg-img" :style="{backgroundColor: activePage.background.color,
-                        backgroundImage: activePage.background.image? 'url('+activePage.background.image+')' : 'none'}">
 
-                        </div>
-                    </div>
-
-                    <canvas id="thumbCanvas"></canvas>
-                    <img :src="thumbImgSrc" class="thumb-canvas-img" />
-                    <img v-if="activePage && activePage.drawingLayer" :src="activePage.drawingLayer.drawingJson" class="thumb-drawing-img" />
-
-                    <div class="text-layer">
-                        <!-- TEXT EDITOR -->
-                        <!-- <text-editor :print="true" v-if="activePage && activePage.pageSize" :active="false" :zoom="1" :pageWidth="activePage.pageSize.width" :pageHeight="activePage.pageSize.height" ></text-editor> -->
-                    </div>
+                <!-- Handle -->
+                <div class="handle" @click="toggleThumbs()">
+                    <i class="mdi" :class="{'mdi-chevron-double-right': !settings.showThumbs, 'mdi-chevron-double-left': settings.showThumbs}"></i>
                 </div>
-                <!-- <img :src="previewSrc" class=preview /> -->
-                <!-- <div id="pdf" style="position: absolute; top: 0; background: red; z-index: 1000;">
-                    <a :href="pdf" :download="'test'">download</a>
-                </div> -->
             </div>
 
             <!-- Canvas -->
@@ -70,6 +62,13 @@
 
 
         </q-page>
+        <!-- IMAGE MODAL -->
+        <q-modal
+        v-if="pageDimensions"
+        v-model="settings.showAddPage"
+        :content-css="{minWidth: '350px', height: '90vh', maxWidth: '100%', width: pageDimensions.width+'px'}">
+        <add-page></add-page>
+        </q-modal>
     </div>
 </template>
 
@@ -80,6 +79,8 @@ import * as _ from 'lodash';
 import draggable from 'vuedraggable';
 import TextEditor from "../../components/story/TextEditor";
 import DrawingCanvas from '../../components/story/DrawingCanvas';
+import AddPage from '../../components/story/AddPage';
+
 
 
 import pdfMake from "pdfmake/build/pdfmake";
@@ -91,44 +92,21 @@ export default {
     components: {
         draggable,
         TextEditor,
-        DrawingCanvas
+        DrawingCanvas,
+        AddPage
     },
     data() {
         return {
             thumbCanvas: null,
-            editorConfig: {
-                modules: {
-                    blotFormatter: {},
-                    toolbar: [
-                        ['bold', 'italic', 'underline'],        // toggled buttons
-                        ['blockquote'],
-
-                        // [{ 'header': 1 }, { 'header': 2 }],               // custom button values
-                        [{ 'list': 'ordered'}, { 'list': 'bullet' }],
-                        // [{ 'script': 'sub'}, { 'script': 'super' }],      // superscript/subscript
-                        // [{ 'indent': '-1'}, { 'indent': '+1' }],          // outdent/indent
-                        // [{ 'direction': 'rtl' }],                         // text direction
-
-                        [{ 'size': ['small', false, 'large', 'huge'] }],  // custom dropdown
-                        // [{ 'header': [1, 2, 3, 4, 5, 6, false] }],
-
-                        [{ 'color': [] }, { 'background': [] }],          // dropdown with defaults from theme
-                        [{ 'font': [] }],
-                        [{ 'align': [] }],
-                        ['link', 'video']
-
-                        // ['clean']                                         // remove formatting button
-                    ]
-                }
-            },
-            imageKey: 0,
+            previewIndex: 0,
+            previewImages: [],
             scrollTop: -1,
             cursorSelection: null,
             isEdit: false,
             thumbImgSrc: '',
             previewSrc: '',
             downloadPdf: false,
-            // pdf: '',
+            showAddPage: false,
         }
     },
     computed: {
@@ -147,8 +125,11 @@ export default {
         story() {
             return this.$store.getters.getStory;
         },
-        pdfImages() {
-            return this.$store.getters.getPdfImages;
+        pageDimensions() {
+          return this.$store.getters.getPageDimensions;
+        },
+        settings() {
+            return this.$store.getters.getSettings;
         },
         editorContent: {
             get() {
@@ -191,10 +172,6 @@ export default {
         }
     },
     mounted() {
-        this.imageKey = Math.random();
-        /* if(this.activePage && this.activePage.canvasJson) {
-            this.canvasInit();
-        } */
         /** Set story from route */
         if ((!this.story || !this.story.hasOwnProperty('id') || this.story.id !== this.$route.params.id) && this.user) {
             const payload = {
@@ -225,14 +202,32 @@ export default {
     },
     methods: {
         getPageImages() {
+            this.$store.commit('setLoading', false);
             // console.log('getPageImages');
-            const payload = {
-                user: this.user,
-                storyKey: this.$route.params.id,
+            this.previewIndex = 0;
+            this.previewImages = [];
+            this.getPageImage();
+        },
+
+        getPageImage() {
+            const el = this.$refs.previewGenerator;
+            const _this = this;
+            const options = {
+                type: 'dataURL',
+                useCORS: true,
+                logging: false
             }
-            this.$store.dispatch('genPdfImages', payload);
-            this.$store.commit('setLoading', true);
-            this.downloadPdf = true;
+            this.$html2canvas(el, options).then(th => {
+                let thumbImg = th;
+                _this.previewImages.push(th);
+                if (_this.previewIndex < (_this.pages.length -1)) {
+                    _this.previewIndex++;
+                    _this.getPageImage();
+                } else {
+                    console.log('images done');
+                    _this.createPdf();
+                }
+            });
         },
 
         createPdf() {
@@ -247,9 +242,9 @@ export default {
                 // [left, top, right, bottom] or [horizontal, vertical] or just a number for equal margins
                 pageMargins: [ 40, 60, 40, 60 ],
             content: []};
-            this.pdfImages.forEach(image => {
+            this.previewImages.forEach(image => {
                 docDefinition.content.push({
-                    image: 'data:image/png;base64, ' + image,
+                    image: image,
                     fit: [(595 - 80), (868 - 120)],
                 })
             })
@@ -276,6 +271,21 @@ export default {
                 return page.background.color;
             }
         },
+        thumbBgImage(page) {
+            if (this.activePage && page.id === this.activePage.id) {
+                if (this.activePage.background.image){
+                    return 'url('+this.activePage.background.image+')';
+                } else {
+                    return null
+                }
+            } else {
+                if (page.background.image){
+                    return 'url('+page.background.image+')';
+                } else {
+                    return null
+                }
+            }
+        },
         getThumbDrawing(page) {
             if (this.activePage && page.id === this.activePage.id) {
                 return this.activePage.drawingLayer['drawingCanvasImage'];
@@ -283,6 +293,7 @@ export default {
                 return page.drawingLayer['drawingCanvasImage'];
             }
         },
+
         getThumbPhoto(page) {
             if (this.activePage && page.id === this.activePage.id) {
                 return this.activePage.photoLayer['photoCanvasImage'];
@@ -290,28 +301,27 @@ export default {
                 return page.photoLayer['photoCanvasImage'];
             }
         },
-        canvasInit() {
-            /** Thumbnail canvas */
-            this.thumbCanvas = new fabric.Canvas('thumbCanvas');
-            this.thumbCanvas.setHeight(595);
-            this.thumbCanvas.setWidth(842);
-            if (this.activePage && this.activePage.canvasJson) {
-                // this.generateThumb()
-            }
+
+        getPreviewDrawing(page) {
+            return this.pages[this.previewIndex].page.drawingLayer['drawingCanvasImage'];
+        },
+
+        getPreviewPhoto(page) {
+            return this.pages[this.previewIndex].page.photoLayer['photoCanvasImage'];
+        },
+
+        toggleThumbs() {
+            const payload = {
+                showThumbs: !this.settings.showThumbs,
+            };
+            this.$store.commit('setSettings', payload);
         },
 
         addPage() {
             const payload = {
-                user: this.user,
-                storyKey: this.$route.params.id,
-                pageKey: this.$route.params.pageId ? this.$route.params.pageId : null,
-                order: this.pages.length,
-            }
-            const storyKey = this.$route.params.id;
-            this.$store.dispatch('addPage', payload)
-            .then(newPage => {
-                this.$router.push({ path: '/story/'+storyKey+'/'+newPage })
-            }) ;
+                showAddPage: true,
+            };
+            this.$store.commit('setSettings', payload);
         },
 
         deletePage(pageId, prevId) {
@@ -343,100 +353,6 @@ export default {
 
 
         },
-
-        setZoom(factor) {
-            /** change zoom to load or export */
-            this.thumbCanvas.setHeight(842 * factor);
-            this.thumbCanvas.setWidth(595 * factor)
-            this.thumbCanvas.setZoom(factor);
-            this.thumbCanvas.renderAll();
-        },
-
-        generateThumb() {
-            this.setZoom(1);
-            const _this = this;
-            this.thumbCanvas.clear();
-            this.thumbCanvas.loadFromJSON(
-                this.activePage.canvasJson,
-                function() {
-                    _this.thumbCanvas.renderAll.bind(_this.thumbCanvas);
-                    _this.thumbImgSrc = _this.thumbCanvas.toDataURL('png');
-                    const el = _this.$refs.thumbGenerator;
-                    // add option type to get the image version
-                    // if not provided the promise will return
-                    // the canvas.
-                    const options = {
-                        type: 'dataURL',
-                        useCORS: true,
-                        logging: false
-                    }
-                    /* _this.$html2canvas(el, options).then(th => {
-                        let thumbImg = th;
-                        _this.previewSrc = th;
-                        _this.addThumbBack(thumbImg);
-                    }); */
-                    _this.addThumbBack(_this.thumbImgSrc)
-                });
-        },
-
-        addThumbBack(thumbImg) {
-            /** export preview image */
-            const previewBlob = b64toBlob(thumbImg.split(',')[1], 'image/png');
-            this.setPreview(previewBlob);
-            const _this = this;
-            /** add canvas image back */
-            fabric.Image.fromURL(thumbImg, function(myImg) {
-                myImg.set({ left: 0, top: 0 });
-                _this.thumbCanvas.add(myImg);
-                _this.thumbCanvas.renderAll.bind(_this.thumbCanvas);
-                /** export final image */
-                _this.setZoom(0.5);
-                const thumbImg = _this.thumbCanvas.toDataURL('png');
-                /** convert to blob */
-                const thumbBlob = b64toBlob(thumbImg.split(',')[1], 'image/png');
-                _this.setThumb(thumbBlob);
-            });
-        },
-
-        setPreview(previewImg) {
-            const payload = {
-                user: this.user,
-                storyKey: this.$route.params.id,
-                pageKey: this.activePage.id,
-                image: {
-                    type: 'image/png',
-                    dataUrl: previewImg,
-                },
-            };
-            this.$store.dispatch('setPreview', payload);
-        },
-
-        setThumb(thumbImg) {
-            const payload = {
-                user: this.user,
-                storyKey: this.$route.params.id,
-                pageKey: this.activePage.id,
-                image: {
-                    type: 'image/png',
-                    dataUrl: thumbImg,
-                },
-                order: this.activePage.order
-            };
-            const _this = this;
-            this.$store.dispatch('setThumb', payload)
-                .then(imgUrl => {
-                    /** If this is page 1, set image as story cover */
-                    if (this.activePage.order === 0) {
-                        const payload = {
-                            user: this.user,
-                            storyKey : this.$route.params.id,
-                            thumbUrl: imgUrl
-                        };
-                        this.$store.dispatch('updateStory', payload);
-                    }
-                });
-        },
-
     },
     watch: {
         user: {
@@ -453,9 +369,6 @@ export default {
         },
         activePage: {
             handler: function(newPage, oldPage) {
-                if (!this.thumbCanvas) {
-                    this.canvasInit();
-                }
                 if (newPage
                     && oldPage
                     && (newPage.canvasJson || newPage.textLayer.text)
@@ -464,7 +377,6 @@ export default {
                         || newPage.textLayer.text !== oldPage.textLayer.text
                         || newPage.background !== oldPage.background)
                     && (newPage.id === this.$route.params.pageId || !this.$route.params.pageId)) {
-                    // this.generateThumb();
 
                     /** Scroll active thumb into view */
                     const _this = this;
@@ -496,20 +408,10 @@ export default {
         $route: {
             handler: function(from, to){
                 if(from.params.id === to.params.id && from.params.pageId != to.params.pageId) {
-                    /** key to force refresh of thumbs and keep them fresh after page navigation */
-                    this.imageKey = Math.random();
                     this.scrollTop = -1;
                 }
             },
             deep: true
-        },
-        pdfImages: {
-            handler: function(newImages, oldImages) {
-                console.log('pdfImages Watcher');
-                if (this.downloadPdf) {
-                    this.createPdf();
-                }
-            }
         }
     },
 }
@@ -537,24 +439,32 @@ export default {
     background: rgba(255,255,255,.8);
     z-index: 3;
 }
-.actiion-buttons {
+.action-buttons {
     display: flex;
-    justify-comtent: space-between;
+    justify-content: space-around;
     flex-direction: row;
 }
 .add-page {
     text-align: center;
-    width: 61px;
 }
 .thumbs {
     margin-top: 35px;
-    width: 81px;
+    width: 100px;
     align-self: flex-start;
+    .handle {
+        display: none;
+    }
 }
 #thumb-wrapper {
     margin-top: 5px;
     max-height: calc(100vh - 160px);
     overflow: auto;
+    .thumb-draggable {
+        display: flex;
+        flex-direction: column;
+        justify-content: flex-end;
+        align-items: center;
+    }
 }
 .thumb {
     height: 84px;
@@ -567,6 +477,7 @@ export default {
     background-size: cover;
     background-repeat: no-repeat;
     background-color: #fff;
+    background-position: center center;
     position: relative;
     border: solid 3px #aeaeae;
     -webkit-transition: border-color 1s; /* Safari */
@@ -592,15 +503,12 @@ export default {
     }
 }
 .delete-page {
-    opacity: 0.5;
     cursor: pointer;
     transform-origin: top right;
     position: absolute;
     top: 2px;
     right: 2px;
-}
-.thumb:hover .delete-page {
-    opacity: 1;
+    z-index: 5;
 }
 .delete-page:hover {
     -ms-transform: scale(1.5, 1.5); /* IE 9 */
@@ -614,73 +522,43 @@ export default {
 .thumb a {
     width: 100%;
 }
-.thumb-generator {
-    position: absolute;
-    top: 0;
-    left: -5000px;
-    z-index: 999;
-    border: solid 1px #999;
-    background: #fff;
-    .text-layer {
-        position: absolute;
-        top: 0;
-        left: 0;
-        bottom: 0;
-        right: 0;
-        z-index: 6;
-    }
-    #thumbCanvas {
-        display: none;
-    }
-    .thumb-canvas-img {
-        position: absolute;
-        top: 0;
-        left: 0;
-        bottom: 0;
-        right: 0;
-        z-index: 5;
-    }
-    .thumb-drawing-img {
-        position: absolute;
-        top: 0;
-        left: 0;
-        bottom: 0;
-        right: 0;
-        z-index: 6;
-    }
-    .canvas-bg-img-wrapper {
-        position: absolute;
-        overflow: hidden;
-        top: 0;
-        left: 0;
-        bottom: 0;
-        right: 0;
-        z-index: 4;
-        .canvas-bg-img {
-            position: absolute;
-            top: 0;
-            bottom: 0;
-            width: 100%;
-            z-index: 1;
+@media(max-width: $breakpoint-md)  {
+    .thumbs {
+        position: fixed;
+        left: -79px;
+        transition: all .5s ease-in-out;
+        z-index: 2002;
+        &.active {
+            left: 0;
             background: #fff;
-            background-repeat: no-repeat;
-            background-size: cover;
-            background-position: center center;
+            .handle {
+                right: -20px;
+            }
+        }
+        #thumb-wrapper .thumb-draggable {
+            align-items: flex-end;
+        }
+        .handle {
+            display: flex;
+            position: absolute;
+            bottom: 0;
+            right: -10px;
+            width: 35px;
+            height: 35px;
+            border-radius: 0 5px 5px 0;
+            border: none;
+            justify-content: center;
+            align-items: center;
+            font-size: 1.5em;
+            background-color: #fff;
         }
     }
 }
 @media(orientation: portrait) {
-    .actiion-buttons {
-        flex-direction: column;
-    }
-    .story-page {
-        flex-direction: column;
-        padding: 10px;
-    }
     .side-bar {
         height: calc(100vh - (50px + 100px));
     }
-    .thumbs {
+    /* .thumbs {
         display: flex;
         flex-wrap: nowrap;
         flex-direction: row;
@@ -708,6 +586,6 @@ export default {
                 }
             }
         }
-    }
+    } */
 }
 </style>

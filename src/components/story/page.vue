@@ -86,7 +86,7 @@
     </q-modal>
     <!-- SHORTCUTS -->
     <span
-      v-if="modes.subMode !== 'text' && !showPlan"
+      v-if="modes.subMode !== 'text' && modes.mode !== 'photo' && !showPlan"
       v-shortkey="{undoWin:['ctrl', 'z'], undoMac:['meta', 'z'], deleteKey:['del'], backspaceKey:['backspace']}"
       @shortkey="shortKeys($event)"
     ></span>
@@ -290,7 +290,7 @@ export default {
       this.$store.commit("clearInsertImage");
       this.$store.commit("clearImageSearchResults");
       this.background.image = imageObj.webformatURL;
-      this.savestory();
+      this.saveStory();
       this.$store.commit('setSubMode', "text");
       const newSetting = {
         showImageModal: false,

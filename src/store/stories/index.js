@@ -42,7 +42,9 @@ export default {
       color: '#000000',
       isSelected: false,
       showImageModal: false,
-      activeEditor: 0
+      activeEditor: 0,
+      showAddPage: false,
+      showThumbs: false,
     },
     history: {
       undo: false,
@@ -311,10 +313,10 @@ export default {
       return new Promise((resolve, reject) => {
         let newId = null;
         const newOrder = payload.order;
-        const userStory = firebase
-          .firestore()
-          .collection('users/' + payload.user.id + '/stories/' + payload.storyKey + '/pages/');
-          userStory.add({
+        let page = payload.page
+        if (!page) {
+          /** Set default */
+          page = {
             commit: 0,
             photoLayer: {},
             drawingLayer: {},
@@ -334,7 +336,12 @@ export default {
               width: 595,
               height: 842,
             }
-          }).then(function(docRef) {
+          }
+        }
+        const userStory = firebase
+          .firestore()
+          .collection('users/' + payload.user.id + '/stories/' + payload.storyKey + '/pages/');
+          userStory.add(page).then(function(docRef) {
             newId = docRef.id;
             resolve(newId);
           });

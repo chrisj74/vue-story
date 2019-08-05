@@ -448,7 +448,7 @@ export default {
 #storyCanvas {
   position: relative;
   z-index: 2;
-  height: 595px;
+  /* height: 595px; */
 }
 .upper-canvas {
   z-index: 2

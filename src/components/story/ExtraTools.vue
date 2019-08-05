@@ -226,6 +226,7 @@
           </q-tooltip>
         </q-btn>
         <div class="q-slider-wrap" v-if="settings.showBrushWidth">
+          <div>Pen width</div>
           <q-slider v-model="settings.brushWidth" :min="1" :max="50" :step="1" label snap @change="updateBrushWidth(newVal)"/>
         </div>
       </div>
@@ -402,7 +403,7 @@ export default {
   display: flex;
   position: fixed;
   right: 0;
-  z-index: 3;
+  z-index: 100;
   flex-direction: column;
   justify-content: center;
 }
@@ -428,7 +429,9 @@ export default {
   width: 200px;
   right: 60px;
   top: 0;
-  z-index: 1000;
+  z-index: 100;
+  padding: 5px;
+  background-color: #fff;
 }
 
 
