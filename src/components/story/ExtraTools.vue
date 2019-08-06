@@ -158,7 +158,7 @@
     <template v-if="modes.mode === 'photo'">
       <!-- Add photo -->
       <q-btn
-        icon="mdi-camera"
+        icon="mdi-plus-circle"
         :color="modes.mode === 'photo' ? 'primary' : 'dark'"
         round
         size="sm"
@@ -168,6 +168,26 @@
           Add an image
         </q-tooltip>
       </q-btn>
+
+      <!-- OPACITY -->
+      <div class="tool-slider">
+        <q-btn
+          size="sm"
+          icon="mdi-signal"
+          round
+          :color="settings.showImageOpacity ? 'primary' : 'dark'"
+          @click="toggleImageOpacity()"
+          :disabled="!settings.isSelected"
+        >
+          <q-tooltip>
+            Change image opacity (how see through it is)
+          </q-tooltip>
+        </q-btn>
+        <div class="q-slider-wrap" v-if="settings.showImageOpacity">
+          <div>Image opacity (how see through it is)</div>
+          <q-slider v-model="settings.imageOpacity" :min="0" :max="1" :step="0.1" label snap @change="updateImageOpacity(newVal)"/>
+        </div>
+      </div>
 
       <!-- DELETE OBJ -->
       <q-btn
@@ -328,6 +348,10 @@ export default {
       this.$store.commit('setSubMode', "eraser");
     },
 
+    setDraw() {
+      this.$store.commit('setSubMode', "brush");
+    },
+
     setText() {
       this.$store.commit('setSubMode', "text");
     },
@@ -354,8 +378,17 @@ export default {
     },
 
     updateBrushWidth(newVal) {
+      console.log('updateBrushWidth');
       const payload = {
         brushWidth: newVal
+      };
+      this.$store.commit('setSettings', payload);
+    },
+
+    updateImageOpacity(newVal) {
+      console.log('updateImageOpacity', newVal);
+      const payload = {
+        imageOpacity: newVal
       };
       this.$store.commit('setSettings', payload);
     },
@@ -382,6 +415,14 @@ export default {
     toggleBrushWidth() {
       const payload = {
         showBrushWidth: !this.settings.showBrushWidth
+      };
+      this.$store.commit('setSettings', payload);
+    },
+
+    toggleImageOpacity() {
+      console.log('toggleImageOpacity')
+      const payload = {
+        showImageOpacity: !this.settings.showImageOpacity
       };
       this.$store.commit('setSettings', payload);
     },

@@ -5,7 +5,7 @@
             <div class="thumbs" :class="{'active': settings.showThumbs}">
                 <div class="action-buttons">
                     <q-btn size="sm" :round="true" @click="isEdit = !isEdit" :icon="isEdit? 'mdi-check-outline' : 'mdi-pencil'"></q-btn>
-                    <q-btn size="sm" :round="true" @click="getPageImages()" icon="mdi-cloud-download"></q-btn>
+                    <q-btn size="sm" :round="true" @click="getPageImages(true)" icon="mdi-cloud-download"></q-btn>
                 </div>
 
                 <!-- List thumbs -->
@@ -52,6 +52,50 @@
                 <!-- Handle -->
                 <div class="handle" @click="toggleThumbs()">
                     <i class="mdi" :class="{'mdi-chevron-double-right': !settings.showThumbs, 'mdi-chevron-double-left': settings.showThumbs}"></i>
+                </div>
+
+                <!-- Preview -->
+                <div class="preview-generator" ref="previewGenerator" v-if="pages && pages.length > 0 && Object.keys(pageImages).length === pages.length">
+                    <div
+                        :style="{
+                            backgroundColor: thumbBgColor(pages[previewIndex].page),
+                            backgroundImage: thumbBgImage(pages[previewIndex].page),
+                            width: (pages[previewIndex].pageSize.width) + 'px',
+                            height: (pages[previewIndex].pageSize.height) + 'px'
+                        }">
+                        <img :src="getThumbDrawing(pages[previewIndex].page)" style="max-width: 100%" class="preview-drawing" />
+                        <img :src="pageImages[pages[previewIndex].page.id].imageData" style="max-width: 100%" class="preview-photo" />
+                        <div class="preview-text"
+                            :style="{
+                                width: pages[previewIndex].pageSize.width + 'px',
+                                height: pages[previewIndex].pageSize.height + 'px',
+                            }">
+                            <div v-for="(pageText, tIndex) of pages[previewIndex].page.textLayer" :key="pages[previewIndex].page.id+'PreviewText'+tIndex"
+                                :style="{
+                                    top: pageText.y + 'px',
+                                    left: pageText.x + 'px',
+                                    width: pageText.width +'px',
+                                    height: pageText.height + 'px'
+                                }"
+                                class="preview-text-block text-render" v-html="pageText.text">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- Photo image generator -->
+                <div class="photo-generator" v-if="pages && pages.length > 0">
+                    <canvas
+                        id="photoCanvas"
+                        ref="photoCanvas"
+                        key="photoCanvas"
+                        v-if="pageDimensions"
+                        :style="{
+                        width: pages[previewIndex].pageSize.width + 'px',
+                        height: pages[previewIndex].pageSize.height + 'px',
+                        top: 0,
+                        left: 0,
+                        }">
+                    </canvas>
                 </div>
             </div>
 
@@ -107,6 +151,7 @@ export default {
             previewSrc: '',
             downloadPdf: false,
             showAddPage: false,
+            canvas: null,
         }
     },
     computed: {
@@ -130,6 +175,9 @@ export default {
         },
         settings() {
             return this.$store.getters.getSettings;
+        },
+        pageImages() {
+            return this.$store.getters.getPageImages;
         },
         editorContent: {
             get() {
@@ -198,18 +246,51 @@ export default {
             }
             this.$store.dispatch('setPages', payload);
         }
-
     },
     methods: {
-        getPageImages() {
+        canvasInit() {
+            /** Photo canvas */
+            this.canvas = new fabric.Canvas("photoCanvas");
+            const _this = this;
+            const canvas = this.canvas;
+
+            this.canvas.targetFindTolerance = 4;
+            this.canvas.preserveObjectStacking = true;
+            canvas.renderAll.bind(canvas);
+        },
+
+        generatePhotoImages() {
+            console.log('generatePhotoImages')
+            this.previewIndex = 0;
+            this.generatePhotoImage()
+        },
+
+        generatePhotoImage() {
+            const _this = this;
+            this.canvas.setHeight(this.pages[this.previewIndex].pageSize.height);
+            this.canvas.setWidth(this.pages[this.previewIndex].pageSize.width);
+            this.canvas.loadFromJSON(this.pages[this.previewIndex].page.photoLayer.photoCanvasJson, function() {
+                console.log('canvas loaded');
+                const imagePayload = {
+                    pageId: _this.pages[_this.previewIndex].page.id,
+                    imageData: _this.canvas.toDataURL(),
+                }
+                _this.$store.commit('setPageImage', imagePayload);
+                if (_this.previewIndex < (_this.pages.length -1)) {
+                    _this.previewIndex++;
+                    _this.generatePhotoImage();
+                }
+            });
+        },
+        getPageImages(pdf) {
             this.$store.commit('setLoading', false);
             // console.log('getPageImages');
             this.previewIndex = 0;
             this.previewImages = [];
-            this.getPageImage();
+            this.getPageImage(pdf);
         },
 
-        getPageImage() {
+        getPageImage(pdf) {
             const el = this.$refs.previewGenerator;
             const _this = this;
             const options = {
@@ -223,7 +304,7 @@ export default {
                 if (_this.previewIndex < (_this.pages.length -1)) {
                     _this.previewIndex++;
                     _this.getPageImage();
-                } else {
+                } else if (pdf) {
                     console.log('images done');
                     _this.createPdf();
                 }
@@ -295,19 +376,7 @@ export default {
         },
 
         getThumbPhoto(page) {
-            if (this.activePage && page.id === this.activePage.id) {
-                return this.activePage.photoLayer['photoCanvasImage'];
-            } else {
-                return page.photoLayer['photoCanvasImage'];
-            }
-        },
-
-        getPreviewDrawing(page) {
-            return this.pages[this.previewIndex].page.drawingLayer['drawingCanvasImage'];
-        },
-
-        getPreviewPhoto(page) {
-            return this.pages[this.previewIndex].page.photoLayer['photoCanvasImage'];
+            return this.$store.getters.getPageImageById(page.id);
         },
 
         toggleThumbs() {
@@ -409,6 +478,25 @@ export default {
             handler: function(from, to){
                 if(from.params.id === to.params.id && from.params.pageId != to.params.pageId) {
                     this.scrollTop = -1;
+                }
+                if (!from.params.id || (from.params.id !== to.params.id)) {
+                    // changed story
+                    console.log('init canvas');
+                    if (!this.canvas) {
+                        this.canvasInit();
+                    }
+                }
+            },
+            deep: true
+        },
+        pages: {
+            handler: function(oldPages, newPages){
+                if(Object.keys(this.pageImages).length === 0) {
+                    if (!this.canvas) {
+                        console.log('init canvas');
+                        this.canvasInit();
+                    }
+                    this.generatePhotoImages();
                 }
             },
             deep: true
@@ -521,6 +609,40 @@ export default {
 }
 .thumb a {
     width: 100%;
+}
+.photo-generator {
+    position: absolute;
+    top: 5000px;
+    left: -5000px;
+    z-index: 1000;
+}
+.preview-generator {
+    position: absolute;
+    top: 0;
+    left: -5000px;
+    z-index: 999;
+    border: solid 1px #999;
+    background-size: cover;
+    background-repeat: no-repeat;
+    background-color: #fff;
+    background-position: center center;
+    .preview-drawing {
+        position: absolute;
+        z-index: 3;
+    }
+    .preview-photo {
+        position: absolute;
+        z-index: 2;
+    }
+    .preview-text {
+        position: absolute;
+        z-index: 4;
+        transform-origin: top left;
+        overflow: hidden;
+        .preview-text-block {
+            position: absolute;
+        }
+    }
 }
 @media(max-width: $breakpoint-md)  {
     .thumbs {

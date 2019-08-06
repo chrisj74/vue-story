@@ -452,6 +452,10 @@ export default {
               : null
           };
           this.$store.dispatch("setPage", payload);
+          const settingsPayload = {
+            showThumbs: false,
+          };
+          this.$store.commit('setSettings', settingsPayload);
         }
       },
       deep: true
@@ -489,7 +493,9 @@ export default {
 
     activePage: {
       handler: function(newPage, oldPage) {
-        if (!this.pageDimensions && this.activePage.pageSize) {
+        if ((!this.pageDimensions && this.activePage.pageSize)
+        || oldPage.pageSize !== newPage.pageSize) {
+          console.log('changed');
           this.setDefaultZoom();
         }
         if (this.background.color !== this.activePage.background.color
@@ -591,7 +597,7 @@ export default {
 .text-toolbar-wrapper {
   position: fixed;
   top: 45px;
-  left: 91px;
+  left: 110px;
   width: 100%;
   z-index: 101;
   background: #fff;
@@ -638,7 +644,7 @@ export default {
 }
 @media(max-width: $breakpoint-md) and (orientation: portrait) {
   .main-content-wrapper {
-    max-height: calc(100vh - 170px);
+    max-height: calc(100vh - 100px);
   }
 }
 </style>

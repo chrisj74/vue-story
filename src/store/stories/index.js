@@ -8,6 +8,7 @@ export default {
     stories: [
 
     ],
+    pageImages: {},
     story: {},
     pages: [],
     page: {
@@ -39,6 +40,8 @@ export default {
     settings: {
       brushWidth: 5,
       showBrushWidth: false,
+      imageOpacity: 1,
+      showImageOpacity: false,
       color: '#000000',
       isSelected: false,
       showImageModal: false,
@@ -91,6 +94,12 @@ export default {
         }
         state.history.restoreIndex = state.history.restoreIndex + 1;
       }
+    },
+    setPageImage(state, payload) {
+      state.pageImages[payload.pageId] = payload.imageData;
+    },
+    clearPageImages(state) {
+      state.pageImages = {};
     },
     clearImageSearchResults(state) {
       state.imageSearchResults.str = '';
@@ -726,7 +735,12 @@ export default {
     },
     getToolAction(state) {
       return state.toolAction;
+    },
+    getPageImageById: (state) => (id) => {
+      return state.pageImages[id];
+    },
+    getPageImages(state) {
+      return state.pageImages;
     }
-
   }
 };

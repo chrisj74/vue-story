@@ -122,6 +122,12 @@ export default {
           isSelected: true
         };
         _this.$store.commit('setSettings', newSetting);
+        if(o.selected[0].opacity) {
+          const newOpacity = {
+          imageOpacity: o.selected[0].opacity
+        };
+        _this.$store.commit('setSettings', newOpacity);
+        }
       });
       this.canvas.on("selection:cleared", function(o) {
         const newSetting = {
@@ -319,11 +325,15 @@ export default {
           page: {
             photoLayer: {
               photoCanvasJson: JSON.stringify(jsonObj),
-              photoCanvasImage: this.canvas.toDataURL(),
             }
           }
         };
         this.$store.dispatch("updatePage", payload);
+        const imagePayload = {
+          pageId: this.activePage.id,
+          imageData: this.canvas.toDataURL(),
+        }
+        this.$store.commit('setPageImage', imagePayload);
       }
     },
 
@@ -336,7 +346,6 @@ export default {
     deleteObj() {
       const activeObject = this.canvas.getActiveObject();
       if (activeObject && !activeObject.isEditing) {
-        console.log('remove image');
         this.canvas.remove(activeObject);
         this.canvas.renderAll();
       }
@@ -368,6 +377,17 @@ export default {
       handler: function(newSettings, oldSettings) {
         if (this.settings.color !== this.color) {
           this.color = this.settings.color;
+        }
+        if (this.modes.mode === 'photo' && this.canvas.getActiveObject()) {
+          const activeObj = this.canvas.getActiveObject();
+          if(activeObj.opacity !== newSettings.imageOpacity) {
+            activeObj.set({
+              opacity: newSettings.imageOpacity
+            });
+            this.canvas.renderAll();
+            this.saveStory();
+          }
+
         }
       },
       deep: true
