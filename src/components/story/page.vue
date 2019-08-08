@@ -59,9 +59,9 @@
         <!-- Canvas -->
         <div v-if="pageDimensions" class="canvas-wrapper" :style="{width: pageDimensions.width+'px', height: pageDimensions.height+'px'}">
           <div class="canvas-bg-img-wrapper" :style="{width: pageDimensions.width+'px', height: pageDimensions.height+'px'}">
-            <div v-if="background.color" class="canvas-bg-img" :style="{
-              backgroundColor: background.color,
-              backgroundImage: background.image? 'url('+background.image+')' : 'none',
+            <div v-if="activePage.background" class="canvas-bg-img" :style="{
+              backgroundColor: activePage.background.color,
+              backgroundImage: activePage.background.image? 'url('+activePage.background.image+')' : 'none',
               width: pageDimensions.width + 'px',
               height: pageDimensions.height + 'px',
               top: 0,
@@ -126,7 +126,6 @@ export default {
       lineObj: {
         width: 5
       },
-      color: "#000000",
       canUndo: false,
       canRedo: false,
       imageModal: false,
@@ -193,10 +192,6 @@ export default {
     }
     const _this = this;
     if (this.activePage && !this.pageDimensions && this.story.id === this.$route.params.id) {
-      if (this.activePage.background) {
-        this.background.color = this.activePage.background.color;
-        this.background.image = this.activePage.background.image;
-      }
 
       if (this.activePage) {
         _this.setDefaultZoom();
@@ -215,6 +210,9 @@ export default {
     this.windowWidth = window.innerWidth;
   },
   methods: {
+
+    /** SETUP */
+
     shortKeys(e) {
       switch (e.srcKey) {
         case "undoWin":
@@ -256,34 +254,7 @@ export default {
       this.$store.commit('setPageDimensions', dimensions);
     },
 
-    fillColor() {
-      this.$store.commit('setSubMode', "fill");
-    },
-
-    line() {
-      this.$store.commit('setSubMode', "line");
-    },
-
-    addPhoto() {
-      this.$store.commit('setMode', "photo");
-      const newSetting = {
-        showImageModal: true,
-      };
-      this.$store.commit('setSettings', newSetting);
-    },
-
-    canvasText() {
-      this.$store.commit('setSubMode', "text");
-    },
-
-    backgroundColor() {
-      this.$store.commit('setSubMode', "backgroundColor");
-    },
-
-    pageText() {
-      this.$store.commit('setSubMode', "text");
-      this.textModal = true;
-    },
+    /** ACTIONS */
 
     backgroundAddImage(imageObj) {
       this.imageModal = false;
@@ -304,36 +275,10 @@ export default {
       this.$store.commit('setToolAction', null);
     },
 
-    setPhoto() {
-      this.$store.commit('setMode', "photo");
-      this.$store.commit('setSubMode', "select");
-    },
-
-    setDraw() {
-      this.$store.commit('setMode', "draw");
-      this.$store.commit('setSubMode', "brush");
-    },
-
-    setShape() {
-      this.$store.commit('setMode', "shape");
-      this.$store.commit('setSubMode', "line");
-    },
-
-    setEraser() {
-      this.$store.commit('setSubMode', "eraser");
-    },
-
-    setPage() {
-      this.$store.commit('setMode', "page");
-      this.$store.commit('setSubMode', "text");
-    },
-
-    setText() {
-      this.$store.commit('setSubMode', "text");
-    },
-
-    setBackground() {
-      this.$store.commit('setSubMode', "background");
+    setBackgroundColor() {
+      this.background.color = this.settings.color;
+      this.saveStory();
+      this.$store.commit('setToolAction', null);
     },
 
     addBgPhoto() {
@@ -343,8 +288,6 @@ export default {
       this.$store.commit('setSettings', newSetting);
       this.$store.commit('setSubMode', "background");
     },
-
-    /** ACTIONS */
 
     addTextBlock() {
       const payload = {
@@ -377,27 +320,7 @@ export default {
       this.$store.commit('setToolAction', null);
     },
 
-    updateBrushWidth(newVal) {
-      const payload = {
-        brushWidth: newVal
-      };
-      this.$store.commit('setSettings', payload);
-    },
-
-    updateColor(newColor) {
-      const payload = {
-        color: newColor
-      };
-      this.$store.commit('setSettings', payload);
-    },
-
-    clearDrawing() {
-      this.$store.commit('setToolAction', 'clearDrawing');
-    },
-
-    deleteObj() {
-      this.$store.commit('setToolAction', 'deleteObj');
-    },
+    /** UTILITIES */
 
     saveStory() {
       if (this.activePage) {
@@ -415,21 +338,6 @@ export default {
         };
         this.$store.dispatch("updatePage", payload);
       }
-    },
-
-    toggleTextSize() {
-      this.showTextSize = !this.showTextSize;
-    },
-
-    toggleBrushWidth() {
-      const payload = {
-        showBrushWidth: !this.settings.showBrushWidth
-      };
-      this.$store.commit('setSettings', payload);
-    },
-
-    toggleLineWidth() {
-      this.showLineWidth = !this.showLineWidth;
     },
   },
   watch: {
@@ -473,17 +381,11 @@ export default {
         if (this.toolAction === 'backgroundRemoveImage') {
           this.backgroundRemoveImage()
         }
+        if (this.toolAction === 'setBackgroundColor') {
+          this.setBackgroundColor();
+        }
       },
       deep: true
-    },
-
-    color: {
-      handler: function(newColor, oldColor) {
-        if (this.modes.mode === "page" && this.modes.subMode === 'backgroundColor') {
-          this.background.color = newColor;
-          this.saveStory();
-        }
-      }
     },
 
     insertImage: {
@@ -502,20 +404,6 @@ export default {
           console.log('changed');
           this.setDefaultZoom();
         }
-        if (this.background.color !== this.activePage.background.color
-          || this.background.image !== this.activePage.background.image) {
-          this.background.color = this.activePage.background.color;
-          this.background.image = this.activePage.background.image;
-          // this.saveStory();
-        }
-      },
-      deep: true
-    },
-
-    history: {
-      handler: function(newH, oldH) {
-        this.canUndo = this.history.restoreIndex > 0;
-        this.canRedo = this.history.restoreIndex < this.history.states.length - 1;
       },
       deep: true
     },
@@ -544,7 +432,7 @@ export default {
   flex-direction: column;
   align-items: stretch;
   justify-content: stretch;
-  margin: 35px 0 0 0;
+  margin: 60px 0 0 0;
   width: calc(100vw - 200px);
   position: relative;
   z-index: 1;
@@ -563,7 +451,7 @@ export default {
 
 .page-ref {
   display: flex;
-  max-width: calc(100vw - 150px);
+  max-width: calc(100vw - 160px);
   flex-grow: 2;
 }
 
@@ -639,7 +527,7 @@ export default {
   }
   .page-ref {
     padding-left: 0;
-    max-width: calc(100vw - 10px);
+    max-width: calc(100vw - 57px);
     height: calc(100vh - 220px);
   }
   .text-toolbar-wrapper {
@@ -649,6 +537,9 @@ export default {
 @media(max-width: $breakpoint-md) and (orientation: portrait) {
   .main-content-wrapper {
     max-height: calc(100vh - 100px);
+  }
+  .page-ref {
+    max-width: calc(100vw - 40px);
   }
 }
 </style>

@@ -6,8 +6,8 @@
       :value="settings.color"
       @input="updateColor"
       colors="text-advanced"
-      :popover-to="screen.width > screen.height ? 'left' : 'right'"
-      :trigger-style="{ width: '30px', height: '30px', borderRadius: '50%' }"
+      :popover-to="'left'"
+      :trigger-style="{ width: $q.screen.lt.sm ? '30px' : '42px', height: $q.screen.lt.sm ? '30px' : '42px', borderRadius: '50%' }"
       :disabled="modes.mode === 'text' && modes.subMode === 'text'"
     ></swatches>
     <!-- TEXT -->
@@ -16,14 +16,14 @@
           icon="mdi-format-text"
           :color="modes.subMode === 'text' ? 'primary' : 'dark'"
           round
-          size="sm"
+          :size="$q.screen.lt.sm ? 'sm' : 'md'"
           @click="setText()"
         />
         <!-- ADD TEXT BLOCK -->
         <q-btn
           key="addTextBlock"
           icon="mdi-plus-circle"
-          size="sm"
+          :size="$q.screen.lt.sm ? 'sm' : 'md'"
           :color="'primary'"
           round
           @click="addTextBlock()"
@@ -34,7 +34,7 @@
         </q-btn>
         <!-- DELETE OBJ -->
         <q-btn
-          size="sm"
+          :size="$q.screen.lt.sm ? 'sm' : 'md'"
           color="negative"
           icon="mdi-delete"
           round
@@ -52,8 +52,8 @@
           icon="mdi-format-color-fill"
           :color="modes.subMode === 'backgroundColor' ? 'primary' : 'dark'"
           round
-          size="sm"
-          @click="backgroundColor()"
+          :size="$q.screen.lt.sm ? 'sm' : 'md'"
+          @click="setBackgroundColor()"
         >
           <q-tooltip>
             Change background color
@@ -63,7 +63,7 @@
         <q-btn
           key="bgImageButton"
           icon="mdi-image-plus"
-          size="sm"
+          :size="$q.screen.lt.sm ? 'sm' : 'md'"
           :color="'dark'"
           round
           @click="addBgPhoto()"
@@ -76,7 +76,7 @@
         <q-btn
           key="bgImageRemoveButton"
           icon="mdi-image-off"
-          size="sm"
+          :size="$q.screen.lt.sm ? 'sm' : 'md'"
           :color="'negative'"
           round
           @click="backgroundRemoveImage()"
@@ -93,7 +93,7 @@
         icon="mdi-cursor-move"
         :color="modes.subMode === 'select' ? 'primary' : 'dark'"
         round
-        size="sm"
+        :size="$q.screen.lt.sm ? 'sm' : 'md'"
         @click="setSelect()"
       />
       <!-- RULER -->
@@ -101,14 +101,14 @@
         icon="mdi-ruler"
         :color="modes.subMode === 'line' ? 'primary' : 'dark'"
         round @click="line()"
-        size="sm"
+        :size="$q.screen.lt.sm ? 'sm' : 'md'"
       />
       <!-- FILL OBJ -->
       <q-btn
         icon="mdi-format-color-fill"
         :color="modes.subMode === 'fill' ? 'primary' : 'dark'"
         round
-        size="sm"
+        :size="$q.screen.lt.sm ? 'sm' : 'md'"
         @click="fillColor()"
         :disabled="!isSelected"
       />
@@ -118,12 +118,12 @@
         icon="mdi-format-text"
         :color="modes.subMode === 'text' ? 'primary' : 'dark'"
         round
-        size="sm"
+        :size="$q.screen.lt.sm ? 'sm' : 'md'"
         @click="canvasText()"
       />
       <!-- TEXT SIZE -->
       <div class="tool-slider" v-if="modes.mode === 'shape' && (modes.subMode === 'text' || modes.subMode === 'selectText')">
-        <q-btn size="sm" color="primary" icon="mdi-format-size" round @click="toggleTextSize()"/>
+        <q-btn :size="$q.screen.lt.sm ? 'sm' : 'md'" color="primary" icon="mdi-format-size" round @click="toggleTextSize()"/>
         <div class="q-slider-wrap" v-if="showTextSize">
           <q-slider v-model="text.size" :min="5" :max="100" :step="1" label snap/>
         </div>
@@ -131,7 +131,7 @@
       <!-- LINE WIDTH -->
       <div class="tool-slider" v-if="modes.mode === 'shape' && modes.subMode === 'line'">
         <q-btn
-          size="sm"
+          :size="$q.screen.lt.sm ? 'sm' : 'md'"
           icon="mdi-signal"
           round
           :color="showLineWidth ? 'primary' : 'dark'"
@@ -143,7 +143,7 @@
       </div>
       <!-- DELETE OBJ -->
       <q-btn
-        size="sm"
+        :size="$q.screen.lt.sm ? 'sm' : 'md'"
         color="negative"
         icon="mdi-delete"
         round
@@ -151,7 +151,7 @@
         :disabled="!settings.isSelected"
       />
       <!-- CLEAR -->
-      <q-btn icon="mdi-close" round @click="clearCanvas()" size="sm"/>
+      <q-btn icon="mdi-close" round @click="clearCanvas()" :size="$q.screen.lt.sm ? 'sm' : 'md'"/>
     </template>
 
     <!-- PHOTO TOOLS -->
@@ -161,7 +161,7 @@
         icon="mdi-plus-circle"
         :color="modes.mode === 'photo' ? 'primary' : 'dark'"
         round
-        size="sm"
+        :size="$q.screen.lt.sm ? 'sm' : 'md'"
         @click="addPhoto()"
       >
         <q-tooltip>
@@ -172,7 +172,7 @@
       <!-- OPACITY -->
       <div class="tool-slider">
         <q-btn
-          size="sm"
+          :size="$q.screen.lt.sm ? 'sm' : 'md'"
           icon="mdi-signal"
           round
           :color="settings.showImageOpacity ? 'primary' : 'dark'"
@@ -191,7 +191,7 @@
 
       <!-- DELETE OBJ -->
       <q-btn
-        size="sm"
+        :size="$q.screen.lt.sm ? 'sm' : 'md'"
         color="negative"
         icon="mdi-delete"
         round
@@ -210,7 +210,7 @@
       <q-btn
         key="pencil"
         icon="mdi-pencil"
-        size="sm"
+        :size="$q.screen.lt.sm ? 'sm' : 'md'"
         :color="modes.subMode === 'brush'? 'primary' : 'dark'"
         round
         @click="setDraw()"
@@ -222,7 +222,7 @@
       <!-- ERASER -->
       <q-btn
         key="eraser"
-        size="sm"
+        :size="$q.screen.lt.sm ? 'sm' : 'md'"
         :color="modes.subMode === 'eraser' ? 'primary' : 'dark'"
         icon="mdi-eraser"
         round
@@ -235,7 +235,7 @@
       <!-- BRUSH SIZE -->
       <div class="tool-slider" v-if="modes.subMode === 'brush' || modes.subMode === 'eraser'">
         <q-btn
-          size="sm"
+          :size="$q.screen.lt.sm ? 'sm' : 'md'"
           icon="mdi-signal"
           round
           :color="settings.showBrushWidth ? 'primary' : 'dark'"
@@ -252,7 +252,7 @@
       </div>
       <!-- CLEAR -->
       <q-btn
-        size="sm"
+        :size="$q.screen.lt.sm ? 'sm' : 'md'"
         :color="'dark'"
         icon="mdi-close"
         round
@@ -336,8 +336,9 @@ export default {
       this.$store.commit('setSubMode', "text");
     },
 
-    backgroundColor() {
-      this.$store.commit('setSubMode', "backgroundColor");
+    setBackgroundColor() {
+      this.$store.commit('setToolAction', 'setBackgroundColor');
+      this.$store.commit('setSubMode', "background");
     },
 
     pageText() {
@@ -444,9 +445,9 @@ export default {
   visibility: none;
 }
 .extra-tools {
-  width: 50px;
   display: flex;
   position: fixed;
+  top: 60px;
   right: 0;
   z-index: 100;
   flex-direction: column;
@@ -477,30 +478,6 @@ export default {
   z-index: 100;
   padding: 5px;
   background-color: #fff;
-}
-
-
-@media (orientation: portrait) {
-  .extra-tools {
-    flex-direction: row;
-    width: 100%;
-    position: relative;
-    margin-top: 5px;
-    > * {
-      margin-bottom: 0;
-    }
-  }
-  .tool-slider .q-slider-wrap {
-    width: 200px;
-    left: -20px;
-    right: auto;
-    top: -30px;
-    z-index: 1000;
-  }
-  .vue-swatches__container:not(.vue-swatches--inline) {
-    bottom: 40px;
-  }
-
 }
 
 </style>

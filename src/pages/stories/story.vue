@@ -4,8 +4,8 @@
             <!-- Thumbs -->
             <div class="thumbs" :class="{'active': settings.showThumbs}">
                 <div class="action-buttons">
-                    <q-btn size="sm" :round="true" @click="isEdit = !isEdit" :icon="isEdit? 'mdi-check-outline' : 'mdi-pencil'"></q-btn>
-                    <q-btn size="sm" :round="true" @click="getPageImages(true)" icon="mdi-cloud-download"></q-btn>
+                    <q-btn size="sm" :round="true" @click="toggleEdit()" :icon="isEdit? 'mdi-check-outline' : 'mdi-pencil'"></q-btn>
+                    <q-btn size="sm" :round="true" @click="getPageImages(true, true)" icon="mdi-cloud-download"></q-btn>
                 </div>
 
                 <!-- List thumbs -->
@@ -40,7 +40,15 @@
                                     </div>
                                 </div>
                             </router-link>
-                            <div v-if="isEdit" class="delete-page" @click="deletePage(page.id, pages[index-1].id)"><q-icon v-if="index !== 0" size="sm" color="negative" name="mdi-delete" /></div>
+                            <div class="thumb-actions" v-if="isEdit" :style="{
+                                height: (page.pageSize.height * 0.1) + 'px'
+                            }">
+                                <div @click="showEditActions(page.id)" class="thumb-actions-toggle"><q-icon name="mdi-dots-vertical" /></div>
+                                <div class="active-thumb-actions" v-if="activeEditActions === page.id">
+                                    <div class="download-page" @click="downloadPage(page.id)"><q-icon name="mdi-cloud-download" /></div>
+                                    <div class="delete-page" @click="deletePage(page.id, pages[index-1].id)"><q-icon v-if="index !== 0" color="negative" name="mdi-delete" /></div>
+                                </div>
+                            </div>
                         </div>
                     </draggable>
                 </div>
@@ -152,6 +160,7 @@ export default {
             downloadPdf: false,
             showAddPage: false,
             canvas: null,
+            activeEditActions: null,
         }
     },
     computed: {
@@ -248,6 +257,22 @@ export default {
         }
     },
     methods: {
+        toggleEdit(){
+            if (this.isEdit) {
+                this.activeEditActions = null;
+                this.isEdit = false;
+            } else {
+                this.isEdit = true
+            }
+        },
+        showEditActions(pageId) {
+            if (this.activeEditActions && this.activeEditActions === pageId) {
+                this.activeEditActions = null;
+            } else {
+                this.activeEditActions = pageId;
+            }
+        },
+
         canvasInit() {
             /** Photo canvas */
             this.canvas = new fabric.Canvas("photoCanvas");
@@ -282,15 +307,17 @@ export default {
                 }
             });
         },
-        getPageImages(pdf) {
+        getPageImages(pdf, allPages) {
             this.$store.commit('setLoading', false);
-            // console.log('getPageImages');
             this.previewIndex = 0;
             this.previewImages = [];
-            this.getPageImage(pdf);
+            this.getPageImage(pdf, allPages);
         },
 
-        getPageImage(pdf) {
+        getPageImage(pdf, allPages, pageIndex) {
+            if (!allPages && pageIndex) {
+                this.previewIndex = pageindex;
+            }
             const el = this.$refs.previewGenerator;
             const _this = this;
             const options = {
@@ -301,12 +328,14 @@ export default {
             this.$html2canvas(el, options).then(th => {
                 let thumbImg = th;
                 _this.previewImages.push(th);
-                if (_this.previewIndex < (_this.pages.length -1)) {
+                if (_this.previewIndex < (_this.pages.length -1) && allPages) {
                     _this.previewIndex++;
-                    _this.getPageImage();
+                    _this.getPageImage(pdf, allpages);
                 } else if (pdf) {
                     console.log('images done');
                     _this.createPdf();
+                } else if (!allPages && pageIndex) {
+                    console.log('download image');
                 }
             });
         },
@@ -393,6 +422,10 @@ export default {
             this.$store.commit('setSettings', payload);
         },
 
+        downloadPage(pageId) {
+
+        },
+
         deletePage(pageId, prevId) {
             /** Don't navigate after delete if not on page being deleted */
             let moveTo = null;
@@ -419,8 +452,6 @@ export default {
             .catch(() => {
                 // Picked "Cancel" or dismissed
             })
-
-
         },
     },
     watch: {
@@ -590,20 +621,33 @@ export default {
         }
     }
 }
-.delete-page {
-    cursor: pointer;
-    transform-origin: top right;
+.thumb-actions {
     position: absolute;
-    top: 2px;
-    right: 2px;
+    top: -3px;
+    right: -3px;
     z-index: 5;
+    background: rgba(255,255,255,0.95);
+    display: flex;
+    flex-direction: row;
+    justify-content: flex-start;
+    align-items: center;
+    padding: 0 5px;
+    .thumb-actions-toggle {
+        cursor: pointer;
+        font-size: 20px;
+    }
+    .active-thumb-actions{
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        .delete-page, .download-page {
+            cursor: pointer;
+            font-size: 26px;
+        }
+    }
 }
-.delete-page:hover {
-    -ms-transform: scale(1.5, 1.5); /* IE 9 */
-    -webkit-transform: scale(1.5, 1.5); /* Safari */
-    transform: scale(1.5, 1.5);
 
-}
 .thumb.active-thumb {
     border: solid 3px $primary;
 }
@@ -644,7 +688,7 @@ export default {
         }
     }
 }
-@media(max-width: $breakpoint-md)  {
+@media(orientation: portrait) {
     .thumbs {
         position: fixed;
         left: -79px;
