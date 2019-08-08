@@ -377,6 +377,10 @@ export default {
       this.$store.commit('setToolAction', 'deleteTextBlock');
     },
 
+    backgroundRemoveImage() {
+      this.$store.commit('setToolAction', 'backgroundRemoveImage');
+    },
+
     updateBrushWidth(newVal) {
       console.log('updateBrushWidth');
       const payload = {

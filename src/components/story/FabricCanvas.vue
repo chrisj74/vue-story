@@ -395,7 +395,9 @@ export default {
 
     modes: {
       handler: function(newMode, oldMode) {
-        if(this.modes.mode !== 'photo') {
+        if(this.modes.mode !== 'photo'
+            && this.canvas
+            && this.canvas.getActiveObject()) {
           this.canvas.discardActiveObject();
           this.canvas.renderAll();
         }

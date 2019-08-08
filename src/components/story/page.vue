@@ -301,6 +301,7 @@ export default {
     backgroundRemoveImage() {
       this.background.image = null;
       this.saveStory();
+      this.$store.commit('setToolAction', null);
     },
 
     setPhoto() {
@@ -468,6 +469,9 @@ export default {
         }
         if (this.toolAction === 'deleteTextBlock') {
           this.deleteTextBlock();
+        }
+        if (this.toolAction === 'backgroundRemoveImage') {
+          this.backgroundRemoveImage()
         }
       },
       deep: true
