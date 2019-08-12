@@ -47,6 +47,31 @@
         Page Mode
       </q-tooltip>
     </q-btn>
+    <!-- ZOOM IN -->
+    <q-btn
+      icon="mdi-magnify-plus"
+      :color="modes.mode === 'page' ? 'primary' : 'dark'"
+      round
+      :size="$q.screen.lt.sm ? 'sm' : 'md'"
+      @click="setZoomIn()"
+    >
+      <q-tooltip>
+        Zoom In
+      </q-tooltip>
+    </q-btn>
+
+    <!-- ZOOM IN -->
+    <q-btn
+      icon="mdi-magnify-minus"
+      :color="modes.mode === 'page' ? 'primary' : 'dark'"
+      round
+      :size="$q.screen.lt.sm ? 'sm' : 'md'"
+      @click="setZoomOut()"
+    >
+      <q-tooltip>
+        Zoom Out
+      </q-tooltip>
+    </q-btn>
     <!-- SHAPE -->
     <!-- <q-btn
       icon="mdi-shape"
@@ -135,6 +160,14 @@ export default {
     setPage() {
       this.$store.commit('setMode', "page");
       this.$store.commit('setSubMode', "text");
+    },
+
+    setZoomIn() {
+      this.$store.commit('setToolAction', 'zoomIn');
+    },
+
+     setZoomOut() {
+      this.$store.commit('setToolAction', 'zoomOut');
     },
 
     saveStory() {

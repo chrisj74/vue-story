@@ -133,7 +133,9 @@ export default {
 
       showTextSize: false,
       showLineWidth: false,
-      windowWidth: 1024
+      windowWidth: 1024,
+      maxHeightRatio: 0,
+      maxWidthRatio: 0
     };
   },
   computed: {
@@ -228,30 +230,58 @@ export default {
 
     setDefaultZoom() {
       // this.setPageSize();
-      const maxHeightRatio = this.$refs.page.clientHeight / this.activePage.pageSize.height;
-      let maxWidthRatio = this.$refs.page.clientWidth / this.activePage.pageSize.width;
-      maxWidthRatio = maxWidthRatio > 1.5 ? 1.5 : maxWidthRatio;
+      this.maxHeightRatio = this.$refs.page.clientHeight / this.activePage.pageSize.height;
+      this.maxWidthRatio = this.$refs.page.clientWidth / this.activePage.pageSize.width;
+      // console.log('maxHeightRatio=', maxHeightRatio, ' maxWidthRatio=', maxWidthRatio);
+      // maxWidthRatio = maxWidthRatio > 1.5 ? 1.5 : maxWidthRatio;
       let dimensions;
-      if (maxHeightRatio < maxWidthRatio) {
+      if (this.maxHeightRatio < this.maxWidthRatio) {
         dimensions = {
-          height: (this.activePage.pageSize.height * maxHeightRatio),
-          width: (this.activePage.pageSize.width * maxHeightRatio),
-          zoom: maxHeightRatio,
+          height: (this.activePage.pageSize.height * this.maxHeightRatio),
+          width: (this.activePage.pageSize.width * this.maxHeightRatio),
+          zoom: this.maxHeightRatio,
         }
       } else {
         dimensions = {
-          height: (this.activePage.pageSize.height * maxWidthRatio),
-          width: (this.activePage.pageSize.width * maxWidthRatio),
-          zoom: maxWidthRatio,
+          height: (this.activePage.pageSize.height * this.maxWidthRatio),
+          width: (this.activePage.pageSize.width * this.maxWidthRatio),
+          zoom: this.maxWidthRatio,
         }
       }
-      dimensions = {
+      /* dimensions = {
         height: (this.activePage.pageSize.height * maxWidthRatio),
         width: (this.activePage.pageSize.width * maxWidthRatio),
         zoom: maxWidthRatio,
-      }
+      } */
 
       this.$store.commit('setPageDimensions', dimensions);
+    },
+
+    setZoom(dir) {
+      let newZoom = this.pageDimensions.zoom;
+      if (dir === 'inc' && this.maxWidthRatio) {
+        if (this.pageDimensions.zoom < (this.maxWidthRatio - 0.1)) {
+          newZoom = this.pageDimensions.zoom + 0.1;
+        } else if (this.pageDimensions.zoom < this.maxWidthRatio) {
+          newZoom = this.maxWidthRatio;
+        }
+      } else {
+        if (this.pageDimensions.zoom > (this.maxHeightRatio + 0.1)) {
+          newZoom = this.pageDimensions.zoom - 0.1
+        } else if (this.pageDimensions.zoom > this.maxHeightRatio) {
+          newZoom = this.maxHeightRatio;
+        }
+      }
+      if (newZoom !== this.pageDimensions.zoom){
+        /** Only reset if changed */
+        const dimensions = {
+          height: (this.activePage.pageSize.height * newZoom),
+          width: (this.activePage.pageSize.width * newZoom),
+          zoom: newZoom,
+        }
+        this.$store.commit('setPageDimensions', dimensions);
+      }
+      this.$store.commit('setToolAction', null);
     },
 
     /** ACTIONS */
@@ -384,6 +414,12 @@ export default {
         if (this.toolAction === 'setBackgroundColor') {
           this.setBackgroundColor();
         }
+        if (this.toolAction === 'zoomIn') {
+          this.setZoom('inc');
+        }
+        if (this.toolAction === 'zoomOut') {
+          this.setZoom('dec');
+        }
       },
       deep: true
     },
@@ -445,7 +481,7 @@ export default {
   align-items: flex-start;
   flex-grow: 1;
   position: relative;
-  height: calc(100vh - 20px);
+  height: calc(100vh - 80px);
   overflow: auto;
 }
 
@@ -453,6 +489,7 @@ export default {
   display: flex;
   max-width: calc(100vw - 160px);
   flex-grow: 2;
+  align-self: stretch;
 }
 
 .text-layer {

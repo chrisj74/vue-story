@@ -45,7 +45,7 @@
                             }">
                                 <div @click="showEditActions(page.id)" class="thumb-actions-toggle"><q-icon name="mdi-dots-vertical" /></div>
                                 <div class="active-thumb-actions" v-if="activeEditActions === page.id">
-                                    <div class="download-page" @click="downloadPage(page.id)"><q-icon name="mdi-cloud-download" /></div>
+                                    <div class="download-page" @click="downloadPage(index)"><q-icon name="mdi-cloud-download" /></div>
                                     <div class="delete-page" @click="deletePage(page.id, pages[index-1].id)"><q-icon v-if="index !== 0" color="negative" name="mdi-delete" /></div>
                                 </div>
                             </div>
@@ -63,7 +63,7 @@
                 </div>
 
                 <!-- Preview -->
-                <div class="preview-generator" ref="previewGenerator" v-if="pages && pages.length > 0 && Object.keys(pageImages).length === pages.length">
+                <div class="preview-generator" ref="previewGenerator" v-if="previewIndex && pages && pages.length > 0 && imagesGenerated">
                     <div
                         :style="{
                             backgroundColor: thumbBgColor(pages[previewIndex].page),
@@ -72,7 +72,7 @@
                             height: (pages[previewIndex].pageSize.height) + 'px'
                         }">
                         <img :src="getThumbDrawing(pages[previewIndex].page)" style="max-width: 100%" class="preview-drawing" />
-                        <img :src="pageImages[pages[previewIndex].page.id].imageData" style="max-width: 100%" class="preview-photo" />
+                        <img :src="pageImages[pages[previewIndex].page.id]" style="max-width: 100%" class="preview-photo" />
                         <div class="preview-text"
                             :style="{
                                 width: pages[previewIndex].pageSize.width + 'px',
@@ -90,6 +90,12 @@
                         </div>
                     </div>
                 </div>
+                <!-- Download image link -->
+                <div class="image-download-link" v-if="previewImages.length === 1">
+                    <a :href="previewImages[0]" ref="imageDownloadLink" download="page">Download</a>
+                    <img :src="previewImages[0]" style="max-width: 100%" />
+                </div>
+
                 <!-- Photo image generator -->
                 <div class="photo-generator" v-if="pages && pages.length > 0">
                     <canvas
@@ -161,6 +167,7 @@ export default {
             showAddPage: false,
             canvas: null,
             activeEditActions: null,
+            imagesGenerated: false,
         }
     },
     computed: {
@@ -257,6 +264,7 @@ export default {
         }
     },
     methods: {
+        /** EDIT */
         toggleEdit(){
             if (this.isEdit) {
                 this.activeEditActions = null;
@@ -265,6 +273,7 @@ export default {
                 this.isEdit = true
             }
         },
+
         showEditActions(pageId) {
             if (this.activeEditActions && this.activeEditActions === pageId) {
                 this.activeEditActions = null;
@@ -272,8 +281,8 @@ export default {
                 this.activeEditActions = pageId;
             }
         },
-
-        canvasInit() {
+        /** PHOTO */
+        photoCanvasInit() {
             /** Photo canvas */
             this.canvas = new fabric.Canvas("photoCanvas");
             const _this = this;
@@ -285,7 +294,6 @@ export default {
         },
 
         generatePhotoImages() {
-            console.log('generatePhotoImages')
             this.previewIndex = 0;
             this.generatePhotoImage()
         },
@@ -295,7 +303,6 @@ export default {
             this.canvas.setHeight(this.pages[this.previewIndex].pageSize.height);
             this.canvas.setWidth(this.pages[this.previewIndex].pageSize.width);
             this.canvas.loadFromJSON(this.pages[this.previewIndex].page.photoLayer.photoCanvasJson, function() {
-                console.log('canvas loaded');
                 const imagePayload = {
                     pageId: _this.pages[_this.previewIndex].page.id,
                     imageData: _this.canvas.toDataURL(),
@@ -304,11 +311,14 @@ export default {
                 if (_this.previewIndex < (_this.pages.length -1)) {
                     _this.previewIndex++;
                     _this.generatePhotoImage();
+                } else {
+                    _this.imagesGenerated = true;
                 }
             });
         },
+        /** DOWNLOAD */
         getPageImages(pdf, allPages) {
-            this.$store.commit('setLoading', false);
+            this.$store.commit('setLoading', true);
             this.previewIndex = 0;
             this.previewImages = [];
             this.getPageImage(pdf, allPages);
@@ -316,33 +326,41 @@ export default {
 
         getPageImage(pdf, allPages, pageIndex) {
             if (!allPages && pageIndex) {
-                this.previewIndex = pageindex;
+                this.$store.commit('setLoading', true);
+                this.previewIndex = pageIndex;
+                this.previewImages = [];
             }
+
             const el = this.$refs.previewGenerator;
             const _this = this;
+            const _allPages = allPages, _pdf = pdf, _pageIndex = pageIndex;
             const options = {
                 type: 'dataURL',
                 useCORS: true,
                 logging: false
             }
-            this.$html2canvas(el, options).then(th => {
-                let thumbImg = th;
-                _this.previewImages.push(th);
-                if (_this.previewIndex < (_this.pages.length -1) && allPages) {
-                    _this.previewIndex++;
-                    _this.getPageImage(pdf, allpages);
-                } else if (pdf) {
-                    console.log('images done');
-                    _this.createPdf();
-                } else if (!allPages && pageIndex) {
-                    console.log('download image');
-                }
-            });
+            this.$nextTick()
+                .then(function () {
+                    _this.$html2canvas(el, options).then(th => {
+                        let thumbImg = th;
+                        _this.previewImages.push(th);
+                        if (_this.previewIndex < (_this.pages.length -1) && _allPages) {
+                            _this.previewIndex++;
+                            _this.getPageImage(_pdf, _allPages);
+                        } else if (_pdf) {
+                            console.log('images done now pdf');
+                            _this.createPdf();
+                        } else if (!_allPages && _pageIndex) {
+                            console.log('download image, ref=', _this.$refs.imageDownloadLink);
+                            _this.$store.commit('setLoading', false);
+                            _this.doDownload();
+                        }
+                    });
+                });
         },
 
         createPdf() {
             // const iframe = document.getElementById('pdf');
-            console.log('createPdf');
             const docDefinition = {
                 pageSize: 'A4',
 
@@ -363,45 +381,38 @@ export default {
             this.$store.commit('setLoading', false);
         },
 
+        downloadPage(pageIndex) {
+            this.previewIndex = pageIndex;
+            this.getPageImage(false, false, pageIndex)
+        },
+
+        doDownload() {
+            const _this = this;
+            this.$nextTick()
+                .then(function () {
+                    // DOM updated
+                    _this.$refs.imageDownloadLink.click();
+                });
+        },
+
         onEditorFocus(quill){
             this.cursorSelection = quill.getSelection();
         },
-        isActiveRoute() {
-            if ((this.activePage && this.$route.params.pageId === this.activePage.id)
-                || !this.$route.params.pageId) {
-                    return true;
-            } else {
-                return false;
-            }
-        },
+
+
         thumbBgColor(page) {
-            if (this.activePage && page.id === this.activePage.id) {
-                return this.activePage.background.color;
-            } else {
-                return page.background.color;
-            }
+            return page.background.color;
         },
+
         thumbBgImage(page) {
-            if (this.activePage && page.id === this.activePage.id) {
-                if (this.activePage.background.image){
-                    return 'url('+this.activePage.background.image+')';
-                } else {
-                    return null
-                }
+            if (page.background.image){
+                return 'url('+page.background.image+')';
             } else {
-                if (page.background.image){
-                    return 'url('+page.background.image+')';
-                } else {
-                    return null
-                }
+                return null
             }
         },
         getThumbDrawing(page) {
-            if (this.activePage && page.id === this.activePage.id) {
-                return this.activePage.drawingLayer['drawingCanvasImage'];
-            } else {
-                return page.drawingLayer['drawingCanvasImage'];
-            }
+            return page.drawingLayer['drawingCanvasImage'];
         },
 
         getThumbPhoto(page) {
@@ -420,10 +431,6 @@ export default {
                 showAddPage: true,
             };
             this.$store.commit('setSettings', payload);
-        },
-
-        downloadPage(pageId) {
-
         },
 
         deletePage(pageId, prevId) {
@@ -512,9 +519,8 @@ export default {
                 }
                 if (!from.params.id || (from.params.id !== to.params.id)) {
                     // changed story
-                    console.log('init canvas');
                     if (!this.canvas) {
-                        this.canvasInit();
+                        this.photoCanvasInit();
                     }
                 }
             },
@@ -524,8 +530,7 @@ export default {
             handler: function(oldPages, newPages){
                 if(Object.keys(this.pageImages).length === 0) {
                     if (!this.canvas) {
-                        console.log('init canvas');
-                        this.canvasInit();
+                        this.photoCanvasInit();
                     }
                     this.generatePhotoImages();
                 }
@@ -576,7 +581,7 @@ export default {
 }
 #thumb-wrapper {
     margin-top: 5px;
-    max-height: calc(100vh - 160px);
+    max-height: calc(100vh - 185px);
     overflow: auto;
     .thumb-draggable {
         display: flex;
@@ -659,6 +664,10 @@ export default {
     top: 5000px;
     left: -5000px;
     z-index: 1000;
+}
+
+.image-download-link {
+    display: none;
 }
 .preview-generator {
     position: absolute;
