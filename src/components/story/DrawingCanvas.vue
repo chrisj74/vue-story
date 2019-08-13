@@ -97,8 +97,8 @@ export default {
         backgroundColor: 'rgba(255, 255, 255, 0)',
         penColor: _this.settings.color,
         maxWidth: _this.settings.brushWidth * _this.pageDimensions.zoom,
-        minDistance: 1,
-        dotSize: 1,
+        minDistance: 0,
+        dotSize: _this.settings.brushWidth * _this.pageDimensions.zoom,
         throttle: 16,
         onBegin: function() {
           const payload = {
@@ -184,9 +184,22 @@ export default {
       handler: function(newSettings, oldSettings) {
         if (this.settings.brushWidth * this.pageDimensions.zoom !== this.drawingPad.maxWidth) {
           this.drawingPad.maxWidth = this.settings.brushWidth * this.pageDimensions.zoom;
+          this.drawingPad.dotSize = this.settings.brushWidth * this.pageDimensions.zoom;
         }
         if (this.settings.color !== this.drawingPad.penColor) {
           this.drawingPad.penColor = this.settings.color;
+        }
+      },
+      deep: true
+    },
+    pageDimensions: {
+      handler: function(newDimensions, oldDimensions) {
+        if (this.settings.brushWidth * this.pageDimensions.zoom !== this.drawingPad.maxWidth) {
+          this.drawingPad.maxWidth = this.settings.brushWidth * this.pageDimensions.zoom;
+          this.drawingPad.dotSize = this.settings.brushWidth * this.pageDimensions.zoom;
+        }
+        if (newDimensions.zoom !== oldDimensions.zoom) {
+          this.resizeCanvas();
         }
       },
       deep: true

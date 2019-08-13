@@ -1,7 +1,23 @@
 <template>
-  <div>
+  <div class="modal-wrapper">
     <h4>Add Page</h4>
-    <q-btn color="primary" icon="mdi-plus-circle" @click="addPage()" />
+    <div class="page-size-wrapper">
+      <div class="page-size" @click="setSize(595, 842, 0)" :class="{selected: selectedIndex === 0}">
+        <div class="portrait outline"></div>
+        portrait
+      </div>
+      <div class="page-size" @click="setSize(842, 595, 1)" :class="{selected: selectedIndex === 1}">
+        <div class="landscape outline"></div>
+        landscape
+      </div>
+      <div class="page-size" @click="setSize(595, 595, 2)" :class="{selected: selectedIndex === 2}">
+        <div class="square outline"></div>
+        square
+      </div>
+    </div>
+    <div class="add-actions">
+      <q-btn color="primary" icon="mdi-plus-circle" @click="addPage()" :disabled="!selectedHeight || !selectedWidth">Add Page</q-btn>
+    </div>
   </div>
 </template>
 
@@ -10,7 +26,9 @@ export default {
   name: 'AddStory',
   data() {
       return {
-
+        selectedWidth: null,
+        selectedHeight: null,
+        selectedIndex: null
       }
   },
   computed: {
@@ -52,6 +70,12 @@ export default {
       }
   },
   methods: {
+    setSize(width, height, index) {
+      this.selectedWidth = width;
+      this.selectedHeight = height;
+      this.selectedIndex = index;
+    },
+
     addPage() {
       const newOrder = this.pages.length;
       const page = {
@@ -62,7 +86,7 @@ export default {
           text: ' ',
           x: 50,
           y: 25,
-          width: (595 - 100),
+          width: (this.selectedWidth - 100),
           height: (150)
         }],
         background: {
@@ -71,8 +95,8 @@ export default {
         },
         order: newOrder,
         pageSize: {
-          width: 842,
-          height: 595,
+          width: this.selectedWidth,
+          height: this.selectedHeight,
         }
       };
       const payload = {
@@ -98,5 +122,53 @@ export default {
 
 <style lang="stylus">
 @import '~variables'
+.modal-wrapper {
+  padding: 20px;
+}
+.page-size-wrapper {
+  display: flex;
+  justify-content: space-evenly;
+  margin-bottom: 10px;
+  .page-size {
+    flex-basis: 30%;
+    padding: 10px;
+    min-height: 200px;
+    box-shadow: 0 1px 5px rgba(0,0,0,0.2), 0 2px 2px rgba(0,0,0,0.14), 0 3px 1px -2px rgba(0,0,0,0.12);
+    border: solid 3px transparent;
+    border-radius: 3px;
+    background: #fff;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+    &.selected {
+      border: solid 3px $primary;
+      .outline {
+        border: solid 2px $primary;
+      }
+    }
+    .outline {
+      border: solid 2px #666;
+      border-radius: 3px;
+      margin-bottom: 5px;
+      &.portrait {
+        width: 50%;
+        height: 80%;
+      }
+      &.landscape {
+        width: 80%;
+        height: 50%;
+      }
+      &.square {
+        width: 50%;
+        height: 50%;
+      }
+    }
+  }
+}
+.add-actions {
+  display: flex;
+  justify-content: center;
+}
 
 </style>

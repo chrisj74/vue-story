@@ -157,7 +157,9 @@ export default {
       state.history.redo = payload;
     },
     setPageDimensions(state, payload) {
-      state.pageDimensions = payload;
+      let newDimensions = _.cloneDeep(state.pageDimensions);
+      newDimensions = _.merge(newDimensions, payload);
+      state.pageDimensions = newDimensions;
     },
     setSettings(state, payload) {
       let settings = _.cloneDeep(state.settings);

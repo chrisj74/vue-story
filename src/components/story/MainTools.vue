@@ -53,6 +53,7 @@
       :color="modes.mode === 'page' ? 'primary' : 'dark'"
       round
       :size="$q.screen.lt.sm ? 'sm' : 'md'"
+      :disabled="!pageDimensions || pageDimensions.zoom >= pageDimensions.maxWidthRatio"
       @click="setZoomIn()"
     >
       <q-tooltip>
@@ -60,12 +61,13 @@
       </q-tooltip>
     </q-btn>
 
-    <!-- ZOOM IN -->
+    <!-- ZOOM OUT -->
     <q-btn
       icon="mdi-magnify-minus"
       :color="modes.mode === 'page' ? 'primary' : 'dark'"
       round
       :size="$q.screen.lt.sm ? 'sm' : 'md'"
+      :disabled="!pageDimensions || pageDimensions.zoom <= pageDimensions.maxHeightRatio"
       @click="setZoomOut()"
     >
       <q-tooltip>

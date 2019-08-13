@@ -63,7 +63,7 @@
                 </div>
 
                 <!-- Preview -->
-                <div class="preview-generator" ref="previewGenerator" v-if="previewIndex && pages && pages.length > 0 && imagesGenerated">
+                <div class="preview-generator" ref="previewGenerator" v-if="pages && pages.length > 0 && photoImagesGenerated">
                     <div
                         :style="{
                             backgroundColor: thumbBgColor(pages[previewIndex].page),
@@ -167,7 +167,7 @@ export default {
             showAddPage: false,
             canvas: null,
             activeEditActions: null,
-            imagesGenerated: false,
+            photoImagesGenerated: false,
         }
     },
     computed: {
@@ -302,19 +302,28 @@ export default {
             const _this = this;
             this.canvas.setHeight(this.pages[this.previewIndex].pageSize.height);
             this.canvas.setWidth(this.pages[this.previewIndex].pageSize.width);
-            this.canvas.loadFromJSON(this.pages[this.previewIndex].page.photoLayer.photoCanvasJson, function() {
-                const imagePayload = {
-                    pageId: _this.pages[_this.previewIndex].page.id,
-                    imageData: _this.canvas.toDataURL(),
-                }
-                _this.$store.commit('setPageImage', imagePayload);
-                if (_this.previewIndex < (_this.pages.length -1)) {
-                    _this.previewIndex++;
-                    _this.generatePhotoImage();
-                } else {
-                    _this.imagesGenerated = true;
-                }
-            });
+            console.log('canvas json=', this.pages[this.previewIndex].page.photoLayer.photoCanvasJson);
+            if (this.pages[this.previewIndex].page.photoLayer.photoCanvasJson) {
+                this.canvas.loadFromJSON(this.pages[this.previewIndex].page.photoLayer.photoCanvasJson, function() {
+                    const imagePayload = {
+                        pageId: _this.pages[_this.previewIndex].page.id,
+                        imageData: _this.canvas.toDataURL(),
+                    }
+                    _this.$store.commit('setPageImage', imagePayload);
+                    if (_this.previewIndex < (_this.pages.length -1)) {
+                        _this.previewIndex++;
+                        _this.generatePhotoImage();
+                    } else {
+                        console.log('finished photo images');
+                        _this.photoImagesGenerated = true;
+                    }
+                });
+            } else if (this.previewIndex < (this.pages.length -1)) {
+                    this.previewIndex++;
+                    this.generatePhotoImage();
+            } else {
+                this.photoImagesGenerated = true;
+            }
         },
         /** DOWNLOAD */
         getPageImages(pdf, allPages) {
@@ -581,7 +590,7 @@ export default {
 }
 #thumb-wrapper {
     margin-top: 5px;
-    max-height: calc(100vh - 185px);
+    max-height: calc(100vh - 190px);
     overflow: auto;
     .thumb-draggable {
         display: flex;

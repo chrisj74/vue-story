@@ -229,30 +229,27 @@ export default {
     },
 
     setDefaultZoom() {
-      // this.setPageSize();
       this.maxHeightRatio = this.$refs.page.clientHeight / this.activePage.pageSize.height;
       this.maxWidthRatio = this.$refs.page.clientWidth / this.activePage.pageSize.width;
-      // console.log('maxHeightRatio=', maxHeightRatio, ' maxWidthRatio=', maxWidthRatio);
-      // maxWidthRatio = maxWidthRatio > 1.5 ? 1.5 : maxWidthRatio;
+
       let dimensions;
       if (this.maxHeightRatio < this.maxWidthRatio) {
         dimensions = {
+          maxWidthRatio: this.maxWidthRatio,
+          maxHeightRatio: this.maxHeightRatio,
           height: (this.activePage.pageSize.height * this.maxHeightRatio),
           width: (this.activePage.pageSize.width * this.maxHeightRatio),
           zoom: this.maxHeightRatio,
         }
       } else {
         dimensions = {
+          maxWidthRatio: this.maxWidthRatio,
+          maxHeightRatio: this.maxHeightRatio,
           height: (this.activePage.pageSize.height * this.maxWidthRatio),
           width: (this.activePage.pageSize.width * this.maxWidthRatio),
           zoom: this.maxWidthRatio,
         }
       }
-      /* dimensions = {
-        height: (this.activePage.pageSize.height * maxWidthRatio),
-        width: (this.activePage.pageSize.width * maxWidthRatio),
-        zoom: maxWidthRatio,
-      } */
 
       this.$store.commit('setPageDimensions', dimensions);
     },
@@ -436,8 +433,10 @@ export default {
     activePage: {
       handler: function(newPage, oldPage) {
         if ((!this.pageDimensions && this.activePage.pageSize)
-        || oldPage.pageSize !== newPage.pageSize) {
-          console.log('changed');
+        || (oldPage.pageSize.height !== newPage.pageSize.height)
+        || (oldPage.pageSize.width !== newPage.pageSize.width)) {
+          console.log('changed, oldPage.pageSize=', oldPage.pageSize);
+          console.log('newPage.pageSize=', newPage.pageSize);
           this.setDefaultZoom();
         }
       },

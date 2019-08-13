@@ -113,7 +113,7 @@ export default {
         }
         _this.saveStory();
       });
-      this.canvas.on("object:moved", () => {
+      this.canvas.on("object:modified", () => {
         canvas.renderAll.bind(canvas);
         _this.saveStory();
       });
@@ -237,6 +237,8 @@ export default {
     },
 
     setSize() {
+      this.canvas.setHeight(this.activePage.pageSize.height);
+      this.canvas.setWidth(this.activePage.pageSize.width);
       this.canvas.setHeight(this.canvas.height * this.pageDimensions.zoom);
       this.canvas.setWidth(this.canvas.width * this.pageDimensions.zoom);
       this.canvas.setZoom(this.pageDimensions.zoom);
@@ -378,7 +380,7 @@ export default {
         if (this.settings.color !== this.color) {
           this.color = this.settings.color;
         }
-        if (this.modes.mode === 'photo' && this.canvas.getActiveObject()) {
+        if (this.modes.mode === 'photo' && this.canvas && this.canvas.getActiveObject()) {
           const activeObj = this.canvas.getActiveObject();
           if(activeObj.opacity !== newSettings.imageOpacity) {
             activeObj.set({
@@ -451,18 +453,15 @@ export default {
       },
       deep: true
     },
-    user: {
-      handler: function(newUser) {
-        if (!this.story) {
-          const payload = {
-            user: this.user,
-            storyKey: this.$route.params.id
-          };
-          this.$store.dispatch("setStory", payload);
-          this.storiesSet = true;
+
+    pageDimensions: {
+      handler: function(newDimensions, oldDimensions) {
+        if (newDimensions.zoom !== oldDimensions.zoom) {
+          this.setSize();
         }
-      }
-    }
+      },
+      deep: true
+    },
   }
 };
 </script>
