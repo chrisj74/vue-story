@@ -12,18 +12,27 @@
     :drag-handle="'.drag-handle'"
     :active="active"
     :class="{print: print}"
+    class="text-box"
     >
-    <quill-editor
-      :content="editorContent"
-      ref="textLayerEditor"
-      @ready="onEditorReady($event)"
-      @change="onEditorChange($event)"
-      @focus="onEditorFocus($event)"
-      :options="editorConfig"
-      class="editor"
-      v-if="active && editorContent && editorConfig">
-    </quill-editor>
-    <div v-else v-html="storeTextLayer[layerIndex].text" class="text-render ql-editor ql-container"></div>
+    <div
+      class="text-outer-box"
+      :style="{
+        borderWidth: storeTextLayer[layerIndex].borderWidth + 'px',
+        borderColor: storeTextLayer[layerIndex].borderColor,
+        backgroundColor: backgroundColor}">
+      <quill-editor
+        :content="editorContent"
+        ref="textLayerEditor"
+        @ready="onEditorReady($event)"
+        @change="onEditorChange($event)"
+        @focus="onEditorFocus($event)"
+        @blur="onEditorBlur($event)"
+        :options="editorConfig"
+        class="editor"
+        v-if="active && editorContent && editorConfig">
+      </quill-editor>
+      <div v-else v-html="storeTextLayer[layerIndex].text" class="text-render ql-editor ql-container"></div>
+    </div>
     <div class="drag-handle" v-if="active"><i class="mdi mdi-cursor-move"></i></div>
   </vue-draggable-resizable>
 </template>
@@ -32,6 +41,8 @@
 
 import VueDraggableResizable from 'vue-draggable-resizable';
 import * as _ from 'lodash';
+import QuillBetterTable from 'quill-better-table';
+
 
 export default {
   name: 'TextEditor',
@@ -55,8 +66,8 @@ export default {
       } else {
         this.editorContent = ' ';
       }
-
     }
+
     this.editorConfig = {
         bounds: '.draggable',
         modules: {
@@ -73,11 +84,42 @@ export default {
           toolbar: '#toolbar'+this.layerIndex,
           syntax: {
             highlight: text => hljs.highlightAuto(text).value
-          }
+          },
+          // table: false,  // disable table module
+          /* 'better-table': {
+            operationMenu: {
+              items: {
+                unmergeCells: {
+                  text: 'Another unmerge cells name'
+                }
+              }
+            }
+          },
+          keyboard: {
+            bindings: QuillBetterTable.keyboardBindings
+          } */
         }
       };
+    /* const _this = this;
+    document.body.querySelector('#table'+this.layerIndex)
+    .onclick = () => {
+      console.log('click table');
+      let tableModule = _this.editor.getModule('better-table')
+      tableModule.insertTable(3, 3)
+    } */
   },
   computed: {
+    backgroundColor() {
+      /* convert opcity to hex */
+      let hexOpacity = (this.storeTextLayer[this.layerIndex].opacity * 255).toString(16);
+      while (hexOpacity.length < 2) {
+        hexOpacity = "0" + hexOpacity;
+      }
+      let bgColor = this.storeTextLayer[this.layerIndex].backgroundColor;
+
+      /* manipulate color to include opacity */
+      return bgColor.substring(0, 7) + hexOpacity;
+    },
     editor() {
       return this.$refs.textLayerEditor ? this.$refs.textLayerEditor.quill : null;
     },
@@ -119,20 +161,20 @@ export default {
       if (this.user && event.html !== this.editorContent) {
         this.editorContent = event.html;
         const textLayer = _.cloneDeep(this.storeTextLayer);
-            const payload = {
-                user: this.user,
-                storyKey: this.$route.params.id,
-                pageKey: this.activePage.id,
-                index: this.layerIndex,
-                textLayer: {
-                  x: (textLayer[this.layerIndex].x * 1),
-                  y: (textLayer[this.layerIndex].y * 1),
-                  width: (textLayer[this.layerIndex].width * 1),
-                  height: (textLayer[this.layerIndex].height * 1),
-                  text: event.html === '' ? ' ' : event.html
-                }
-            };
-            this.$store.dispatch('updatePageText', payload)
+          const payload = {
+              user: this.user,
+              storyKey: this.$route.params.id,
+              pageKey: this.activePage.id,
+              index: this.layerIndex,
+              textLayer: {
+                x: (textLayer[this.layerIndex].x * 1),
+                y: (textLayer[this.layerIndex].y * 1),
+                width: (textLayer[this.layerIndex].width * 1),
+                height: (textLayer[this.layerIndex].height * 1),
+                text: event.html === '' ? ' ' : event.html
+              }
+          };
+          this.$store.dispatch('updatePageText', payload);
         }
     }, 500),
 
@@ -142,6 +184,15 @@ export default {
       };
       this.$store.commit('setSettings', payload);
     },
+
+    onEditorBlur(quill) {
+      console.log('blur');
+      /* const payload = {
+        activeEditor: null
+      };
+      this.$store.commit('setSettings', payload); */
+    },
+
     onEditorReady(quill) {
       this.contentSet = true;
       quill.setSelection(this.editorContent.length, 0, 'api');
@@ -274,6 +325,12 @@ export default {
   bottom: 0;
   font-size: 13px;
 }
+.text-outer-box {
+  position: relative;
+  border-style: solid;
+  border-color: red;
+  width: 100%;
+}
 .editor-box {
   border: 1px #999 dashed;
 }
@@ -291,7 +348,6 @@ export default {
   bottom: 0;
   position: absolute;
   width: 100%;
-  background-color: rgba(255,255,255,.5);
 }
 .text-render, .editor {
   .ql-size-small {
@@ -310,9 +366,8 @@ export default {
 
 .vdr {
   border: dashed 1px rgba(0,0,0,0.2);
-  &.active {
-    border-color: rgba(0,0,0,1);
-  }
+  display: flex;
+  justify-content: stretch;
   &.print {
     border: none;
   }

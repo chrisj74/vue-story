@@ -48,6 +48,10 @@ export default {
       activeEditor: 0,
       showAddPage: false,
       showThumbs: false,
+      textBoxBorderWidth: 0,
+      textBoxBorderColor: '#ffffff00',
+      textBoxBackgroundColor: '#ffffffff',
+      textBoxOpacity: 0,
     },
     history: {
       undo: false,
@@ -196,7 +200,11 @@ export default {
                       x: 50,
                       y: 25,
                       width: (595 - 100),
-                      height: (150)
+                      height: (150),
+                      borderWidth: 0,
+                      borderColor: '#ffffff00',
+                      backgroundColor: '#ffffffff',
+                      opacity: 0
                     }
                   ],
                   background: {
@@ -336,7 +344,11 @@ export default {
               x: 50,
               y: 25,
               width: (595 - 100),
-              height: (150)
+              height: (150),
+              borderWidth: 0,
+              borderColor: '#ffffff00',
+              backgroundColor: '#ffffffff',
+              opacity: 0
             }],
             background: {
               color: '#ffffff',

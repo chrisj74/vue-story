@@ -31,6 +31,7 @@
 
               <button class="ql-link"></button>
               <button class="ql-video"></button>
+              <!-- <button :id="'table'+layerIndex">table</button> -->
             </span>
           </div>
         </div>
@@ -179,7 +180,7 @@ export default {
       return this.$store.getters.getToolAction;
     },
     textLayerActive() {
-      return this.modes.mode === 'text' && this.modes.subMode === 'text'
+      return this.modes.mode === 'text'; // && this.modes.subMode === 'text'
     }
   },
   mounted() {
@@ -327,7 +328,10 @@ export default {
           x: 50,
           y: 25,
           width: (200),
-          height: (200)
+          height: (200),
+          borderWidth: 0,
+          borderColor: '#ffffff00',
+          opacity: 0
         }
       };
       this.$store.dispatch('updatePageText', payload);

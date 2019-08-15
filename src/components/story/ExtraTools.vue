@@ -19,6 +19,47 @@
           :size="$q.screen.lt.sm ? 'sm' : 'md'"
           @click="setText()"
         />
+        <!-- TEXT BOX OPTIONS -->
+        <div class="tool-slider">
+          <q-btn
+            :size="$q.screen.lt.sm ? 'sm' : 'md'"
+            :color="modes.subMode === 'options' ? 'primary' : 'dark'"
+            icon="mdi-checkbox-blank-outline"
+            round
+            @click="toggleTextOptions()"
+            :disabled="isNaN(settings.activeEditor)"/>
+          <div class="q-slider-wrap" v-if="showTextOptions">
+            <div>
+              <p>Box border width</p>
+              <q-slider :value="settings.textBoxBorderWidth" :min="0" :max="10" :step="1" label snap @input="val => {updateTextBoxOptions(val, 'borderWidth')}"/>
+            </div>
+            <div>
+              <p>Box border color</p>
+              <swatches
+                :value="settings.textBoxBorderColor"
+                @input="val => {updateTextBoxOptions(val, 'borderColor')}"
+                colors="text-advanced"
+                :popover-to="'left'"
+                :trigger-style="{ width: $q.screen.lt.sm ? '30px' : '42px', height: $q.screen.lt.sm ? '30px' : '42px', borderRadius: '50%' }"
+              ></swatches>
+            </div>
+            <div>
+              <p>Background opactiy</p>
+              <q-slider :value="settings.textBoxOpacity" :min="0" :max="1" :step="0.1" label snap @input="val => {updateTextBoxOptions(val, 'opacity')}"/>
+            </div>
+            <div>
+              <p>Background color</p>
+              <swatches
+                :value="settings.textBoxBackgroundColor"
+                @input="val => {updateTextBoxOptions(val, 'backgroundColor')}"
+                colors="text-advanced"
+                :popover-to="'left'"
+                :trigger-style="{ width: $q.screen.lt.sm ? '30px' : '42px', height: $q.screen.lt.sm ? '30px' : '42px', borderRadius: '50%' }"
+              ></swatches>
+            </div>
+            <!-- <q-slider v-model="text.size" :min="5" :max="100" :step="1" label snap/> -->
+          </div>
+        </div>
         <!-- ADD TEXT BLOCK -->
         <q-btn
           key="addTextBlock"
@@ -185,7 +226,7 @@
         </q-btn>
         <div class="q-slider-wrap" v-if="settings.showImageOpacity">
           <div>Image opacity (how see through it is)</div>
-          <q-slider v-model="settings.imageOpacity" :min="0" :max="1" :step="0.1" label snap @change="updateImageOpacity(newVal)"/>
+          <q-slider :value="settings.imageOpacity" :min="0" :max="1" :step="0.1" label snap @change="updateImageOpacity(val)"/>
         </div>
       </div>
 
@@ -275,6 +316,7 @@ export default {
     return {
       showTextSize: false,
       showLineWidth: false,
+      showTextOptions: false,
     };
   },
   computed: {
@@ -313,6 +355,9 @@ export default {
     },
     settings() {
       return this.$store.getters.getSettings;
+    },
+    storeTextLayer() {
+      return this.$store.getters.getPageTextLayer;
     },
   },
   methods: {
@@ -383,7 +428,6 @@ export default {
     },
 
     updateBrushWidth(newVal) {
-      console.log('updateBrushWidth');
       const payload = {
         brushWidth: newVal
       };
@@ -391,11 +435,40 @@ export default {
     },
 
     updateImageOpacity(newVal) {
-      console.log('updateImageOpacity', newVal);
+      console.log('updateImageOpacity, newVal=', newVal);
       const payload = {
         imageOpacity: newVal
       };
       this.$store.commit('setSettings', payload);
+    },
+
+    updateTextBoxOptions(newVal, type) {
+      let payload = {};
+      let textLayer = {}
+      if (type === 'borderWidth') {
+        payload['textBoxBorderWidth'] = newVal;
+        textLayer['borderWidth'] = newVal;
+      } else if (type === 'opacity') {
+        payload['textBoxOpacity'] = newVal;
+        textLayer['opacity'] = newVal;
+      } else if (type === 'backgroundColor') {
+        payload['textBoxBackgroundColor'] = newVal;
+        textLayer['backgroundColor'] = newVal;
+      } else if (type === 'borderColor') {
+        payload['textBoxBorderColor'] = newVal;
+        textLayer['borderColor'] = newVal;
+      }
+      /* Update settings */
+      this.$store.commit('setSettings', payload);
+      /* Update page */
+      payload = {
+        user: this.user,
+        storyKey: this.$route.params.id,
+        pageKey: this.activePage.id,
+        index: this.settings.activeEditor,
+        textLayer: textLayer
+      };
+      this.$store.dispatch('updatePageText', payload);
     },
 
     updateColor(newColor) {
@@ -412,9 +485,15 @@ export default {
     deleteObj() {
       this.$store.commit('setToolAction', 'deleteObj');
     },
-
+    /** Toggles  */
     toggleTextSize() {
       this.showTextSize = !this.showTextSize;
+    },
+
+    toggleTextOptions() {
+      console.log('toggleTextOptions, this.showTextOptions=', this.showTextOptions)
+      this.showTextOptions = !this.showTextOptions;
+      this.$store.commit('setSubMode', "options");
     },
 
     toggleBrushWidth() {
@@ -436,6 +515,51 @@ export default {
       this.showLineWidth = !this.showLineWidth;
     },
   },
+  watch: {
+    modes: {
+      handler: function(newMode, oldMode) {
+        if(this.modes.subMode !== 'options') {
+          this.showTextOptions = false;
+        }
+      },
+      deep: true
+    },
+    settings: {
+      handler: function(newSettings, oldSettings) {
+        if (newSettings.activeEditor !== oldSettings.activeEditor || !oldSettings.activeEditor) {
+          console.log('editor changed');
+          let payload = {};
+          if(this.storeTextLayer[this.settings.activeEditor].borderWidth !== this.settings.textBoxBorderWidth) {
+            console.log('Border width changed');
+            /* Border width changed */
+            payload['textBoxBorderWidth'] = this.storeTextLayer[this.settings.activeEditor].borderWidth;
+          }
+          if(this.storeTextLayer[this.settings.activeEditor].borderColor !== this.settings.textBoxBorderColor) {
+            console.log('Border color changed');
+            /* Border color changed */
+            payload['textBoxBorderColor'] = this.storeTextLayer[this.settings.activeEditor].borderColor;
+          }
+          if(this.storeTextLayer[this.settings.activeEditor].opacity !== this.settings.textBoxOpacity) {
+            console.log('Opacity changed');
+            /* Opacity changed */
+            payload['textBoxOpacity'] = this.storeTextLayer[this.settings.activeEditor].opacity;
+          }
+          if(this.storeTextLayer[this.settings.activeEditor].backgroundColor !== this.settings.textBoxBackgroundColor) {
+            console.log('BG color changed');
+            /* bg color changed */
+            payload['textBoxBackgroundColor'] = this.storeTextLayer[this.settings.activeEditor].backgroundColor
+          }
+          if (Object.keys(payload).length > 0) {
+            /* only update if changed */
+            this.$store.commit('setSettings', payload);
+            this.$store.commit('setSubMode', "text");
+            this.showTextOptions = false;
+          }
+        }
+      },
+      deep: true
+    },
+  }
 };
 </script>
 

@@ -34,7 +34,10 @@
                                             top: pageText.y + 'px',
                                             left: pageText.x + 'px',
                                             width: pageText.width +'px',
-                                            height: pageText.height + 'px'
+                                            height: pageText.height + 'px',
+                                            borderWidth: pageText.borderWidth,
+                                            borderColor: pageText.borderColor,
+                                            background: getTextBoxBg(pageText)
                                         }"
                                         class="thumb-text-block text-render" v-html="pageText.text">
                                     </div>
@@ -83,7 +86,9 @@
                                     top: pageText.y + 'px',
                                     left: pageText.x + 'px',
                                     width: pageText.width +'px',
-                                    height: pageText.height + 'px'
+                                    height: pageText.height + 'px',
+                                    borderWidth: pageText.borderWidth,
+                                    borderColor: pageText.borderColor,
                                 }"
                                 class="preview-text-block text-render" v-html="pageText.text">
                             </div>
@@ -408,6 +413,16 @@ export default {
             this.cursorSelection = quill.getSelection();
         },
 
+        getTextBoxBg(pageText) {
+            let hexOpacity = (pageText.opacity * 255).toString(16);
+            while (hexOpacity.length < 2) {
+                hexOpacity = "0" + hexOpacity;
+            }
+            let bgColor = pageText.backgroundColor;
+
+            /* manipulate color to include opacity */
+            return bgColor.substring(0, 7) + hexOpacity;
+        },
 
         thumbBgColor(page) {
             return page.background.color;
@@ -590,6 +605,7 @@ export default {
 }
 #thumb-wrapper {
     margin-top: 5px;
+    padding-top: 3px;
     max-height: calc(100vh - 190px);
     overflow: auto;
     .thumb-draggable {
@@ -612,9 +628,9 @@ export default {
     background-color: #fff;
     background-position: center center;
     position: relative;
-    border: solid 3px #aeaeae;
-    -webkit-transition: border-color 1s; /* Safari */
-    transition: border-color 1s;
+    outline: solid 3px #aeaeae;
+    -webkit-transition: outline-color 1s; /* Safari */
+    transition: outline-color 1s;
     position: relative;
     .thumb-drawing {
         position: absolute;
@@ -630,8 +646,10 @@ export default {
         transform: scale(0.1);
         transform-origin: top left;
         overflow: hidden;
+        top: calc(40px * 0.1);
         .thumb-text-block {
             position: absolute;
+            border-style: solid;
         }
     }
 }
@@ -663,7 +681,7 @@ export default {
 }
 
 .thumb.active-thumb {
-    border: solid 3px $primary;
+    outline: solid 3px $primary;
 }
 .thumb a {
     width: 100%;
