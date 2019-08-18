@@ -97,7 +97,7 @@ export default {
         backgroundColor: 'rgba(255, 255, 255, 0)',
         penColor: _this.settings.color,
         maxWidth: _this.settings.brushWidth * _this.pageDimensions.zoom,
-        minDistance: 0,
+        minDistance: 1,
         dotSize: _this.settings.brushWidth * _this.pageDimensions.zoom,
         throttle: 16,
         onBegin: function() {

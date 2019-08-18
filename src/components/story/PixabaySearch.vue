@@ -5,7 +5,7 @@
         <q-input v-model="searchString" float-label="Search for images" class="col-8"  />
         <q-btn color="primary" icon="mdi-image-search" @click="searchImages()" class="col-1" />
         <div class="col-2">
-          <image-uploader :debug="1" :maxWidth="512" :quality="0.7" :autoRotate=true outputFormat="verbose" :preview=false :accept="'video/*,image/*'" doNotResize="['gif', 'svg']" @input="setImage" ref="imageUploader">
+          <image-uploader :debug="1" :maxHeight="2000" :maxWidth="2000" :quality="0.9" :autoRotate=true outputFormat="verbose" :preview=false :accept="'video/*,image/*'" doNotResize="['gif', 'svg', 'png']" @input="setImage" ref="imageUploader">
             <label for="fileInput" slot="upload-label" class="upload-btn">
               <q-icon color="primary" name="mdi-cloud-upload" label="Upload" />
             </label>
@@ -101,6 +101,7 @@ export default {
 
       image.src = url;
     },
+
     getImageDimensions(file) {
       return new Promise (function (resolved, rejected) {
         var i = new Image()
@@ -110,6 +111,7 @@ export default {
         i.src = file
       })
     },
+
     setImage(newImage) {
       const _user = this.user;
       const blob = b64toBlob(newImage.dataUrl.split(',')[1], newImage.type);
@@ -123,6 +125,7 @@ export default {
             name: newImage.name,
           }
         }
+        console.log('imgObj', imgObj);
         this.$store.commit('setLoading', true);
         this.$store.dispatch('addImage', imgObj);
       });

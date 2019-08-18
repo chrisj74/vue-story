@@ -77,6 +77,9 @@ export default {
           _this.canvas.renderAll.bind(_this.canvas);
           _this.setSize();
         });
+      } else {
+        this.canvasInit();
+        this.setSize();
       }
     }
     /** Trigger canvas resize on browser resize */
@@ -94,6 +97,7 @@ export default {
   },
   methods: {
     canvasInit() {
+      // console.log('canvasInit');
       /** Main canvas */
       this.canvas = new fabric.Canvas("storyCanvas");
       const _this = this;
@@ -359,17 +363,25 @@ export default {
   watch: {
     $route: {
       handler: function(from, to) {
+        if (!from.params.id || (from.params.id !== to.params.id)) {
+            // changed story
+            if (!this.canvas) {
+                this.photoCanvasInit();
+            }
+        }
         if (
-          (from.params.id === to.params.id &&
-            from.params.pageId != to.params.pageId) ||
-            !to.params.pageId
+          ( from.params.pageId != to.params.pageId) ||
+          ( !to.params.pageId && from.params.id !== to.params.id)
         ) {
-          // same story new page
+          //  new page
           // detroy canvas
           if (this.canvas) {
             this.canvas.dispose();
             this.canvas = null;
           }
+        }
+        else {
+          console.log('route changed activePge=', this.activePage);
         }
       },
       deep: true
@@ -456,7 +468,25 @@ export default {
 
     pageDimensions: {
       handler: function(newDimensions, oldDimensions) {
-        if (newDimensions.zoom !== oldDimensions.zoom) {
+        if (!this.canvas) {
+          if (this.activePage && this.activePage.photoLayer.photoCanvasJson) {
+            // console.log('no canvas but json');
+            this.canvasInit();
+            this.canvas.forEachObject(function(object) {
+              object.selectable = true;
+            });
+            const _this = this;
+            this.canvas.loadFromJSON(this.activePage.photoLayer.photoCanvasJson, function() {
+              _this.canvas.renderAll.bind(_this.canvas);
+            });
+            this.setSize();
+          } else {
+            // console.log('no json & no canvas');
+            this.canvasInit();
+            this.setSize();
+          }
+        } else if (newDimensions.zoom !== oldDimensions.zoom) {
+          // console.log('dimensions watcher has canvas');
           this.setSize();
         }
       },

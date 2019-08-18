@@ -4,41 +4,46 @@
     <main-tools></main-tools>
 
     <!-- MAIN CONTENT -->
-    <div class="main-content">
+    <div class="main-content" ref="mainContent">
       <div class="page-ref" ref="page">
         <!-- PAGE TEXT EDITOR -->
-        <div
-          v-for="(textLayer, layerIndex) in activePage.textLayer"
-          :key="'toolbar'+layerIndex"
-          class="text-toolbar-wrapper"
-          :style="{width: (pageDimensions.width) + 'px', left: (91)}">
-          <div :id="'toolbar'+layerIndex" v-if="textLayerActive" :style="{width: (pageDimensions.width) + 'px'}" v-show="settings.activeEditor === layerIndex">
-            <span class="ql-format-group">
-              <button type="button" class="ql-bold"></button>
-              <button type="button" class="ql-italic"></button>
-              <button type="button" class="ql-underline" v-if="$q.screen.gt.sm"></button>
-              <button type="button" class="ql-blockquote" v-if="$q.screen.gt.sm"></button>
-              <select class="ql-align"></select>
+        <template v-if="pageDimensions">
+          <div
+            v-for="(textLayer, layerIndex) in activePage.textLayer"
+            :key="'toolbar'+layerIndex"
+            class="text-toolbar-wrapper"
+            :style="{width: (pageDimensions.width) + 'px', left: (91)}">
+            <div :id="'toolbar'+layerIndex" v-if="textLayerActive" :style="{width: (pageDimensions.width) + 'px'}" v-show="settings.activeEditor === layerIndex">
+              <span class="ql-format-group">
+                <button type="button" class="ql-bold"></button>
+                <button type="button" class="ql-italic"></button>
+                <button type="button" class="ql-underline" v-if="$q.screen.gt.sm"></button>
+                <button type="button" class="ql-blockquote" v-if="$q.screen.gt.sm"></button>
+                <select class="ql-align"></select>
 
-              <button type="button" class="ql-list" value="ordered"></button>
-              <button type="button" class="ql-list" value="bullet"></button>
+                <button type="button" class="ql-list" value="ordered"></button>
+                <button type="button" class="ql-list" value="bullet"></button>
 
-              <select class="ql-size"></select>
-              <select class="ql-font" v-if="$q.screen.gt.sm"></select>
+                <select class="ql-size"></select>
+                <select class="ql-font" v-if="$q.screen.gt.sm">
+                  <option selected>Normal</option>
+                  <option value="schoolbell">Handwriting</option>
+                </select>
 
-              <select class="ql-color"></select>
-              <select class="ql-background"></select>
+                <select class="ql-color"></select>
+                <select class="ql-background"></select>
 
-              <button class="ql-link"></button>
-              <button class="ql-video"></button>
-              <!-- <button :id="'table'+layerIndex">table</button> -->
-            </span>
+                <button class="ql-link"></button>
+                <button class="ql-video"></button>
+                <button :id="'table'+layerIndex"><i class="mdi mdi-table"></i></button>
+              </span>
+            </div>
           </div>
-        </div>
+        </template>
         <div
           v-if="pageDimensions"
           :style="{
-          transform: 'scale('+pageDimensions.zoom+')',
+          zoom: pageDimensions.zoom,
           height: (activePage.pageSize.height - 50)+'px',
           width: activePage.pageSize.width+'px',
           pointerEvents: textLayerActive ? 'all' : 'none',
@@ -49,7 +54,6 @@
               v-if="textLayer.width"
               :key="index"
               :print="false"
-              :active="textLayerActive"
               :zoom="pageDimensions.zoom"
               :pageWidth="activePage.pageSize.width"
               :pageHeight="activePage.pageSize.height"
@@ -58,7 +62,7 @@
           </template>
         </div>
         <!-- Canvas -->
-        <div v-if="pageDimensions" class="canvas-wrapper" :style="{width: pageDimensions.width+'px', height: pageDimensions.height+'px'}">
+        <div v-if="pageDimensions" ref="canvasWrapper" class="canvas-wrapper" :style="{width: pageDimensions.width+'px', height: pageDimensions.height+'px'}">
           <div class="canvas-bg-img-wrapper" :style="{width: pageDimensions.width+'px', height: pageDimensions.height+'px'}">
             <div v-if="activePage.background" class="canvas-bg-img" :style="{
               backgroundColor: activePage.background.color,
@@ -77,6 +81,30 @@
 
     <!-- EXTRA TOOLS -->
     <extra-tools></extra-tools>
+
+    <!-- scrollers -->
+    <div class="page-scrollers" v-if="pageDimensions && pageDimensions.height > pageHeight">
+      <div class="scroll-btn">
+        <button
+          class="q-btn inline relative-position q-btn-item non-selectable q-btn-round q-focusable q-hoverable bg-dark text-white"
+          :style="{fontSize: $q.screen.lt.sm ? '14px' : '14px'}"
+          v-on:mousedown="startScroll('up', true)"
+          v-on:mouseup="stopScroll()"
+        >
+          <q-icon name="mdi-chevron-up"></q-icon>
+        </button>
+      </div>
+      <div class="scroll-btn">
+        <button
+          class="q-btn inline relative-position q-btn-item non-selectable q-btn-round q-focusable q-hoverable bg-dark text-white"
+          :style="{fontSize: $q.screen.lt.sm ? '14px' : '14px'}"
+          v-on:mousedown="startScroll('down', true)"
+          v-on:mouseup="stopScroll()"
+        >
+        <q-icon name="mdi-chevron-down"></q-icon>
+        </button>
+      </div>
+    </div>
 
     <!-- IMAGE MODAL -->
     <q-modal
@@ -105,6 +133,7 @@ import DrawingCanvas from './DrawingCanvas';
 import FabricCanvas from './FabricCanvas';
 import MainTools from './MainTools';
 import ExtraTools from './ExtraTools';
+import { setTimeout } from 'timers';
 
 export default {
   name: "Page",
@@ -136,7 +165,9 @@ export default {
       showLineWidth: false,
       windowWidth: 1024,
       maxHeightRatio: 0,
-      maxWidthRatio: 0
+      maxWidthRatio: 0,
+      pageHeight: 0,
+      scrolling: false,
     };
   },
   computed: {
@@ -194,8 +225,7 @@ export default {
       this.$store.dispatch('setPage', payload);
     }
     const _this = this;
-    if (this.activePage && !this.pageDimensions && this.story.id === this.$route.params.id) {
-
+    if (this.activePage && !this.pageDimensions) {
       if (this.activePage) {
         _this.setDefaultZoom();
       }
@@ -230,6 +260,7 @@ export default {
     },
 
     setDefaultZoom() {
+      this.pageHeight = this.$refs.page.clientHeight;
       this.maxHeightRatio = this.$refs.page.clientHeight / this.activePage.pageSize.height;
       this.maxWidthRatio = this.$refs.page.clientWidth / this.activePage.pageSize.width;
 
@@ -330,8 +361,10 @@ export default {
           width: (200),
           height: (200),
           borderWidth: 0,
-          borderColor: '#ffffff00',
-          opacity: 0
+          borderColor: '#ffffff',
+          opacity: 0,
+          backgroundColor: '#ffffff',
+          delta: []
         }
       };
       this.$store.dispatch('updatePageText', payload);
@@ -339,7 +372,6 @@ export default {
     },
 
     deleteTextBlock() {
-      console.log('PAGE deltext this.settings.activeEditor=', this.settings.activeEditor);
       const payload = {
         user: this.user,
         storyKey: this.$route.params.id,
@@ -352,6 +384,30 @@ export default {
     },
 
     /** UTILITIES */
+
+    startScroll(dir, init) {
+      if (init) {
+        this.scrolling = true;
+      }
+      if (this.scrolling) {
+        if (dir === 'down'
+        && this.$refs.mainContent.scrollTop < (this.$refs.canvasWrapper.clientHeight - this.$refs.mainContent.clientHeight)) {
+          this.$refs.mainContent.scrollTop += 20;
+        } else if (dir === 'up'
+        && this.$refs.mainContent.scrollTop > 0) {
+          this.$refs.mainContent.scrollTop -= 20;
+        }
+        const _this = this;
+        const _dir = dir;
+        setTimeout(function() {
+          _this.startScroll(_dir, false)
+        }, 50)
+      }
+    },
+
+    stopScroll() {
+      this.scrolling = false;
+    },
 
     saveStory() {
       if (this.activePage) {
@@ -439,8 +495,6 @@ export default {
         if ((!this.pageDimensions && this.activePage.pageSize)
         || (oldPage.pageSize.height !== newPage.pageSize.height)
         || (oldPage.pageSize.width !== newPage.pageSize.width)) {
-          console.log('changed, oldPage.pageSize=', oldPage.pageSize);
-          console.log('newPage.pageSize=', newPage.pageSize);
           this.setDefaultZoom();
         }
       },
@@ -493,6 +547,7 @@ export default {
   max-width: calc(100vw - 160px);
   flex-grow: 2;
   align-self: stretch;
+  height: calc(100vh - 100px);
 }
 
 .text-layer {
@@ -548,7 +603,22 @@ export default {
       .ql-snow .ql-picker-options {
         z-index: 102;
       }
+      .ql-picker.ql-font {
+        span[data-label="Handwriting"]::before {
+          font-family: "Schoolbell", cursive;
+        }
+      }
     }
+  }
+}
+
+.page-scrollers {
+  position: fixed;
+  right: 3px;
+  bottom: 3px;
+  z-index: 100;
+  .scroll-btn:last-child {
+    margin-top: 10px;
   }
 }
 
@@ -568,7 +638,6 @@ export default {
   .page-ref {
     padding-left: 0;
     max-width: calc(100vw - 57px);
-    height: calc(100vh - 220px);
   }
   .text-toolbar-wrapper {
     left: 10px;
@@ -581,5 +650,14 @@ export default {
   .page-ref {
     max-width: calc(100vw - 40px);
   }
+}
+
+@media(max-width: $breakpoint-xs) and (orientation: portrait) {
+  body.mobile {
+    .page-ref {
+      height: calc(100vh - 150px);
+    }
+  }
+
 }
 </style>

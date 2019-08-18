@@ -1,6 +1,6 @@
 <template>
     <div>
-        <q-page class="story-page row justify-center">
+        <q-page class="story-page row justify-center" v-if="activePage">
             <!-- Thumbs -->
             <div class="thumbs" :class="{'active': settings.showThumbs}">
                 <div class="action-buttons">
@@ -35,7 +35,7 @@
                                             left: pageText.x + 'px',
                                             width: pageText.width +'px',
                                             height: pageText.height + 'px',
-                                            borderWidth: pageText.borderWidth,
+                                            borderWidth: pageText.borderWidth + 'px',
                                             borderColor: pageText.borderColor,
                                             background: getTextBoxBg(pageText)
                                         }"
@@ -80,6 +80,7 @@
                             :style="{
                                 width: pages[previewIndex].pageSize.width + 'px',
                                 height: pages[previewIndex].pageSize.height + 'px',
+                                top: '40px'
                             }">
                             <div v-for="(pageText, tIndex) of pages[previewIndex].page.textLayer" :key="pages[previewIndex].page.id+'PreviewText'+tIndex"
                                 :style="{
@@ -87,8 +88,10 @@
                                     left: pageText.x + 'px',
                                     width: pageText.width +'px',
                                     height: pageText.height + 'px',
-                                    borderWidth: pageText.borderWidth,
+                                    borderWidth: pageText.borderWidth + 'px',
                                     borderColor: pageText.borderColor,
+                                    borderStyle: 'solid',
+                                    background: getTextBoxBg(pageText)
                                 }"
                                 class="preview-text-block text-render" v-html="pageText.text">
                             </div>
@@ -268,6 +271,10 @@ export default {
             this.$store.dispatch('setPages', payload);
         }
     },
+    destroyed() {
+        console.log('story destroyed');
+        this.$store.commit('resetPage');
+    },
     methods: {
         /** EDIT */
         toggleEdit(){
@@ -307,7 +314,6 @@ export default {
             const _this = this;
             this.canvas.setHeight(this.pages[this.previewIndex].pageSize.height);
             this.canvas.setWidth(this.pages[this.previewIndex].pageSize.width);
-            console.log('canvas json=', this.pages[this.previewIndex].page.photoLayer.photoCanvasJson);
             if (this.pages[this.previewIndex].page.photoLayer.photoCanvasJson) {
                 this.canvas.loadFromJSON(this.pages[this.previewIndex].page.photoLayer.photoCanvasJson, function() {
                     const imagePayload = {
@@ -319,7 +325,6 @@ export default {
                         _this.previewIndex++;
                         _this.generatePhotoImage();
                     } else {
-                        console.log('finished photo images');
                         _this.photoImagesGenerated = true;
                     }
                 });
@@ -362,10 +367,8 @@ export default {
                             _this.previewIndex++;
                             _this.getPageImage(_pdf, _allPages);
                         } else if (_pdf) {
-                            console.log('images done now pdf');
                             _this.createPdf();
                         } else if (!_allPages && _pageIndex) {
-                            console.log('download image, ref=', _this.$refs.imageDownloadLink);
                             _this.$store.commit('setLoading', false);
                             _this.doDownload();
                         }
@@ -632,6 +635,9 @@ export default {
     -webkit-transition: outline-color 1s; /* Safari */
     transition: outline-color 1s;
     position: relative;
+    a {
+        color: #000;
+    }
     .thumb-drawing {
         position: absolute;
         z-index: 3;

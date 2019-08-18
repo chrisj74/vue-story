@@ -11,18 +11,7 @@ export default {
     pageImages: {},
     story: {},
     pages: [],
-    page: {
-      commit: 0,
-      photoLayer: null,
-      textLayer: null,
-      id: null,
-      thumb: null,
-      preview: null,
-      background: null,
-      drawingLayer: null,
-      pageSize: null,
-      order: null,
-    },
+    page: null,
     pageDimensions: null,
     imageSearchResults: {
       str: '',
@@ -38,7 +27,7 @@ export default {
       subMode: 'text',
     },
     settings: {
-      brushWidth: 5,
+      brushWidth: 2,
       showBrushWidth: false,
       imageOpacity: 1,
       showImageOpacity: false,
@@ -77,7 +66,7 @@ export default {
     },
     setPage (state, payload) {
       let pageVal;
-      if (state.page.id === payload.page.id) {
+      if (state.page && state.page.id === payload.page.id) {
         pageVal = _.cloneDeep(state.page);
         if(payload.page.textLayer.length !== pageVal.textLayer.length) {
           pageVal.textLayer = payload.page.textLayer;
@@ -98,6 +87,10 @@ export default {
         }
         state.history.restoreIndex = state.history.restoreIndex + 1;
       }
+    },
+    resetPage (state) {
+      state.page =  null;
+      state.pageDimensions = null;
     },
     setPageImage(state, payload) {
       state.pageImages[payload.pageId] = payload.imageData;
@@ -204,7 +197,8 @@ export default {
                       borderWidth: 0,
                       borderColor: '#ffffff00',
                       backgroundColor: '#ffffffff',
-                      opacity: 0
+                      opacity: 0,
+                      delta: []
                     }
                   ],
                   background: {
@@ -266,7 +260,6 @@ export default {
       const statePage = _.cloneDeep(state.page);
       const newState = _.merge(statePage, payload.page);
       newState.commit++;
-      console.log('updatePage id=', newState.id);
       commit('setPage', {page: newState, restoreIndex: payload.restoreIndex});
       return new Promise((resolve, reject) => {
         const userStory = firebase
@@ -302,11 +295,11 @@ export default {
 
 
     updatePageText( {commit, state }, payload) {
-      // console.log('updatePage payload =', payload);
       const newState = _.cloneDeep(state.page);
       if (newState.textLayer[payload.index]) {
         if (payload.textLayer) {
           newState.textLayer[payload.index] = _.merge(newState.textLayer[payload.index], payload.textLayer);
+          newState.textLayer[payload.index].delta = payload.textLayer.delta;
         } else {
           newState.textLayer.splice(payload.index, 1);
         }
@@ -348,7 +341,8 @@ export default {
               borderWidth: 0,
               borderColor: '#ffffff00',
               backgroundColor: '#ffffffff',
-              opacity: 0
+              opacity: 0,
+              delta: []
             }],
             background: {
               color: '#ffffff',
@@ -551,7 +545,6 @@ export default {
             || querySnapshot.docs[0].data().commit > state.page.commit
             || state.page.commit == 0) {
             /** cater for index without id */
-            console.log('pass test no id');
             page = {
               photoLayer : querySnapshot.docs[0].data().photoLayer,
               textLayer : querySnapshot.docs[0].data().textLayer,

@@ -5,10 +5,9 @@
     :h="storeTextLayer[layerIndex].height"
     :x="storeTextLayer[layerIndex].x"
     :y="storeTextLayer[layerIndex].y"
-    :scaling="pageDimensions.zoom"
     @dragstop="onDrag"
     @resizestop="onResize"
-    :parent="true"
+    :parent="'.text-layer'"
     :drag-handle="'.drag-handle'"
     :active="active"
     :class="{print: print}"
@@ -29,11 +28,11 @@
         @blur="onEditorBlur($event)"
         :options="editorConfig"
         class="editor"
-        v-if="active && editorContent && editorConfig">
+        v-if="editorContent && editorConfig">
       </quill-editor>
       <div v-else v-html="storeTextLayer[layerIndex].text" class="text-render ql-editor ql-container"></div>
     </div>
-    <div class="drag-handle" v-if="active"><i class="mdi mdi-cursor-move"></i></div>
+    <div class="drag-handle" v-if="active && layerIndex === settings.activeEditor"><i class="mdi mdi-cursor-move"></i></div>
   </vue-draggable-resizable>
 </template>
 
@@ -49,7 +48,7 @@ export default {
   components: {
     VueDraggableResizable,
   },
-  props: ['zoom','active','pageWidth','pageHeight','print','textLayerIndex'],
+  props: ['zoom','pageWidth','pageHeight','print','textLayerIndex'],
   data() {
     return {
       layerIndex: this.textLayerIndex,
@@ -57,6 +56,7 @@ export default {
       editorConfig: null,
       cursorSelection: null,
       contentSet: false,
+      active: false,
     }
   },
   mounted() {
@@ -66,6 +66,10 @@ export default {
       } else {
         this.editorContent = ' ';
       }
+      const payload = {
+        activeEditor: this.layerIndex
+      };
+      this.$store.commit('setSettings', payload);
     }
 
     this.editorConfig = {
@@ -82,11 +86,11 @@ export default {
           },
           cursors: true,
           toolbar: '#toolbar'+this.layerIndex,
-          syntax: {
+          /* syntax: {
             highlight: text => hljs.highlightAuto(text).value
-          },
-          // table: false,  // disable table module
-          /* 'better-table': {
+          }, */
+          table: false,  // disable table module
+          'better-table': {
             operationMenu: {
               items: {
                 unmergeCells: {
@@ -97,16 +101,16 @@ export default {
           },
           keyboard: {
             bindings: QuillBetterTable.keyboardBindings
-          } */
+          }
         }
       };
-    /* const _this = this;
+    const _this = this;
     document.body.querySelector('#table'+this.layerIndex)
     .onclick = () => {
-      console.log('click table');
+      console.log('add table');
       let tableModule = _this.editor.getModule('better-table')
       tableModule.insertTable(3, 3)
-    } */
+    }
   },
   computed: {
     backgroundColor() {
@@ -147,6 +151,9 @@ export default {
     pageDimensions() {
       return this.$store.getters.getPageDimensions;
     },
+    settings() {
+      return this.$store.getters.getSettings;
+    },
   },
   methods: {
     onEditorChange: _.debounce(function(event) {
@@ -156,10 +163,12 @@ export default {
         event.quill.focus();
         const range = this.cursorSelection ? this.cursorSelection : {index: this.editorContent.length, length:0};
         event.quill.setSelection(range, 'api');
-        this.cursorSlection = null;
+        this.cursorSelection = null;
       }
-      if (this.user && event.html !== this.editorContent) {
-        this.editorContent = event.html;
+      /* console.log('event=', event.quill.editor.delta.ops);
+      console.log('editor=', JSON.parse(JSON.stringify(this.storeTextLayer[this.layerIndex].delta))); */
+      if (this.user && !_.isEqual(event.quill.editor.delta.ops, JSON.parse(JSON.stringify(this.storeTextLayer[this.layerIndex].delta)))) {
+        const newRange = this.cursorSelection ? this.cursorSelection : {index: this.editorContent.length, length:0};
         const textLayer = _.cloneDeep(this.storeTextLayer);
           const payload = {
               user: this.user,
@@ -171,14 +180,17 @@ export default {
                 y: (textLayer[this.layerIndex].y * 1),
                 width: (textLayer[this.layerIndex].width * 1),
                 height: (textLayer[this.layerIndex].height * 1),
-                text: event.html === '' ? ' ' : event.html
+                text: event.html === '' ? ' ' : event.html,
+                delta: _.cloneDeep(event.quill.editor.delta.ops),
+                range: newRange
               }
           };
           this.$store.dispatch('updatePageText', payload);
         }
-    }, 500),
+    }, 100),
 
     onEditorFocus(quill) {
+      this.active = true;
       const payload = {
         activeEditor: this.layerIndex
       };
@@ -186,14 +198,11 @@ export default {
     },
 
     onEditorBlur(quill) {
-      console.log('blur');
-      /* const payload = {
-        activeEditor: null
-      };
-      this.$store.commit('setSettings', payload); */
+      this.active = false;
     },
 
     onEditorReady(quill) {
+      this.active = true;
       this.contentSet = true;
       quill.setSelection(this.editorContent.length, 0, 'api');
     },
@@ -210,7 +219,8 @@ export default {
               y: (y * 1),
               width: (width * 1),
               height: (height * 1),
-              text: this.editorContent === '' ? ' ' : this.editorContent
+              text: this.editorContent === '' ? ' ' : this.editorContent,
+              delta: this.storeTextLayer[this.layerIndex].delta
             }
         };
         this.$store.dispatch('updatePageText', payload);
@@ -229,7 +239,8 @@ export default {
               y: y,
               width: this.storeTextLayer[this.layerIndex].width,
               height: this.storeTextLayer[this.layerIndex].height,
-              text: this.editorContent === '' ? ' ' : this.editorContent
+              text: this.editorContent === '' ? ' ' : this.editorContent,
+              delta: this.storeTextLayer[this.layerIndex].delta
             }
           };
           this.$store.dispatch('updatePageText', payload);
@@ -237,73 +248,20 @@ export default {
     }, 500),
   },
   watch: {
-    editorContent: {
-      handler: function(from, to) {
-        /* if (this.editor && !this.editor.cursors) {
-          console.log('no cursor yet');
-          const cursors = this.editor.getModule('cursors');
-          console.log('module =', cursors);
-          cursors.createCursor(1, 'User 1', 'red');
-          console.log('this.editor.cursors=', this.editor.cursors);
-        } */
-        // console.log('watcher', this.cursorSelection.index);
-        // this.editor.setSelection(this.cursorSelection);
-        /* this.$nextTick(() => {
-          const editorToolbar = document.querySelectorAll('.ql-toolbar.ql-snow ');
-          console.log('editorToolbar=', editorToolbar);
-          editorToolbar[0].style.transform = 'scale(' + (1 / this.zoom) + ')';
-        }); */
-      }
-    },
     storeTextLayer: {
       handler: function(to, from) {
-        /* console.log('storeTextLayer watcher=');
-        console.log('store text=', this.storeTextLayer[this.layerIndex].text);
-        console.log('this.editorContent=', this.editorContent);
-        console.log('this.layerIndex=', isNaN(this.layerIndex)) */
-        if (this.storeTextLayer && !isNaN(this.layerIndex) && this.storeTextLayer[this.layerIndex].text !== this.editorContent) {
-          /* console.log('update text from store');
-          console.log('this.editor=selection.cursor.selection.lastRange', this.editor.selection.cursor.selection.lastRange); */
-          if (this.editor) {
-            this.cursorSelection = this.editor.selection.cursor.selection.lastRange;
-          }
-          this.contentSet = false;
+        // console.log('store not same as editor', _.isEqual(JSON.parse(JSON.stringify(this.storeTextLayer[this.layerIndex].delta)), this.editor.getContents().ops));
+        if (this.storeTextLayer && !isNaN(this.layerIndex) &&
+          (!this.storeTextLayer[this.layerIndex].delta
+          || !_.isEqual(JSON.parse(JSON.stringify(this.storeTextLayer[this.layerIndex].delta)), this.editor.getContents().ops))) {
+          /** Only update content from the store if needed  */
+          // console.log('update from store, editor=', _.cloneDeep(this.editor.getContents().ops));
+          // console.log('store=', JSON.parse(_.cloneDeep(JSON.stringify(this.storeTextLayer[this.layerIndex].delta))));
           this.editorContent = _.cloneDeep(this.storeTextLayer[this.layerIndex].text);
-
-          // this.editor.setSelection(lastRange, 'api');
         }
       },
       deep: true
     },
-    layerIndex: {
-      handler: function(to, from) {
-        if (this.storeTextLayer && this.layerIndex && this.storeTextLayer[this.layerIndex].text !== this.editorContent) {
-          this.editorContent = _.cloneDeep(this.storeTextLayer[this.layerIndex].text);
-          this.editor.setSelection(this.editorContent.length, 0, 'api');
-        }
-      },
-      deep: true
-    },
-    toolAction: {
-      handler: function(newAction, oldAction) {
-
-      }
-    }
-    /* active: {
-      handler: function(to, from) {
-        console.log('from=', from, ' to=', to);
-        if (to) {
-          console.log('isactive');
-          // text has become active move cursor to end
-          this.$nextTick(() => {
-            console.log('this.editor =', this.editor);
-            this.editor.setSelection(5, 1, 'api');
-          });
-
-        }
-      },
-      deep: true
-    }*/
   }
 }
 </script>
@@ -336,7 +294,7 @@ export default {
 }
 .drag-handle {
   position: absolute;
-  bottom: 0;
+  bottom: -1em;
   font-size: 2em;
   z-index: 9999;
 }
@@ -361,6 +319,10 @@ export default {
   }
   .ql-size-massive {
     font-size: 6em;
+  }
+
+  .ql-font-schoolbell {
+    font-family: "Schoolbell", cursive;
   }
 }
 

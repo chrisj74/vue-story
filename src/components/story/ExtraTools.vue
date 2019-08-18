@@ -166,7 +166,7 @@
       <div class="tool-slider" v-if="modes.mode === 'shape' && (modes.subMode === 'text' || modes.subMode === 'selectText')">
         <q-btn :size="$q.screen.lt.sm ? 'sm' : 'md'" color="primary" icon="mdi-format-size" round @click="toggleTextSize()"/>
         <div class="q-slider-wrap" v-if="showTextSize">
-          <q-slider v-model="text.size" :min="5" :max="100" :step="1" label snap/>
+          <q-slider :value="text.size" :min="5" :max="100" :step="1" label snap/>
         </div>
       </div>
       <!-- LINE WIDTH -->
@@ -226,7 +226,7 @@
         </q-btn>
         <div class="q-slider-wrap" v-if="settings.showImageOpacity">
           <div>Image opacity (how see through it is)</div>
-          <q-slider :value="settings.imageOpacity" :min="0" :max="1" :step="0.1" label snap @change="updateImageOpacity(val)"/>
+          <q-slider :value="settings.imageOpacity" :min="0" :max="1" :step="0.1" label snap @input="val => {updateImageOpacity(val)}"/>
         </div>
       </div>
 
@@ -435,7 +435,6 @@ export default {
     },
 
     updateImageOpacity(newVal) {
-      console.log('updateImageOpacity, newVal=', newVal);
       const payload = {
         imageOpacity: newVal
       };
@@ -491,7 +490,6 @@ export default {
     },
 
     toggleTextOptions() {
-      console.log('toggleTextOptions, this.showTextOptions=', this.showTextOptions)
       this.showTextOptions = !this.showTextOptions;
       this.$store.commit('setSubMode', "options");
     },
@@ -504,7 +502,6 @@ export default {
     },
 
     toggleImageOpacity() {
-      console.log('toggleImageOpacity')
       const payload = {
         showImageOpacity: !this.settings.showImageOpacity
       };
@@ -526,28 +523,30 @@ export default {
     },
     settings: {
       handler: function(newSettings, oldSettings) {
-        if (newSettings.activeEditor !== oldSettings.activeEditor || !oldSettings.activeEditor) {
-          console.log('editor changed');
+        if (this.storeTextLayer && this.storeTextLayer.length > 0 &&
+        (newSettings.activeEditor !== oldSettings.activeEditor || !oldSettings.activeEditor)) {
           let payload = {};
           if(this.storeTextLayer[this.settings.activeEditor].borderWidth !== this.settings.textBoxBorderWidth) {
-            console.log('Border width changed');
             /* Border width changed */
             payload['textBoxBorderWidth'] = this.storeTextLayer[this.settings.activeEditor].borderWidth;
           }
           if(this.storeTextLayer[this.settings.activeEditor].borderColor !== this.settings.textBoxBorderColor) {
-            console.log('Border color changed');
             /* Border color changed */
             payload['textBoxBorderColor'] = this.storeTextLayer[this.settings.activeEditor].borderColor;
           }
           if(this.storeTextLayer[this.settings.activeEditor].opacity !== this.settings.textBoxOpacity) {
-            console.log('Opacity changed');
             /* Opacity changed */
             payload['textBoxOpacity'] = this.storeTextLayer[this.settings.activeEditor].opacity;
           }
           if(this.storeTextLayer[this.settings.activeEditor].backgroundColor !== this.settings.textBoxBackgroundColor) {
-            console.log('BG color changed');
             /* bg color changed */
             payload['textBoxBackgroundColor'] = this.storeTextLayer[this.settings.activeEditor].backgroundColor
+          }
+          if(!this.settings.isSelected && this.settings.showImageOpacity) {
+            const payload = {
+              showImageOpacity: false
+            };
+            this.$store.commit('setSettings', payload);
           }
           if (Object.keys(payload).length > 0) {
             /* only update if changed */
@@ -571,7 +570,7 @@ export default {
 .extra-tools {
   display: flex;
   position: fixed;
-  top: 60px;
+  top: 47px;
   right: 0;
   z-index: 100;
   flex-direction: column;
