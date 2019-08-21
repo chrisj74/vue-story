@@ -36,6 +36,7 @@ export default {
       showImageModal: false,
       activeEditor: 0,
       showAddPage: false,
+      showAddStory: false,
       showThumbs: false,
       textBoxBorderWidth: 0,
       textBoxBorderColor: '#ffffff00',
@@ -111,6 +112,7 @@ export default {
       state.imageSearchResults.page += 1;
     },
     setInsertImage(state,payload) {
+      console.log('setInsertImage', payload);
       state.insertImage = payload;
     },
     clearInsertImage(state) {
@@ -183,39 +185,17 @@ export default {
         userStories
           .collection('stories').add(payload.newStory)
           .then(function(docRef) {
-              docRef
-                .collection('pages').add({
-                  order: 0,
-                  photoLayer: {},
-                  textLayer: [
-                    {
-                      text: ' ',
-                      x: 50,
-                      y: 25,
-                      width: (595 - 100),
-                      height: (150),
-                      borderWidth: 0,
-                      borderColor: '#ffffff00',
-                      backgroundColor: '#ffffffff',
-                      opacity: 0,
-                      delta: []
-                    }
-                  ],
-                  background: {
-                    color: '#ffffff',
-                    image: false,
-                  },
-                  pageSize: {
-                    width: 595,
-                    height: 842,
-                  },
-                  drawingLayer: {}
+            const _docRef = docRef
+            docRef
+              .collection('pages').add(payload.page)
+                .then(function(pageRef) {
+                  const newStoryId = _docRef.id;
+                  resolve(newStoryId);
                 });
           })
           .catch(function(error) {
               console.error("Error adding document: ", error);
           });
-          resolve();
       });
     },
 
@@ -639,6 +619,7 @@ export default {
     },
 
     addImage({ commit }, payload) {
+      console.log('store addImage, payload=', payload);
       const ref = firebase.storage().ref();
       const path = 'images/' + payload.user.id + '/' + (+new Date()) + '-' + payload.image.name;
       const metadata = {

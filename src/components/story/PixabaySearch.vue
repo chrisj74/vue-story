@@ -48,7 +48,10 @@ export default {
     },
     searchSize () {
       return this.$store.state.searchSize;
-    }
+    },
+    modes() {
+      return this.$store.getters.getModes;
+    },
   },
   methods: {
     searchImages() {
@@ -58,6 +61,7 @@ export default {
       };
       this.$store.dispatch('searchImages', payload);
     },
+
     loadMore(){
       const count = this.results.hits.length
       if (count < this.results.totalHits) {
@@ -69,6 +73,7 @@ export default {
         this.$store.dispatch('searchImages', payload);
       }
     },
+
     selectImage(imageObj) {
       const _this = this;
       this.getDataUri(imageObj.webformatURL, function(dataUri) {
@@ -81,6 +86,7 @@ export default {
         _this.setImage(imgObj);
       });
     },
+
     getDataUri(url, callback) {
       const image = new Image();
       image.crossOrigin = 'Anonymous';
@@ -125,9 +131,11 @@ export default {
             name: newImage.name,
           }
         }
-        console.log('imgObj', imgObj);
-        this.$store.commit('setLoading', true);
+        if (this.modes.mode !== 'story') {
+          this.$store.commit('setLoading', true);
+        }
         this.$store.dispatch('addImage', imgObj);
+        this.searchString = '';
       });
     },
   },

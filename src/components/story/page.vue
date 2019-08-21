@@ -518,7 +518,7 @@ export default {
 </script>
 
 <style lang="stylus">
-@import '~variables'
+@import '~variables';
 .main-content-wrapper {
   flex-grow: 1;
   display: flex;

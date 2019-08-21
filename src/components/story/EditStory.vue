@@ -1,6 +1,7 @@
 <template>
   <div class="modal-wrapper">
-    <h4>Add Page</h4>
+    <h4>Add Story</h4>
+      <q-input type="text" v-model="newStory.title" float-label="Story Name" class="text-input" />
     <div class="page-size-wrapper">
       <div class="page-size" @click="setSize(595, 842, 0)" :class="{selected: selectedIndex === 0}">
         <div class="portrait outline"></div>
@@ -16,54 +17,31 @@
       </div>
     </div>
     <div class="add-actions">
-      <q-btn color="primary" icon="mdi-plus-circle" @click="addPage()" :disabled="!selectedHeight || !selectedWidth">Add Page</q-btn>
+      <q-btn color="primary" icon="mdi-plus-circle" @click="addStory()" :disabled="!selectedHeight || !selectedWidth || newStory.title.length === 0">Add Story</q-btn>
     </div>
   </div>
 </template>
 
 <script>
 export default {
-  name: 'AddPage',
+  name: 'AddStory',
   data() {
       return {
         selectedWidth: null,
         selectedHeight: null,
-        selectedIndex: null
+        selectedIndex: null,
+        newStory: {
+          title: ""
+        },
+        submitting: false,
       }
   },
   computed: {
-      editor() {
-          return this.$refs.guideEditor.quill
-      },
       user() {
           return this.$store.getters.user;
       },
       loading() {
           return this.$store.getters.loading;
-      },
-      showPlan() {
-          return this.$store.getters.showPlan;
-      },
-      story() {
-          return this.$store.getters.getStory;
-      },
-      pages: {
-          get() {
-              return this.$store.getters.getPages;
-          },
-          set(value) {
-              const payload = {
-                  user: this.user,
-                  storyKey: this.$route.params.id,
-                  pageKey: this.$route.params.pageId ? this.$route.params.pageId : null,
-                  pages: value
-              }
-              this.$store.dispatch('updatePageOrder', payload);
-          }
-
-      },
-      activePage() {
-          return this.$store.getters.getPage;
       },
       screen() {
           return this.$store.getters.screen;
@@ -76,29 +54,31 @@ export default {
       this.selectedIndex = index;
     },
 
-    addPage() {
-      const newOrder = this.pages.length;
+    addStory() {
       const page = {
         commit: 0,
         photoLayer: {},
         drawingLayer: {},
-        textLayer: [{
-          text: ' ',
-          x: 50,
-          y: 25,
-          width: (this.selectedWidth - 100),
-          height: (150),
-          borderWidth: 0,
-          borderColor: '#ffffff',
-          opacity: 0,
-          backgroundColor: '#ffffff',
-          delta: []
-        }],
+        textLayer: [
+          {
+            backgroundColor: "#ffffff",
+            borderColor: "#ffffff",
+            borderWidth: 0,
+            delta: [{"insert":"Story Title","attributes":{"size":"huge"}},{"insert":"\n","attributes":{"align":"center"}}],
+            height: 150,
+            opacity: 0,
+            text: "<p class=\"ql-align-center\"><span class=\"ql-size-huge\">Story Title</span></p>",
+            width: (this.selectedWidth - 100),
+            x: 50,
+            y: 100,
+            range: {"index":1,"length":0}
+          }
+        ],
         background: {
           color: '#ffffff',
           image: false,
         },
-        order: newOrder,
+        order: 0,
         pageSize: {
           width: this.selectedWidth,
           height: this.selectedHeight,
@@ -108,18 +88,23 @@ export default {
           user: this.user,
           storyKey: this.$route.params.id,
           pageKey: this.$route.params.pageId ? this.$route.params.pageId : null,
-          order: this.pages.length,
+          newStory: {
+            title: this.newStory.title,
+            plan: "<p>Plan from db</p>",
+            thumb: '',
+          },
           page: page,
       }
-      const storyKey = this.$route.params.id;
-      this.$store.dispatch('addPage', payload)
-      .then(newPage => {
-        const payload = {
-          showAddPage: false,
-        };
-        this.$store.commit('setSettings', payload);
-        this.$router.push({ path: '/story/'+storyKey+'/'+newPage });
-      }) ;
+      this.$store.dispatch('addStory', payload)
+        .then((newStoryId) => {
+          this.submitting = false;
+          this.newStory.title = "";
+          const payload = {
+            showAddStory: false,
+          };
+          this.$store.commit('setSettings', payload);
+          this.$router.push({ path: '/story/'+newStoryId });
+        });
     },
   }
 }
@@ -130,10 +115,13 @@ export default {
 .modal-wrapper {
   padding: 20px;
 }
+.text-input {
+  margin-bottom: 20px;
+}
 .page-size-wrapper {
   display: flex;
   justify-content: space-evenly;
-  margin-bottom: 10px;
+  margin-bottom: 20px;
   .page-size {
     flex-basis: 30%;
     padding: 10px;
@@ -158,30 +146,15 @@ export default {
       margin-bottom: 5px;
       &.portrait {
         width: 50%;
-        &:after {
-          content: "";
-          padding-top: 150%;
-          position: relative;
-          display: block;
-        }
+        height: 80%;
       }
       &.landscape {
         width: 80%;
-        &:after {
-          content: "";
-          padding-top: 50%;
-          position: relative;
-          display: block;
-        }
+        height: 50%;
       }
       &.square {
         width: 50%;
-        &:after {
-          content: "";
-          padding-top: 100%;
-          position: relative;
-          display: block;
-        }
+        height: 50%;
       }
     }
   }
