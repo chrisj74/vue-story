@@ -56,7 +56,7 @@ export default {
         selectedHeight: null,
         selectedIndex: null,
         newStory: {
-          title: ""
+          title: "",
         },
         coverImage: null,
         submitting: false,
@@ -149,11 +149,16 @@ export default {
       this.$store.dispatch('addStory', payload)
         .then((newStoryId) => {
           this.submitting = false;
-          this.newStory.title = "";
+          this.newStory = {
+            title: "",
+          };
+          this.coverImage = null;
           const payload = {
             showAddStory: false,
           };
           this.$store.commit('setSettings', payload);
+          this.$store.commit('setMode', "text");
+          this.$store.commit('setSubMode', "text");
           this.$router.push({ path: '/story/'+newStoryId });
         });
     },

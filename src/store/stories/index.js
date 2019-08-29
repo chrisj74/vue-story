@@ -37,6 +37,7 @@ export default {
       activeEditor: 0,
       showAddPage: false,
       showAddStory: false,
+      showEditStory: false,
       showThumbs: false,
       textBoxBorderWidth: 0,
       textBoxBorderColor: '#ffffff00',
@@ -174,6 +175,7 @@ export default {
   },
   actions: {
     addStory({ commit }, payload) {
+      console.log('addstory payload=', payload);
       return new Promise((resolve, reject) => {
         const userStories = firebase
           .firestore()
@@ -201,21 +203,29 @@ export default {
 
     updateStory({ commit }, payload) {
       // console.log('updateStory');
-      const payloadRef = payload;
-      const userStory = firebase
-      .firestore()
-      .collection('users/' + payload.user.id + '/stories/').doc(payload.storyKey);
-      // console.log('payloadRef=', payloadRef);
-      if (payloadRef.thumbUrl) {
-        userStory.update({
-          thumb: payloadRef.thumbUrl
-        });
-      }
-      if (payloadRef.plan) {
-        userStory.update({
-          plan: payloadRef.plan
-        });
-      }
+      return new Promise((resolve, reject) => {
+        const payloadRef = payload;
+        const userStory = firebase
+        .firestore()
+        .collection('users/' + payload.user.id + '/stories/').doc(payload.storyKey);
+        // console.log('payloadRef=', payloadRef);
+        if (payloadRef.thumb) {
+          userStory.update({
+            thumb: payloadRef.thumb
+          });
+        }
+        if (payloadRef.title) {
+          userStory.update({
+            title: payloadRef.title
+          });
+        }
+        if (payloadRef.plan) {
+          userStory.update({
+            plan: payloadRef.plan
+          });
+        }
+        resolve();
+      });
     },
 
     updatePageOrder({ commit }, payload) {
@@ -683,6 +693,15 @@ export default {
     },
     getStory(state) {
       return state.story;
+    },
+    getStoryById: (state) => (id) => {
+      let activeStory;
+      state.stories.forEach(story => {
+        if (story.id === id) {
+          activeStory = story;
+        }
+      });
+      return activeStory;
     },
     getStoryPlan(state) {
       return state.story.plan;

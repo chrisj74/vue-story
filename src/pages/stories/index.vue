@@ -27,35 +27,37 @@
           <q-card-separator />
           <q-card-actions align="between">
             <q-btn icon="mdi-delete" @click="deleteStory(story.id)" round color="negative" size="sm"></q-btn>
-            <router-link :to="'/story/'+story.id">
-              <q-btn round type="a" icon="mdi-pencil" size="sm" color="positive" />
-            </router-link>
+            <q-btn round type="a" @click="showEditStory(story.id)" icon="mdi-pencil" size="sm" color="positive" />
           </q-card-actions>
         </template>
       </q-card>
     </div>
 
-    <div v-if="settings.showAddStory">
-
-      <q-btn icon="mdi-pencil" label="Add" @click="addStory" />
-    </div>
     <q-modal
         v-model="settings.showAddStory"
         :content-css="{minWidth: '400px', height: '90vh', maxWidth: '100%', width: '80vw'}">
       <add-story></add-story>
     </q-modal>
+
+    <q-modal
+        v-model="settings.showEditStory"
+        :content-css="{minWidth: '400px', height: '90vh', maxWidth: '100%', width: '80vw'}">
+      <edit-story v-if="editStoryId" :storyId="editStoryId"></edit-story>
+    </q-modal>
   </q-page>
 </template>
 
 <script>
-import AddStory from '../../components/story/AddStory'
+import AddStory from '../../components/story/AddStory';
+import EditStory from '../../components/story/EditStory';
 export default {
   name: 'StoriesIndex',
-  components: { AddStory },
+  components: { AddStory, EditStory },
   data() {
     return {
       submitting: false,
       editStories: false,
+      editStoryId: null,
     }
   },
   computed: {
@@ -80,6 +82,14 @@ export default {
       this.$store.commit('setSettings', payload);
     },
 
+    showEditStory(id) {
+      this.editStoryId = id;
+      const payload = {
+        showEditStory: true,
+      };
+      this.$store.commit('setSettings', payload);
+    },
+
     showEdit() {
       this.editStories = !this.editStories;
     },
@@ -97,7 +107,6 @@ export default {
       };
       this.$store.dispatch('addStory', payload)
         .then(() => {
-          this.showAddStory = false;
           this.submitting = false;
           this.newStory.title = "";
         });
@@ -109,7 +118,6 @@ export default {
       };
       this.$store.dispatch('deleteStory', payload)
         .then(() => {
-          this.showAddStory = false;
           this.submitting = false;
           this.newStory.title = "";
         });

@@ -1,5 +1,5 @@
 <template>
-  <div class="main-content-wrapper">
+  <div class="main-content-wrapper" v-if="activePage">
     <!-- MAIN TOOLS -->
     <main-tools></main-tools>
 
@@ -12,7 +12,7 @@
             v-for="(textLayer, layerIndex) in activePage.textLayer"
             :key="'toolbar'+layerIndex"
             class="text-toolbar-wrapper"
-            :style="{width: (pageDimensions.width) + 'px', left: (91)}">
+            :style="{width: (pageDimensions.width) + 'px'}">
             <div :id="'toolbar'+layerIndex" v-if="textLayerActive" :style="{width: (pageDimensions.width) + 'px'}" v-show="settings.activeEditor === layerIndex">
               <span class="ql-format-group">
                 <button type="button" class="ql-bold"></button>
@@ -41,7 +41,7 @@
           </div>
         </template>
         <div
-          v-if="pageDimensions"
+          v-if="pageDimensions && activePage.textLayer"
           :style="{
           zoom: pageDimensions.zoom,
           height: (activePage.pageSize.height - 50)+'px',
@@ -282,7 +282,7 @@ export default {
           zoom: this.maxWidthRatio,
         }
       }
-
+      console.log('set page dimensions');
       this.$store.commit('setPageDimensions', dimensions);
     },
 
