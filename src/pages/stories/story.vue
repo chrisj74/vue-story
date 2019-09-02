@@ -76,7 +76,7 @@
                         }">
                         <img :src="getThumbDrawing(pages[previewIndex].page)" style="max-width: 100%" class="preview-drawing" />
                         <img :src="pageImages[pages[previewIndex].page.id]" style="max-width: 100%" class="preview-photo" />
-                        <div class="preview-text"
+                        <div class="preview-text ql-editor"
                             :style="{
                                 width: pages[previewIndex].pageSize.width + 'px',
                                 height: pages[previewIndex].pageSize.height + 'px',
@@ -112,8 +112,8 @@
                         key="photoCanvas"
                         v-if="pageDimensions"
                         :style="{
-                        width: pages[previewIndex].pageSize.width + 'px',
-                        height: pages[previewIndex].pageSize.height + 'px',
+                        width: (pages[previewIndex].pageSize.width * pageDimensions.pixelRatio) + 'px',
+                        height: (pages[previewIndex].pageSize.height * pageDimensions.pixelRatio) + 'px',
                         top: 0,
                         left: 0,
                         }">
@@ -312,8 +312,9 @@ export default {
 
         generatePhotoImage() {
             const _this = this;
-            this.canvas.setHeight(this.pages[this.previewIndex].pageSize.height);
-            this.canvas.setWidth(this.pages[this.previewIndex].pageSize.width);
+            this.canvas.setHeight(this.pages[this.previewIndex].pageSize.height * this.pageDimensions.pixelRatio);
+            this.canvas.setWidth(this.pages[this.previewIndex].pageSize.width * this.pageDimensions.pixelRatio);
+            this.canvas.setZoom(this.pageDimensions.pixelRatio);
             if (this.pages[this.previewIndex].page.photoLayer.photoCanvasJson) {
                 this.canvas.loadFromJSON(this.pages[this.previewIndex].page.photoLayer.photoCanvasJson, function() {
                     const imagePayload = {

@@ -140,9 +140,13 @@ export default {
   }
 }
 .story-wrapper {
+  .story {
+    flex-basis: calc(24% - 20px);
+    margin: 10px;
+  }
   display: flex;
   justify-content: flex-start;
-  align-items: center;
+  align-items: stretch;
   flex-wrap: wrap;
   flex-direction: row;
   .q-card-media {
@@ -165,19 +169,15 @@ export default {
           width: 100%;
           padding-top: 66%;
         }
-        /* img.story-thumb {
-          width: auto;
-          max-width: calc(100% - 12px);
-          margin: 5px;
-          border: solid 1px rgba(0,0,0,0.12);
-          max-height: 200px;
-        } */
       }
   }
 }
-.story {
-  flex-basis: 23%;
-  margin: 1%;
+
+@media (max-width: $breakpoint-sm) {
+  .story {
+    flex-basis: 48%;
+    margin: 1%;
+  }
 }
 
 </style>

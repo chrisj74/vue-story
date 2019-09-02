@@ -191,7 +191,6 @@ export default {
   watch: {
     insertImage: {
       handler: function(newImage, oldImage) {
-        console.log('insert image watcher');
         this.$store.commit('setLoading', false);
         if (newImage && this.modes.subMode === "cover") {
           this.addCoverImage(newImage);
@@ -226,6 +225,7 @@ export default {
       margin-bottom: 10px;
       img {
         max-width: 200px;
+        align-self: center;
         box-shadow: 0 1px 5px rgba(0,0,0,0.2), 0 2px 2px rgba(0,0,0,0.14), 0 3px 1px -2px rgba(0,0,0,0.12);
         border: solid 3px transparent;
         border-radius: 3px;

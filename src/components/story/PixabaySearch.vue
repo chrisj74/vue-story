@@ -131,9 +131,9 @@ export default {
             name: newImage.name,
           }
         }
-        if (this.modes.mode !== 'story') {
+        // if (this.modes.mode !== 'story') {
           this.$store.commit('setLoading', true);
-        }
+        // }
         this.$store.dispatch('addImage', imgObj);
         this.searchString = '';
       });

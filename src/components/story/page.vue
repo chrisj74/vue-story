@@ -1,5 +1,5 @@
 <template>
-  <div class="main-content-wrapper" v-if="activePage">
+  <div class="main-content-wrapper">
     <!-- MAIN TOOLS -->
     <main-tools></main-tools>
 
@@ -13,7 +13,7 @@
             :key="'toolbar'+layerIndex"
             class="text-toolbar-wrapper"
             :style="{width: (pageDimensions.width) + 'px'}">
-            <div :id="'toolbar'+layerIndex" v-if="textLayerActive" :style="{width: (pageDimensions.width) + 'px'}" v-show="settings.activeEditor === layerIndex">
+            <div :id="'toolbar'+layerIndex" :style="{width: (pageDimensions.width) + 'px'}" v-show="textLayerActive && settings.activeEditor === layerIndex">
               <span class="ql-format-group">
                 <button type="button" class="ql-bold"></button>
                 <button type="button" class="ql-italic"></button>
@@ -41,7 +41,7 @@
           </div>
         </template>
         <div
-          v-if="pageDimensions && activePage.textLayer"
+          v-if="pageDimensions"
           :style="{
           zoom: pageDimensions.zoom,
           height: (activePage.pageSize.height - 50)+'px',
@@ -272,6 +272,7 @@ export default {
           height: (this.activePage.pageSize.height * this.maxHeightRatio),
           width: (this.activePage.pageSize.width * this.maxHeightRatio),
           zoom: this.maxHeightRatio,
+          pixelRatio: window.devicePixelRatio
         }
       } else {
         dimensions = {
@@ -280,9 +281,9 @@ export default {
           height: (this.activePage.pageSize.height * this.maxWidthRatio),
           width: (this.activePage.pageSize.width * this.maxWidthRatio),
           zoom: this.maxWidthRatio,
+          pixelRatio: window.devicePixelRatio
         }
       }
-      console.log('set page dimensions');
       this.$store.commit('setPageDimensions', dimensions);
     },
 

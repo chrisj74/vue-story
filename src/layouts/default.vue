@@ -1,5 +1,5 @@
 <template>
-  <q-layout view="lHh Lpr lFf" v-if="!loading">
+  <q-layout view="lHh Lpr lFf">
     <q-layout-header>
       <q-toolbar color="primary" shrink>
         <q-btn
@@ -49,7 +49,9 @@
     <q-page-container>
       <router-view />
     </q-page-container>
-    <q-spinner-bars color="primary" :size="50" v-if="loading" />
+    <div v-if="loading" class="loading-box">
+      <q-spinner-bars color="primary" :size="100" v-if="loading" />
+    </div>
   </q-layout>
 </template>
 
@@ -94,4 +96,16 @@ export default {
 </script>
 
 <style>
+.loading-box {
+  position: fixed;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255,255,255, .8);
+}
 </style>
