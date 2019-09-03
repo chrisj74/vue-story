@@ -50,13 +50,13 @@ const routes = [
           {
             path: "",
             name: "PageDefault",
-            component: () => import("components/story/page"),
+            component: () => import("components/story/Page"),
             meta: { requiresAuth: true }
           },
           {
             path: ":pageId",
             name: "Page",
-            component: () => import("components/story/page"),
+            component: () => import("components/story/Page"),
             meta: { requiresAuth: true }
           },
         ],

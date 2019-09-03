@@ -1,6 +1,6 @@
 <template>
   <!-- EXTRA TOOLS -->
-  <div class="extra-tools" v-if="pageDimensions" key="extra-tools">
+  <div class="extra-tools" v-if="pageDimensions" :style="{left: (pageDimensions.width + 20) + 'px'}" key="extra-tools">
     <!-- COLORS -->
     <swatches
       :value="settings.color"
@@ -575,6 +575,7 @@ export default {
   z-index: 100;
   flex-direction: column;
   justify-content: center;
+  width: 45px;
 }
 
 .extra-tools > * {
@@ -601,6 +602,8 @@ export default {
   z-index: 100;
   padding: 5px;
   background-color: #fff;
+  box-shadow: 0 1px 5px rgba(0,0,0,0.2), 0 2px 2px rgba(0,0,0,0.14), 0 3px 1px -2px rgba(0,0,0,0.12);
+  border-radius: 3px;
 }
 
 </style>

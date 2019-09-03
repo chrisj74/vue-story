@@ -24,7 +24,7 @@
                             <router-link :to="'/story/'+$route.params.id+'/'+page.id">
                                 <img :src="getThumbDrawing(page.page)" style="max-width: 100%" class="thumb-drawing" />
                                 <img :src="getThumbPhoto(page.page)" style="max-width: 100%" class="thumb-photo" />
-                                <div class="thumb-text"
+                                <div class="thumb-text ql-editor"
                                     :style="{
                                         width: page.pageSize.width + 'px',
                                         height: page.pageSize.height + 'px',
@@ -126,14 +126,36 @@
                 <router-view />
             </transition>
 
+            <div class="plan" v-show="showPlan">
+                <div v-if="story.plan.video" class="plan-video">
+                    <iframe style="width: 100%" :src="story.plan.video" frameborder="0" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+                </div>
+                <div v-html="story.plan.text" class="plan-text ql-editor">
+
+                </div>
+                <div class="edit-plan-btn">
+                    <q-btn color="primary" @click="showEditPlan()">
+                        edit
+                    </q-btn>
+                </div>
+            </div>
+
 
         </q-page>
-        <!-- IMAGE MODAL -->
+        <!-- ADD PAGE MODAL -->
         <q-modal
         v-if="pageDimensions"
         v-model="settings.showAddPage"
         :content-css="{minWidth: '350px', height: '90vh', maxWidth: '100%', width: pageDimensions.width+'px'}">
         <add-page></add-page>
+        </q-modal>
+
+        <!-- EDIT PLAN MODAL -->
+        <q-modal
+        v-if="pageDimensions"
+        v-model="settings.showEditPlan"
+        :content-css="{minWidth: '350px', height: '90vh', maxWidth: '100%', width: '80%'}">
+            <edit-plan></edit-plan>
         </q-modal>
     </div>
 </template>
@@ -146,6 +168,7 @@ import draggable from 'vuedraggable';
 import TextEditor from "../../components/story/TextEditor";
 import DrawingCanvas from '../../components/story/DrawingCanvas';
 import AddPage from '../../components/story/AddPage';
+import EditPlan from '../../components/story/EditPlan';
 
 
 
@@ -159,7 +182,8 @@ export default {
         draggable,
         TextEditor,
         DrawingCanvas,
-        AddPage
+        AddPage,
+        EditPlan
     },
     data() {
         return {
@@ -461,6 +485,13 @@ export default {
             this.$store.commit('setSettings', payload);
         },
 
+        showEditPlan() {
+            const payload = {
+                showEditPlan: true,
+            };
+            this.$store.commit('setSettings', payload);
+        },
+
         deletePage(pageId, prevId) {
             /** Don't navigate after delete if not on page being deleted */
             let moveTo = null;
@@ -580,16 +611,22 @@ export default {
     justify-content: flex-start;
 }
 
-.side-bar {
+.plan {
     min-width: 20%;
     max-width: 50%;
     width: 400px;
-    position: fixed;
-    top: 50px;
+    position: relative;
+    top: 30px;
     right: 0;
     height: calc(100vh - 50px);
     background: rgba(255,255,255,.8);
     z-index: 3;
+    box-shadow: 0 1px 5px rgba(0,0,0,0.2), 0 2px 2px rgba(0,0,0,0.14), 0 3px 1px -2px rgba(0,0,0,0.12);
+    .edit-plan-btn {
+        position: absolute;
+        bottom: 0;
+        right: 0;
+    }
 }
 .action-buttons {
     display: flex;
@@ -599,12 +636,39 @@ export default {
 .add-page {
     text-align: center;
 }
+
 .thumbs {
     margin-top: 35px;
     width: 100px;
     align-self: flex-start;
+    position: fixed;
+    left: -79px;
+    transition: all .5s ease-in-out;
+    z-index: 2002;
+    &.active {
+        left: 0;
+        background: #fff;
+        .handle {
+            right: -20px;
+        }
+    }
+    #thumb-wrapper .thumb-draggable {
+        align-items: flex-end;
+    }
     .handle {
-        display: none;
+        display: flex;
+        position: absolute;
+        bottom: 0;
+        right: -10px;
+        width: 35px;
+        height: 35px;
+        border-radius: 0 5px 5px 0;
+        border: none;
+        justify-content: center;
+        align-items: center;
+        font-size: 1.5em;
+        background-color: #fff;
+        box-shadow: 0 1px 5px rgba(0,0,0,0.2), 0 2px 2px rgba(0,0,0,0.14), 0 3px 1px -2px rgba(0,0,0,0.12);
     }
 }
 #thumb-wrapper {
@@ -625,7 +689,7 @@ export default {
     display: flex;
     justify-content: center;
     align-items: stretch;
-    margin-bottom: 5px;
+    margin-bottom: 10px;
     margin-right: 10px;
     background-size: cover;
     background-repeat: no-repeat;
@@ -767,34 +831,5 @@ export default {
     .side-bar {
         height: calc(100vh - (50px + 100px));
     }
-    /* .thumbs {
-        display: flex;
-        flex-wrap: nowrap;
-        flex-direction: row;
-        justify-content: flex-start;
-        align-items: center;
-        order: 2;
-        width: 100%;
-        margin-top: 5px;
-    }
-    #thumb-wrapper {
-        >div {
-            max-height: 60px;
-            overflow: auto;
-            display: flex;
-            flex-direction: row;
-            justify-content: flex-end;
-            .thumb {
-                width: 700px;
-                height: 50px;
-                flex-basis: 70px;
-                min-width: 70px;
-                margin-right: 5px;
-                .delete-page {
-                    display: none;
-                }
-            }
-        }
-    } */
 }
 </style>

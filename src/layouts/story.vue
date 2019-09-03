@@ -22,34 +22,6 @@
     >
       <q-icon :name="showPlan ? 'mdi-close' : 'mdi-file-document-box-outline'" />
     </q-btn>
-    <!-- titlebar -->
-    <!-- <q-layout-header v-if="screen.width > screen.height">
-      <q-toolbar color="primary">
-        <q-btn
-          flat
-          dense
-          round
-          size="lg"
-          @click="leftDrawerOpen = !leftDrawerOpen"
-        >
-          <q-icon name="mdi-menu" />
-        </q-btn>
-
-        <q-toolbar-title>
-          Quasar + Firebase Auth
-          <div slot="subtitle">Quasar Framework 0.15.6 + Firebase Auth</div>
-        </q-toolbar-title>
-        <q-btn
-          flat
-          dense
-          round
-          size="lg"
-          @click="togglePlan()"
-        >
-          <q-icon name="mdi-menu" />
-        </q-btn>
-      </q-toolbar>
-    </q-layout-header> -->
 
     <q-layout-drawer
       v-model="leftDrawerOpen"
@@ -125,20 +97,6 @@ export default {
       this.$store.dispatch('toggleShowPlan');
     },
   },
-  mounted () {
-    /* if (this.user) {
-      this.$store.dispatch('setStories', this.user.id);
-      this.storiesSet = true;
-    } */
-  },
-  watch: {
-    /* user(newUser) {
-      if (!this.storiesSet) {
-        this.$store.dispatch('setStories', this.user.id);
-        this.storiesSet = true;
-      }
-    } */
-  }
 }
 </script>
 

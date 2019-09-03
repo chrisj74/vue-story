@@ -38,6 +38,7 @@ export default {
       showAddPage: false,
       showAddStory: false,
       showEditStory: false,
+      showEditPlan: false,
       showThumbs: false,
       textBoxBorderWidth: 0,
       textBoxBorderColor: '#ffffff00',

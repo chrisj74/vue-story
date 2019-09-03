@@ -83,7 +83,9 @@
     <extra-tools></extra-tools>
 
     <!-- scrollers -->
-    <div class="page-scrollers" v-if="pageDimensions && pageDimensions.height > pageHeight">
+    <div class="page-scrollers"
+      v-if="pageDimensions && pageDimensions.height > pageHeight"
+      :style="{left: (pageDimensions.width + 20) + 'px'}">
       <div class="scroll-btn">
         <button
           class="q-btn inline relative-position q-btn-item non-selectable q-btn-round q-focusable q-hoverable bg-dark text-white"
@@ -513,6 +515,12 @@ export default {
           this.storiesSet = true;
         }
       }
+    },
+
+    showPlan: {
+      handler: function(newPlan, oldPlan) {
+        this.setDefaultZoom();
+      }
     }
   }
 };
@@ -532,7 +540,7 @@ export default {
   z-index: 1;
 }
 .main-content {
-  width: 100%;
+  width: calc(100% - 50px);
   display: flex;
   flex-wrap: nowrap;
   justify-content: flex-start;
@@ -628,9 +636,9 @@ export default {
   justify-content: center;
   align-items: center;
 }
-@media (orientation: portrait) {
+/* @media (orientation: portrait) { */
   .main-content-wrapper {
-    margin-right: 0;
+    margin-left: 5px;
     width: 100%;
   }
   .main-content {
@@ -641,9 +649,9 @@ export default {
     max-width: calc(100vw - 57px);
   }
   .text-toolbar-wrapper {
-    left: 10px;
+    left: 15px;
   }
-}
+/* } */
 @media(max-width: $breakpoint-md) and (orientation: portrait) {
   .main-content-wrapper {
     max-height: calc(100vh - 100px);

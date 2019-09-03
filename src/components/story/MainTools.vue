@@ -1,5 +1,5 @@
 <template>
-  <div class="tools">
+  <div class="tools" v-if="pageDimensions" :style="{width: pageDimensions.width + 'px'}">
     <!-- HISTORY -->
     <q-btn icon="mdi-undo" round @click="undo()" :disable="!canUndo" :size="$q.screen.lt.sm ? 'sm' : 'md'"/>
     <q-btn icon="mdi-redo" round @click="redo()" :disable="!canRedo" :size="$q.screen.lt.sm ? 'sm' : 'md'"/>
@@ -134,10 +134,6 @@ export default {
       return this.$store.getters.getSettings;
     },
   },
-  mounted() {
-    /** Set page from route */
-    console.log('main tools loaded');
-  },
   methods: {
     setText() {
       this.$store.commit('setMode', "text");
@@ -184,12 +180,9 @@ export default {
     },
 
     undo() {
-      console.log('undo, this.history.restoreIndex=', this.history.restoreIndex);
       if (this.history.restoreIndex > 0) {
         this.$store.commit('setHistoryRestoreIndex', this.history.restoreIndex - 1);
         this.$store.commit('setHistoryUndo');
-        // this.restoreIndex--;
-
         this.saveStory();
         if (this.history.states.length === this.history.restoreIndex + 1) {
           this.canredo = false;
