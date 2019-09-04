@@ -1,5 +1,5 @@
 <template>
-  <div class="tools" v-if="pageDimensions" :style="{width: pageDimensions.width + 'px'}">
+  <div class="tools" v-if="pageDimensions" :style="{width: (pageDimensions.maxWidth) + 'px'}">
     <!-- HISTORY -->
     <q-btn icon="mdi-undo" round @click="undo()" :disable="!canUndo" :size="$q.screen.lt.sm ? 'sm' : 'md'"/>
     <q-btn icon="mdi-redo" round @click="redo()" :disable="!canRedo" :size="$q.screen.lt.sm ? 'sm' : 'md'"/>
@@ -227,6 +227,7 @@ export default {
 
 .tools {
   position: fixed;
+  margin-left: 20px;
   top: 0;
   left: 0;
   width: 100%;
@@ -236,7 +237,7 @@ export default {
   flex-direction: row;
   background-color: #ddd;
   > button {
-    margin-right: 5px;
+    margin-right: 2px;
   }
 }
 @media (max-width: $breakpoint-md) and (orientation: portrait) {

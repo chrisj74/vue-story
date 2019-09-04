@@ -1,5 +1,5 @@
 <template>
-  <q-layout view="lHh Lpr lFf">
+  <q-layout view="lHh Lpr lFf" :class="'dragging'">
     <!-- left drawer -->
     <q-btn
       class="drawer-btn"
@@ -101,6 +101,9 @@ export default {
 </script>
 
 <style>
+.dragging {
+  position: fixed;
+}
 .drawer-btn {
   position: absolute;
   top: 0;

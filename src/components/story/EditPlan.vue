@@ -44,7 +44,7 @@
 
     </div>
     <div class="plan-preview" ref="planPreview">
-      <div v-if="story.plan.video" class="plan-video" ref="planVideo">
+      <div v-if="story.plan.video" class="plan-video" ref="planPreviewVideo">
         <iframe style="width: 100%" :src="story.plan.video" frameborder="0" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
       </div>
       <div v-html="previewContent" class="plan-text ql-editor" :style="{maxHeight: textHeight() + 'px'}">
@@ -139,7 +139,7 @@ export default {
   },
   methods: {
     textHeight() {
-      return this.$refs.planVideo ? (this.$refs.planPreview.clientHeight - (this.$refs.planVideo.clientHeight + 10)) : 0;
+      return this.$refs.planPreviewVideo ? (this.$refs.planPreview.clientHeight - (this.$refs.planPreviewVideo.clientHeight + 10)) : 0;
     },
 
     onEditorChange: _.debounce(function(event) {

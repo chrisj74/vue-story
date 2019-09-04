@@ -12,7 +12,7 @@
             v-for="(textLayer, layerIndex) in activePage.textLayer"
             :key="'toolbar'+layerIndex"
             class="text-toolbar-wrapper"
-            :style="{width: (pageDimensions.width) + 'px'}">
+            :style="{width: (pageDimensions.maxWidth) + 'px'}">
             <div :id="'toolbar'+layerIndex" :style="{width: (pageDimensions.width) + 'px'}" v-show="textLayerActive && settings.activeEditor === layerIndex">
               <span class="ql-format-group">
                 <button type="button" class="ql-bold"></button>
@@ -40,29 +40,31 @@
             </div>
           </div>
         </template>
-        <div
-          v-if="pageDimensions"
-          :style="{
-          zoom: pageDimensions.zoom,
-          height: (activePage.pageSize.height - 50)+'px',
-          width: activePage.pageSize.width+'px',
-          pointerEvents: textLayerActive ? 'all' : 'none',
-          userSelect: textLayerActive ? 'all' : 'none'}"
-          class="text-layer">
-          <template v-for="(textLayer, index) in activePage.textLayer">
-            <text-editor
-              v-if="textLayer.width"
-              :key="index"
-              :print="false"
-              :zoom="pageDimensions.zoom"
-              :pageWidth="activePage.pageSize.width"
-              :pageHeight="activePage.pageSize.height"
-              :textLayerIndex="index" >
-            </text-editor>
-          </template>
-        </div>
+
         <!-- Canvas -->
         <div v-if="pageDimensions" ref="canvasWrapper" class="canvas-wrapper" :style="{width: pageDimensions.width+'px', height: pageDimensions.height+'px'}">
+          <div
+            v-if="pageDimensions"
+            :style="{
+            transform: 'scale(' + pageDimensions.zoom + ')',
+            transformOrigin: 'top left',
+            height: (activePage.pageSize.height - 50)+'px',
+            width: activePage.pageSize.width+'px',
+            pointerEvents: textLayerActive ? 'all' : 'none',
+            userSelect: textLayerActive ? 'all' : 'none'}"
+            class="text-layer">
+            <template v-for="(textLayer, index) in activePage.textLayer">
+              <text-editor
+                v-if="textLayer.width"
+                :key="index"
+                :print="false"
+                :zoom="pageDimensions.zoom"
+                :pageWidth="activePage.pageSize.width"
+                :pageHeight="activePage.pageSize.height"
+                :textLayerIndex="index" >
+              </text-editor>
+            </template>
+          </div>
           <div class="canvas-bg-img-wrapper" :style="{width: pageDimensions.width+'px', height: pageDimensions.height+'px'}">
             <div v-if="activePage.background" class="canvas-bg-img" :style="{
               backgroundColor: activePage.background.color,
@@ -85,7 +87,7 @@
     <!-- scrollers -->
     <div class="page-scrollers"
       v-if="pageDimensions && pageDimensions.height > pageHeight"
-      :style="{left: (pageDimensions.width + 20) + 'px'}">
+      :style="{left: leftPos}">
       <div class="scroll-btn">
         <button
           class="q-btn inline relative-position q-btn-item non-selectable q-btn-round q-focusable q-hoverable bg-dark text-white"
@@ -214,7 +216,10 @@ export default {
     },
     textLayerActive() {
       return this.modes.mode === 'text'; // && this.modes.subMode === 'text'
-    }
+    },
+    leftPos() {
+      return (((this.pageDimensions.maxWidth - this.pageDimensions.width) / 2) + (this.pageDimensions.width + 20)) + 'px'
+    },
   },
   mounted() {
     /** Set page from route */
@@ -269,6 +274,7 @@ export default {
       let dimensions;
       if (this.maxHeightRatio < this.maxWidthRatio) {
         dimensions = {
+          maxWidth: this.$refs.page.clientWidth,
           maxWidthRatio: this.maxWidthRatio,
           maxHeightRatio: this.maxHeightRatio,
           height: (this.activePage.pageSize.height * this.maxHeightRatio),
@@ -278,6 +284,7 @@ export default {
         }
       } else {
         dimensions = {
+          maxWidth: this.$refs.page.clientWidth,
           maxWidthRatio: this.maxWidthRatio,
           maxHeightRatio: this.maxHeightRatio,
           height: (this.activePage.pageSize.height * this.maxWidthRatio),
@@ -557,6 +564,7 @@ export default {
   flex-grow: 2;
   align-self: stretch;
   height: calc(100vh - 100px);
+  justify-content: center;
 }
 
 .text-layer {
@@ -596,7 +604,8 @@ export default {
   left: 110px;
   width: 100%;
   z-index: 101;
-  background: #fff;
+  display: flex;
+  justify-content: center;
   > * {
     &.ql-toolbar.ql-snow  {
       background: #fff;
@@ -667,6 +676,11 @@ export default {
       height: calc(100vh - 150px);
     }
   }
+}
 
+@media(max-width: $breakpoint-xs) {
+  .main-content {
+    width: calc(100% - 35px);
+  }
 }
 </style>

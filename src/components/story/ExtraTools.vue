@@ -1,6 +1,6 @@
 <template>
   <!-- EXTRA TOOLS -->
-  <div class="extra-tools" v-if="pageDimensions" :style="{left: (pageDimensions.width + 20) + 'px'}" key="extra-tools">
+  <div class="extra-tools" v-if="pageDimensions" :style="{left: leftPos}" key="extra-tools">
     <!-- COLORS -->
     <swatches
       :value="settings.color"
@@ -359,8 +359,13 @@ export default {
     storeTextLayer() {
       return this.$store.getters.getPageTextLayer;
     },
+    leftPos() {
+      return (((this.pageDimensions.maxWidth - this.pageDimensions.width) / 2) + (this.pageDimensions.width + 20)) + 'px'
+    },
   },
   methods: {
+
+
     fillColor() {
       this.$store.commit('setSubMode', "fill");
     },
@@ -604,6 +609,12 @@ export default {
   background-color: #fff;
   box-shadow: 0 1px 5px rgba(0,0,0,0.2), 0 2px 2px rgba(0,0,0,0.14), 0 3px 1px -2px rgba(0,0,0,0.12);
   border-radius: 3px;
+}
+
+@media(max-width: $breakpoint-xs) {
+  .extra-tools {
+    width: 35px;
+  }
 }
 
 </style>

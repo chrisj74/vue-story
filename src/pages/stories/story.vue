@@ -126,11 +126,11 @@
                 <router-view />
             </transition>
 
-            <div class="plan" v-show="showPlan">
-                <div v-if="story.plan.video" class="plan-video">
+            <div class="plan" v-show="showPlan" ref="planContainer">
+                <div v-if="story.plan.video" class="plan-video" ref="planVideo">
                     <iframe style="width: 100%" :src="story.plan.video" frameborder="0" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
                 </div>
-                <div v-html="story.plan.text" class="plan-text ql-editor">
+                <div v-html="story.plan.text" class="plan-text ql-editor" :style="{maxHeight: textHeight() + 'px'}">
 
                 </div>
                 <div class="edit-plan-btn">
@@ -300,6 +300,10 @@ export default {
         this.$store.commit('resetPage');
     },
     methods: {
+        /* Plan  */
+        textHeight() {
+          return this.$refs.planVideo ? (this.$refs.planContainer.clientHeight - (this.$refs.planVideo.clientHeight + 10)) : 0;
+        },
         /** EDIT */
         toggleEdit(){
             if (this.isEdit) {

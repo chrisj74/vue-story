@@ -174,9 +174,11 @@ export default {
 }
 
 @media (max-width: $breakpoint-sm) {
-  .story {
-    flex-basis: 48%;
-    margin: 1%;
+  .story-wrapper {
+    .story {
+      flex-basis: calc(50% - 20px);
+      margin: 10px;
+    }
   }
 }
 
