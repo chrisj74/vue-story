@@ -20,13 +20,14 @@
             <a>{{ story.title }}</a>
           </router-link>
         </q-card-title>
-        <!-- <q-card-main>
-          <p>info</p>
-        </q-card-main> -->
+        <q-card-main v-if="story.description && story.description.length > 0">
+          <p>{{ story.description }}</p>
+        </q-card-main>
         <template v-if="editStories">
           <q-card-separator />
           <q-card-actions align="between">
             <q-btn icon="mdi-delete" @click="deleteStory(story.id)" round color="negative" size="sm"></q-btn>
+            <q-btn icon="mdi-content-copy" @click="cloneStory(story.id)" round color="tertiary" size="sm"></q-btn>
             <q-btn round type="a" @click="showEditStory(story.id)" icon="mdi-pencil" size="sm" color="positive" />
           </q-card-actions>
         </template>
@@ -59,6 +60,9 @@ export default {
       editStories: false,
       editStoryId: null,
     }
+  },
+  mounted() {
+    /* TODO RESET ACTIVE STORY */
   },
   computed: {
     user () {
@@ -94,23 +98,6 @@ export default {
       this.editStories = !this.editStories;
     },
 
-    addStory() {
-      this.submitting = true;
-      const newStory = {
-        title: this.newStory.title,
-        plan: "<p>Plan from db</p>",
-        thumb: ''
-      };
-      const payload = {
-        user: this.user,
-        newStory : newStory
-      };
-      this.$store.dispatch('addStory', payload)
-        .then(() => {
-          this.submitting = false;
-          this.newStory.title = "";
-        });
-    },
     deleteStory(storyKey) {
       const payload = {
         storyKey: storyKey,
@@ -120,6 +107,18 @@ export default {
         .then(() => {
           this.submitting = false;
           this.newStory.title = "";
+        });
+    },
+
+    cloneStory(storyKey) {
+      const payload = {
+        user: this.user,
+        storyKey: storyKey,
+      }
+      this.$store.dispatch('cloneStory', payload)
+        .then((newStoryId) => {
+          console.log('done cloning id=', newStoryId);
+          this.$router.push({ path: '/story/'+newStoryId });
         });
     },
 

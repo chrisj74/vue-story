@@ -4,6 +4,13 @@
       <h4>Add Story</h4>
       <!-- Title -->
       <q-input type="text" v-model="newStory.title" float-label="Story Name" class="text-input" />
+      <!-- Description -->
+      <q-input type="textarea"
+        v-model="newStory.description"
+        float-label="Story Description"
+        :max-height="100"
+        rows="3"
+        class="text-input" />
       <!-- Cover -->
       <div class="cover-image-container">
         <div class="cover-image-thumb">
@@ -56,7 +63,8 @@ export default {
         selectedHeight: null,
         selectedIndex: null,
         newStory: {
-          title: "",
+          title: '',
+          description: ''
         },
         coverImage: null,
         submitting: false,
@@ -65,6 +73,7 @@ export default {
   mounted() {
     /** Reset data */
     this.newStory.title = '';
+    this.newStory.description = '';
     this.selectedWidth = null;
     this.selectedHeight = null;
     this.selectedIndex = null;
@@ -141,7 +150,11 @@ export default {
           pageKey: this.$route.params.pageId ? this.$route.params.pageId : null,
           newStory: {
             title: this.newStory.title,
-            plan: "<p>Plan from db</p>",
+            description: this.newStory.description,
+            plan: {
+              video: null,
+              text: null
+            },
             thumb: this.coverImage ? this.coverImage : '',
           },
           page: page,
@@ -164,7 +177,7 @@ export default {
     },
 
     showCoverImageModal() {
-      this.$store.commit('setMode', "story");
+      this.$store.commit('setMode', "addStory");
       this.$store.commit('setSubMode', "cover");
       const newSetting = {
         showImageModal: true,
@@ -176,7 +189,7 @@ export default {
       this.$store.commit("clearInsertImage");
       this.$store.commit("clearImageSearchResults");
       this.coverImage = imageObj.webformatURL;
-      this.$store.commit('setSubMode', "add");
+      this.$store.commit('setSubMode', "view");
       const newSetting = {
         showImageModal: false,
       };
@@ -192,7 +205,7 @@ export default {
     insertImage: {
       handler: function(newImage, oldImage) {
         this.$store.commit('setLoading', false);
-        if (newImage && this.modes.subMode === "cover") {
+        if (newImage && this.modes.mode === "addStory" && this.modes.subMode === "cover") {
           this.addCoverImage(newImage);
         }
       },
@@ -239,7 +252,6 @@ export default {
     .page-size {
       flex-basis: 30%;
       padding: 10px;
-      min-height: 200px;
       box-shadow: 0 1px 5px rgba(0,0,0,0.2), 0 2px 2px rgba(0,0,0,0.14), 0 3px 1px -2px rgba(0,0,0,0.12);
       border: solid 3px transparent;
       border-radius: 3px;

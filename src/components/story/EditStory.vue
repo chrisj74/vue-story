@@ -4,6 +4,13 @@
       <h4>Add Story</h4>
       <!-- Title -->
       <q-input type="text" v-model="newStory.title" float-label="Story Name" class="text-input" />
+      <!-- Description -->
+      <q-input type="textarea"
+        v-model="newStory.description"
+        float-label="Story Description"
+        :max-height="100"
+        rows="7"
+        class="text-input" />
       <!-- Cover -->
       <div class="cover-image-container">
         <div class="cover-image-thumb">
@@ -41,6 +48,7 @@ export default {
       return {
         newStory: {
           title: "",
+          description: "",
         },
         coverImage: null,
         submitting: false,
@@ -49,6 +57,7 @@ export default {
   mounted() {
     /** Reset data */
     this.newStory.title = this.story.title;
+    this.newStory.description = this.story.description;
     this.coverImage = this.story.thumb;
     this.submitting = false
   },
@@ -89,12 +98,14 @@ export default {
               user: this.user,
               storyKey : this.storyId,
               title: this.newStory.title,
+              title: this.newStory.description,
               thumb: this.coverImage
           };
           this.$store.dispatch('updateStory', payload).then( () => {
               this.submitting = false;
               this.newStory = {
-                title: "",
+                title: '',
+                description: '',
               };
               this.coverImage = null;
               const payload = {
@@ -109,7 +120,7 @@ export default {
     },
 
     showCoverImageModal() {
-      this.$store.commit('setMode', "story");
+      this.$store.commit('setMode', "editStory");
       this.$store.commit('setSubMode', "cover");
       const newSetting = {
         showImageModal: true,
@@ -121,7 +132,7 @@ export default {
       this.$store.commit("clearInsertImage");
       this.$store.commit("clearImageSearchResults");
       this.coverImage = imageObj.webformatURL;
-      this.$store.commit('setSubMode', "add");
+      this.$store.commit('setSubMode', "view");
       const newSetting = {
         showImageModal: false,
       };
@@ -138,7 +149,7 @@ export default {
       handler: function(newImage, oldImage) {
         console.log('insert image watcher');
         this.$store.commit('setLoading', false);
-        if (newImage && this.modes.subMode === "cover") {
+        if (newImage && this.modes.mode === "editStory" && this.modes.subMode === "cover") {
           this.addCoverImage(newImage);
         }
       },
@@ -185,7 +196,6 @@ export default {
     .page-size {
       flex-basis: 30%;
       padding: 10px;
-      min-height: 200px;
       box-shadow: 0 1px 5px rgba(0,0,0,0.2), 0 2px 2px rgba(0,0,0,0.14), 0 3px 1px -2px rgba(0,0,0,0.12);
       border: solid 3px transparent;
       border-radius: 3px;

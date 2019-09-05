@@ -5,9 +5,7 @@ import * as axios from 'axios';
 export default {
   state: {
     nextPage: null,
-    stories: [
-
-    ],
+    stories: [],
     pageImages: {},
     story: {},
     pages: [],
@@ -176,7 +174,6 @@ export default {
   },
   actions: {
     addStory({ commit }, payload) {
-      console.log('addstory payload=', payload);
       return new Promise((resolve, reject) => {
         const userStories = firebase
           .firestore()
@@ -200,6 +197,60 @@ export default {
               console.error("Error adding document: ", error);
           });
       });
+    },
+
+    cloneStory({ commit, state }, payload) {
+      console.log('payload=', payload);
+      return new Promise((resolve, reject) => {
+        let sourceStory;
+        state.stories.forEach(story => {
+          if (story.id === payload.storyKey) {
+            sourceStory = _.cloneDeep(story);
+          }
+        });
+        sourceStory.title = sourceStory.title + ' copy';
+        console.log('sourceStory=', sourceStory);
+
+        const sourcePages = [];
+        firebase.firestore()
+          .collection('users/' + payload.user.id + '/stories/' + payload.storyKey + '/pages').orderBy('order', 'asc')
+          .onSnapshot(function(querySnapshot) {
+            querySnapshot.forEach(function(doc) {
+              sourcePages.push({
+                photoLayer: doc.data().photoLayer,
+                textLayer: doc.data().textLayer,
+                thumb: doc.data().thumb ? doc.data().thumb : '',
+                // preview: doc.data().preview,
+                background: doc.data().background,
+                drawingLayer: doc.data().drawingLayer,
+                pageSize: doc.data().pageSize,
+                order: doc.data().order,
+                commit: 0,
+              });
+            });
+          });
+        console.log('sourcePages=', sourcePages);
+        const userStories = firebase
+          .firestore()
+          .collection("users/").doc(payload.user.id);
+        userStories.set({
+          lastUpdated: new Date(),
+        });
+
+        userStories
+          .collection('stories').add(sourceStory)
+          .then(function(docRef) {
+            const newStoryId = docRef.id;
+            sourcePages.forEach(page => {
+              docRef
+              .collection('pages').add(_.cloneDeep(page))
+            });
+            resolve(newStoryId);
+          })
+          .catch(function(error) {
+              console.error("Error adding document: ", error);
+          });
+        });
     },
 
     updateStory({ commit }, payload) {
@@ -283,7 +334,6 @@ export default {
         resolve();
       });
     },
-
 
     updatePageText( {commit, state }, payload) {
       const newState = _.cloneDeep(state.page);
@@ -411,9 +461,10 @@ export default {
                   id: doc.id,
                   title: doc.data().title,
                   thumb: doc.data().thumb,
-                  preview: doc.data().preview
+                  // preview: doc.data().preview,
+                  description: doc.data().description,
+                  plan: doc.data().plan,
                 });
-
               });
               commit('setStories', stories);
           });
