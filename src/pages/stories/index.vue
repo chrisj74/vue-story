@@ -62,7 +62,9 @@ export default {
     }
   },
   mounted() {
-    /* TODO RESET ACTIVE STORY */
+    /** Reset story & page so deleting doesn't create issues */
+    this.$store.commit('setStory', {});
+    this.$store.commit('resetPage');
   },
   computed: {
     user () {
@@ -106,7 +108,6 @@ export default {
       this.$store.dispatch('deleteStory', payload)
         .then(() => {
           this.submitting = false;
-          this.newStory.title = "";
         });
     },
 

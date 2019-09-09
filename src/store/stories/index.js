@@ -200,7 +200,6 @@ export default {
     },
 
     cloneStory({ commit, state }, payload) {
-      console.log('payload=', payload);
       return new Promise((resolve, reject) => {
         let sourceStory;
         state.stories.forEach(story => {
@@ -209,7 +208,6 @@ export default {
           }
         });
         sourceStory.title = sourceStory.title + ' copy';
-        console.log('sourceStory=', sourceStory);
 
         const sourcePages = [];
         firebase.firestore()
@@ -229,7 +227,6 @@ export default {
               });
             });
           });
-        console.log('sourcePages=', sourcePages);
         const userStories = firebase
           .firestore()
           .collection("users/").doc(payload.user.id);
@@ -582,10 +579,11 @@ export default {
               }
             });
 
-          } else if (!state.page
+          } else if (state.story &&
+            (!state.page
             || state.page.id !== querySnapshot.docs[0].id
             || querySnapshot.docs[0].data().commit > state.page.commit
-            || state.page.commit == 0) {
+            || state.page.commit == 0)) {
             /** cater for index without id */
             page = {
               photoLayer : querySnapshot.docs[0].data().photoLayer,
@@ -756,7 +754,7 @@ export default {
       return activeStory;
     },
     getStoryPlan(state) {
-      return state.story.plan;
+      return state.story ? state.story.plan : null;
     },
     getPages(state) {
       return state.pages;
