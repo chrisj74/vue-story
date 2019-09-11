@@ -64,6 +64,20 @@ const routes = [
     ]
   },
   {
+    path: "/user",
+    name: "User",
+    component: () => import("layouts/default"),
+    meta: { requiresAuth: true },
+    children: [
+      {
+        path: "/profiles",
+        name: "Profiles",
+        component: () => import("pages/user/profiles"),
+        meta: { requiresAuth: true },
+      },
+    ]
+  },
+  {
     // Always leave this as last one
     path: "*",
     component: () => import("pages/404")

@@ -16,10 +16,40 @@ export default ({ Vue, store, router }) => {
         redirect: router.currentRoute.query
       };
       await store.dispatch('autoSignIn', payload );
-      let userProfile = firebase.database().ref('profiles/' + user.uid);
-      await userProfile.on('value', snapshot => {
-        store.dispatch('setProfile', snapshot);
-      });
+      let userAccount = firebase
+      .firestore()
+      .collection('accounts/').doc(user.uid);
+      userAccount.get()
+        .then((docSnapshot) => {
+          if (docSnapshot.exists) {
+            userAccount.onSnapshot((doc) => {
+              store.dispatch('setAccount', doc.data()).then(() => {
+                store.dispatch('setProfile', null);
+              });
+            });
+          } else {
+            /** Create account and default profile */
+            const newAcc = {
+              admin: false,
+            };
+            userAccount.set(newAcc)
+              store.dispatch('setAccount', newAcc);
+              userAccount
+                .collection('/profiles').add({
+                  nickName: user.displayName,
+                  default: true,
+                  age: null,
+                  profilePic: user.photoURL,
+                  email: user.email,
+                })
+                .then(function(profileRef) {
+                  store.dispatch('setProfile', null);
+                })
+                .catch(function(error) {
+                  console.error("Error adding account: ", error);
+              });
+          }
+        })
     } else {
       await store.dispatch('setAuth', true ); // Let the app know auth complete
     }

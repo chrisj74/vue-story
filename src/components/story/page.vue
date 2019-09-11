@@ -132,7 +132,6 @@ import Swatches from "vue-swatches";
 import "vue-swatches/dist/vue-swatches.min.css";
 import AddImage from "./PixabaySearch";
 import TextEditor from "./TextEditor";
-// import FabricCanvas from './FabricCanvas';
 import DrawingCanvas from './DrawingCanvas';
 import FabricCanvas from './FabricCanvas';
 import MainTools from './MainTools';

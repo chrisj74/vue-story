@@ -21,20 +21,36 @@
       v-model="leftDrawerOpen"
       content-class="bg-grey-2"
     >
+      <div class="profile">
+        <div class="profile-avatar" v-if="profile">
+          <router-link :to="'/profiles'">
+            <img :src="profile.profilePic" class="profile-img profile-active" v-if="profile.profilePic" />
+            <div class="profile-initials profile-active" v-else>
+              {{ getInitials(profile.nickName) }}
+            </div>
+          </router-link>
+        </div>
+        <div class="profile-label" v-if="profile && profile.nickName">
+          <router-link :to="'/profiles'">{{profile.nickName}}</router-link>
+        </div>
+      </div>
       <q-list
         no-border
         link
         inset-delimiter
       >
-        <q-list-header>Essential Links</q-list-header>
         <q-item :link="true" to="/">
           <q-item-side icon="mdi-home"/>
           <q-item-main label="HOME" />
         </q-item>
         <q-item :link="true" to="/stories">
           <q-item-side icon="mdi-book"/>
-          <q-item-main label="STORIES" />
+          <q-item-main label="MY STORIES" />
         </q-item>
+        <!-- <q-item :link="true" to="/profile" v-if="user">
+          <q-item-side icon="mdi-account" />
+          <q-item-main label="MY ACCOUNT" />
+        </q-item> -->
         <q-item @click.native="onLogout" v-if="user">
           <q-item-side icon="mdi-power" />
           <q-item-main label="EXIT" />
@@ -70,12 +86,26 @@ export default {
     },
     loading () {
       return this.$store.getters.loading
+    },
+    profile () {
+      return this.$store.getters.profile
     }
   },
   methods: {
    onLogout () {
       this.$store.dispatch('logout');
       this.$router.push('/');
+    },
+
+    getInitials(name) {
+      let initialsStr = '';
+      let initials = name.split(' ');
+      initials.forEach((initial, index) => {
+        if (index === 0 || index === (initials.length -1)) {
+          initialsStr += initial.substr(0,1);
+        }
+      });
+      return initialsStr;
     }
   },
   mounted () {
@@ -95,7 +125,47 @@ export default {
 }
 </script>
 
-<style>
+<style lang="stylus">
+.profile {
+  margin-top: 5px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
+  a {
+    text-decoration: none;
+    color: #000;
+  }
+  .profile-avatar {
+    display: inline-block;
+    width: 150px;
+    max-width: 100%;
+    border-radius: 50%;
+    .profile-active {
+      box-shadow: 0 1px 5px rgba(0,0,0,0.2), 0 2px 2px rgba(0,0,0,0.14), 0 3px 1px -2px rgba(0,0,0,0.12);
+      border: solid 3px transparent;
+    }
+    .profile-img {
+      border-radius: 50%;
+      max-width: 100%;
+    }
+    .profile-initials {
+      width: 150px;
+      max-width: 100%;
+      height: 150px;
+      display: flex;
+      border-radius: 50%;
+      align-items: center;
+      justify-content: center;
+      font-size: 4em;
+      border: none;
+    }
+  }
+  .profile-label {
+    text-align: center;
+    margin-top: 5px;
+  }
+}
 .loading-box {
   position: fixed;
   top: 0;
