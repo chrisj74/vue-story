@@ -1,49 +1,56 @@
 <template>
-  <q-page class="user-index-container">
-    <div class="row justify-start">
-      <q-btn @click="showEdit()" size="sm" v-if="!editProfiles">Manage Profiles</q-btn>
-      <q-btn @click="showEdit()" size="sm" v-if="editProfiles">Done</q-btn>
-    </div>
-    <div class="profiles-wrapper" v-if="profiles">
-      <div v-if="!editProfile" class="profiles-wrapper">
-        <div class="row justify-center">
-          <div class="profile"
-            v-for="profile in profiles"
-            :key="profile.id"
-            @click="editProfiles ? editProfileById(profile.id) : switchProfile(profile.id)"
-          >
-            <div class="profile-avatar">
-                <img :src="profile.profilePic" class="profile-img"
-                  :class="{'profile-active' : profile.id === activeProfile.id}"
-                  v-if="profile && profile.profilePic"
-                />
-                <div v-else class="profile-initials" :class="{'profile-active' : profile.id === activeProfile.id}">
-                  {{ getInitials(profile.nickName)}}
-                </div>
-                <div class="profile-edit" v-if="editProfiles">
-                  <i class="mdi mdi-pencil"></i>
-                </div>
-            </div>
-            <div class="profile-label" v-if="profile && profile.nickName">
-              {{profile.nickName}}
-            </div>
-          </div>
-          <div class="profile" @click="addProfile()" v-if="!editProfiles">
-            <q-btn icon="mdi-plus-circle" round size="xl" label="New Story" />
-            <p>Add Profile</p>
-          </div>
+  <q-page class="user-index-container" v-if="profiles && activeProfile">
+    <transition name="fade" mode="out-in">
+      <div v-if="!profileSettings.editProfile" key="viewProfiles">
+        <div class="row justify-center manage-profiles-wrapper" v-if="editProfiles">
+          <span class="done-btn"><q-btn @click="showEdit()" size="sm">Done</q-btn></span>
+          <h5>Manage Profiles</h5>
         </div>
-        <div class="row justify-center" v-if="editProfiles">
-          <div class="profile" @click="addProfile()">
-            <q-btn icon="mdi-plus-circle" round size="xl" label="New Story" />
-            <p>Add Profile</p>
+        <div class="profiles-wrapper">
+          <div class="profiles-wrapper">
+            <div class="row justify-center">
+              <div class="profile"
+                v-for="profile in profiles"
+                :key="profile.id"
+                @click="editProfiles ? editProfileById(profile.id) : switchProfile(profile.id)"
+              >
+                <div class="profile-avatar">
+                    <div :style="{backgroundImage: 'url(' + profile.profilePic + ')'}" class="profile-img"
+                      :class="{'profile-active' : profile.id === activeProfile.id}"
+                      v-if="profile && profile.profilePic"
+                    ></div>
+                    <div v-else class="profile-initials" :class="{'profile-active' : profile.id === activeProfile.id}">
+                      {{ getInitials(profile.nickName)}}
+                    </div>
+                    <div class="profile-edit" v-if="editProfiles">
+                      <i class="mdi mdi-pencil"></i>
+                    </div>
+                </div>
+                <div class="profile-label" v-if="profile && profile.nickName">
+                  {{profile.nickName}}
+                </div>
+              </div>
+              <div class="profile" @click="addProfile()" v-if="!editProfiles">
+                <q-btn icon="mdi-plus-circle" round size="xl" label="New Story" />
+                <p>Add Profile</p>
+              </div>
+            </div>
+            <div class="row justify-center" v-if="editProfiles">
+              <div class="profile" @click="addProfile()">
+                <q-btn icon="mdi-plus-circle" round size="xl" label="New Story" />
+                <p>Add Profile</p>
+              </div>
+            </div>
+            <div class="row justify-center">
+              <q-btn @click="showEdit()" icon="mdi-pencil" size="sm" v-if="!editProfiles">Manage Profiles</q-btn>
+            </div>
           </div>
         </div>
       </div>
-      <div v-else>
-        <edit-profile></edit-profile>
+      <div v-else key="editProfile">
+        <edit-profile :profileId="profileToEdit"></edit-profile>
       </div>
-    </div>
+    </transition>
   </q-page>
 </template>
 
@@ -55,12 +62,11 @@ export default {
   data() {
     return {
       editProfiles: false,
-      editProfile: false,
+      profileToEdit: null,
     }
   },
   mounted() {
     /** Mounted */
-
 
   },
   destroyed() {
@@ -78,8 +84,10 @@ export default {
     },
     activeProfile () {
       return this.$store.getters.profile;
+    },
+    profileSettings () {
+      return this.$store.getters.getProfileSettings;
     }
-
   },
   methods: {
     showEdit() {
@@ -91,7 +99,11 @@ export default {
     },
 
     editProfileById(profileId){
-
+      this.profileToEdit = profileId;
+      const payload = {
+        editProfile: true
+      }
+      this.$store.commit('setProfileSettings', payload);
     },
 
     switchProfile(profileId) {
@@ -114,8 +126,27 @@ export default {
 
 <style lang="stylus">
 @import '~variables';
+
+.fade-enter-active, .fade-leave-active {
+  transition: opacity .5s;
+}
+.fade-enter, .fade-leave-to /* .fade-leave-active below version 2.1.8 */ {
+  opacity: 0;
+}
+
 .user-index-container {
   padding: 10px;
+}
+.manage-profiles-wrapper {
+  position: relative;
+  .done-btn {
+    position: absolute;
+    top: 0;
+    left: 0;
+  }
+  h5 {
+    margin: 0 0 50px 0;
+  }
 }
 .profiles-wrapper {
   margin-top: 10px;
@@ -126,7 +157,7 @@ export default {
     position: relative;
     .profile-avatar {
       position: relative;
-      img {
+      .avatar-img {
         position: relative;
         z-index: 1;
       }

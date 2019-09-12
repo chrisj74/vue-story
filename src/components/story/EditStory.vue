@@ -147,7 +147,7 @@ export default {
   watch: {
     insertImage: {
       handler: function(newImage, oldImage) {
-        console.log('insert image watcher');
+        console.log('edit story insert image watcher');
         this.$store.commit('setLoading', false);
         if (newImage && this.modes.mode === "editStory" && this.modes.subMode === "cover") {
           this.addCoverImage(newImage);

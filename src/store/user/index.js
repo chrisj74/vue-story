@@ -9,7 +9,11 @@ export default {
     },
     authSet: false,
     profiles: null,
-    activeProfile: null
+    activeProfile: null,
+    profileSettings: {
+      editProfile: false,
+      avatarModal: false
+    }
   },
   mutations: {
     setUser (state, payload) {
@@ -26,7 +30,12 @@ export default {
     },
     setProfiles(state, payload) {
       state.profiles = payload;
-    }
+    },
+    setProfileSettings(state, payload) {
+      let settings = _.cloneDeep(state.profileSettings);
+      settings = _.merge(settings, payload);
+      state.profileSettings = settings;
+    },
   },
   actions: {
     setAuth ({ commit }, payload) {
@@ -211,7 +220,24 @@ export default {
 
     setAccount ({commit, dispatch}, payload) {
       commit('setAccount', payload);
-      dispatch('setProfile')
+      dispatch('setProfiles');
+      dispatch('setProfile');
+    },
+
+    setProfiles ({ commit, state }) {
+      firebase
+      .firestore()
+      .collection('accounts/'+ state.user.id + '/profiles')
+      .onSnapshot(function(querySnapshot) {
+        const profiles = [];
+        querySnapshot.forEach(prof => {
+          const newProfile = prof.data();
+          newProfile.id = prof.id;
+          /** Add profile to array */
+          profiles.push(newProfile);
+        });
+        commit('setProfiles', profiles);
+      });
     },
 
     setProfile({ commit, state}, profileId) {
@@ -219,12 +245,9 @@ export default {
       .firestore()
       .collection('accounts/'+ state.user.id + '/profiles');
       profiles.get().then(function(querySnapshot) {
-        const profiles = [];
         querySnapshot.forEach(prof => {
           const newProfile = prof.data();
           newProfile.id = prof.id;
-          /** Add profile to array */
-          profiles.push(newProfile);
           /** Set active profile */
           if (profileId && (prof.id === profileId)) {
             commit('setActiveProfile', newProfile);
@@ -232,21 +255,22 @@ export default {
             commit('setActiveProfile', newProfile);
           }
         });
-        commit('setProfiles', profiles);
       });
     },
 
     updateProfile ({commit, state}, payload) {
-      delete payload['admin'];
-      commit('setLoading', true);
-      commit('clearError');
-      let userProfiles = firebase
-      .firestore()
-      .collection('accounts/'+ state.user.id + '/profiles').doc(payload.profileId);
-      userProfiles.set(payload, { merge: true })
-        .then(() => {
-          commit('setLoading', false);
-        });
+      return new Promise((resolve, reject) => {
+        commit('setLoading', true);
+        commit('clearError');
+        let userProfiles = firebase
+        .firestore()
+        .collection('accounts/'+ state.user.id + '/profiles').doc(payload.id);
+        userProfiles.set(payload, { merge: true })
+          .then(() => {
+            commit('setLoading', false);
+            resolve()
+          });
+      });
     }
   },
   getters: {
@@ -264,6 +288,19 @@ export default {
     },
     isAdmin (state) {
       return state.account.admin;
-    }
+    },
+    getProfileSettings (state) {
+      return state.profileSettings;
+    },
+    getProfileById: (state) => (id) => {
+      let profile = null;
+      if (state.profiles && state.profiles.length > 0)
+      state.profiles.forEach(prof => {
+        if (prof.id === id) {
+          profile = prof;
+        }
+      });
+      return profile;
+    },
   }
 };

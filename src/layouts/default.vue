@@ -24,7 +24,7 @@
       <div class="profile">
         <div class="profile-avatar" v-if="profile">
           <router-link :to="'/profiles'">
-            <img :src="profile.profilePic" class="profile-img profile-active" v-if="profile.profilePic" />
+            <div :style="{backgroundImage: 'url(' + profile.profilePic + ')'}" class="profile-img profile-active" v-if="profile.profilePic"></div>
             <div class="profile-initials profile-active" v-else>
               {{ getInitials(profile.nickName) }}
             </div>
@@ -148,6 +148,9 @@ export default {
     .profile-img {
       border-radius: 50%;
       max-width: 100%;
+      height: 150px;
+      background-position: center center;
+      background-size: cover;
     }
     .profile-initials {
       width: 150px;
@@ -159,6 +162,7 @@ export default {
       justify-content: center;
       font-size: 4em;
       border: none;
+      background-color: #ddd;
     }
   }
   .profile-label {

@@ -112,7 +112,6 @@ export default {
       state.imageSearchResults.page += 1;
     },
     setInsertImage(state,payload) {
-      console.log('setInsertImage', payload);
       state.insertImage = payload;
     },
     clearInsertImage(state) {

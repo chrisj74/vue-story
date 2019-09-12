@@ -48,10 +48,7 @@ export default {
     },
     searchSize () {
       return this.$store.state.searchSize;
-    },
-    modes() {
-      return this.$store.getters.getModes;
-    },
+    }
   },
   methods: {
     searchImages() {
@@ -131,9 +128,7 @@ export default {
             name: newImage.name,
           }
         }
-        // if (this.modes.mode !== 'story') {
-          this.$store.commit('setLoading', true);
-        // }
+        this.$store.commit('setLoading', true);
         this.$store.dispatch('addImage', imgObj);
         this.searchString = '';
       });
