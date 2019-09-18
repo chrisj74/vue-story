@@ -118,7 +118,7 @@ export default {
           showAddPage: false,
         };
         this.$store.commit('setSettings', payload);
-        this.$router.push({ path: '/story/'+storyKey+'/'+newPage });
+        this.$router.push({ path: '/project/'+storyKey+'/'+newPage });
       }) ;
     },
   }

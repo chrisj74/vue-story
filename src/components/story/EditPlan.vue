@@ -45,9 +45,10 @@
     </div>
     <div class="plan-preview" ref="planPreview">
       <div v-if="story.plan.video" class="plan-video" ref="planPreviewVideo">
-        <iframe style="width: 100%" :src="story.plan.video" frameborder="0" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+        <iframe style="width: 100%" :src="story.plan.video" frameborder="0" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen v-if="videoSource === 'youtube'"></iframe>
+        <iframe :src="story.plan.video" frameborder="0" allow="autoplay; fullscreen" allowfullscreen v-if="videoSource === 'vimeo'"></iframe>
       </div>
-      <div v-html="previewContent" class="plan-text ql-editor" :style="{maxHeight: textHeight() + 'px'}">
+      <div v-html="previewContent" class="plan-text ql-editor" :style="{maxHeight: textHeight + 'px'}">
 
       </div>
     </div>
@@ -67,6 +68,7 @@ export default {
       editorConfig: null,
       cursorSelection: null,
       contentSet: false,
+      textHeight: 100,
     }
   },
   mounted() {
@@ -116,6 +118,8 @@ export default {
       let tableModule = _this.editor.getModule('better-table')
       tableModule.insertTable(3, 3)
     }
+
+    this.setTextHeight();
   },
   computed: {
     editor() {
@@ -136,10 +140,17 @@ export default {
     settings() {
       return this.$store.getters.getSettings;
     },
+    videoSource() {
+        if (this.story.plan.video && this.story.plan.video.indexOf('youtube.') != -1) {
+            return 'youtube';
+        }if (this.story.plan.video && this.story.plan.video.indexOf('vimeo.') != -1) {
+            return 'vimeo';
+        }
+    },
   },
   methods: {
-    textHeight() {
-      return this.$refs.planPreviewVideo ? (this.$refs.planPreview.clientHeight - (this.$refs.planPreviewVideo.clientHeight + 10)) : 0;
+    setTextHeight() {
+      this.textHeight = this.$refs.planPreviewVideo ? (this.$refs.planPreview.clientHeight - (this.$refs.planPreviewVideo.clientHeight + 10)) : 100;
     },
 
     onEditorChange: _.debounce(function(event) {
@@ -153,7 +164,9 @@ export default {
       }
       // console.log('event=', event.quill.editor.delta.ops);
       /* console.log('editor=', JSON.parse(JSON.stringify(this.storeTextLayer[this.layerIndex].delta))); */
-      if (this.user && !_.isEqual(event.quill.editor.delta.ops, JSON.parse(JSON.stringify(this.story.plan.delta)))) {
+      if (this.user
+        && (!this.story.plan.delta
+            || !_.isEqual(event.quill.editor.delta.ops, JSON.parse(JSON.stringify(this.story.plan.delta))))) {
         this.previewContent = event.html === '' ? ' ' : event.html;
         const newRange = this.cursorSelection ? this.cursorSelection : {index: this.editorContent.length, length:0};
           const payload = {
@@ -239,24 +252,8 @@ export default {
   }
   .plan-preview {
     min-width: 200px;
+    max-width: 50%;
     box-shadow: 0 1px 5px rgba(0,0,0,0.2), 0 2px 2px rgba(0,0,0,0.14), 0 3px 1px -2px rgba(0,0,0,0.12);
-    .plan-video {
-      position: relative;
-      padding-bottom: 56.25%; /* 16:9 */
-      height: 0;
-      margin-bottom: 10px;
-      iframe, object, embed {
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-      }
-    }
-    .plan-text {
-      max-height: calc(100% - 300px);
-      overflow: scroll;
-    }
   }
 }
 

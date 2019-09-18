@@ -2,7 +2,7 @@
     <div>
         <q-page class="story-page row justify-center" v-if="activePage">
             <!-- Thumbs -->
-            <div class="thumbs" :class="{'active': settings.showThumbs}">
+            <div class="thumbs" :class="{'active': settings.showThumbs && !leftDrawerOpen, 'hidden-thumbs': leftDrawerOpen}">
                 <div class="action-buttons">
                     <q-btn size="sm" :round="true" @click="toggleEdit()" :icon="isEdit? 'mdi-check-outline' : 'mdi-pencil'"></q-btn>
                     <q-btn size="sm" :round="true" @click="getPageImages(true, true)" icon="mdi-cloud-download"></q-btn>
@@ -21,7 +21,7 @@
                                 height: (page.pageSize.height * 0.1) + 'px'
                             }"
                             :class="{'active-thumb': activePage && page.id === activePage.id}">
-                            <router-link :to="'/story/'+$route.params.id+'/'+page.id">
+                            <router-link :to="'/project/'+$route.params.id+'/'+page.id">
                                 <img :src="getThumbDrawing(page.page)" style="max-width: 100%" class="thumb-drawing" />
                                 <img :src="getThumbPhoto(page.page)" style="max-width: 100%" class="thumb-photo" />
                                 <div class="thumb-text ql-editor"
@@ -125,10 +125,11 @@
             <transition appear>
                 <router-view />
             </transition>
-
+            <!-- PLAN -->
             <div class="plan" v-show="showPlan" ref="planContainer">
                 <div v-if="story.plan.video" class="plan-video" ref="planVideo">
-                    <iframe style="width: 100%" :src="story.plan.video" frameborder="0" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+                    <iframe style="width: 100%" :src="story.plan.video" frameborder="0" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen v-if="videoSource === 'youtube'"></iframe>
+                    <iframe :src="story.plan.video" frameborder="0" allow="autoplay; fullscreen" allowfullscreen v-if="videoSource === 'vimeo'"></iframe>
                 </div>
                 <div v-html="story.plan.text" class="plan-text ql-editor" :style="{maxHeight: textHeight() + 'px'}">
 
@@ -203,6 +204,13 @@ export default {
         }
     },
     computed: {
+        videoSource() {
+            if (this.story.plan.video && this.story.plan.video.indexOf('youtube.') != -1) {
+                return 'youtube';
+            }if (this.story.plan.video && this.story.plan.video.indexOf('vimeo.') != -1) {
+                return 'vimeo';
+            }
+        },
         editor() {
             return this.$refs.guideEditor.quill
         },
@@ -265,6 +273,9 @@ export default {
         },
         screen() {
             return this.$store.getters.screen;
+        },
+        leftDrawerOpen() {
+           return this.$store.getters.getLeftDrawerOpen;
         }
     },
     mounted() {
@@ -618,7 +629,7 @@ export default {
 .plan {
     min-width: 20%;
     max-width: 50%;
-    width: 400px;
+    width: 500px;
     position: relative;
     top: 30px;
     right: 0;
@@ -631,6 +642,23 @@ export default {
         bottom: 0;
         right: 0;
     }
+}
+.plan-video {
+    position: relative;
+    padding-bottom: 56.25%; /* 16:9 */
+    height: 0;
+    margin-bottom: 10px;
+    iframe, object, embed {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    }
+}
+.plan-text {
+    max-height: calc(100% - 300px);
+    overflow: scroll;
 }
 .action-buttons {
     display: flex;
@@ -655,6 +683,9 @@ export default {
         .handle {
             right: -20px;
         }
+    }
+    &.hidden-thumbs {
+        left: -150px;
     }
     #thumb-wrapper .thumb-draggable {
         align-items: flex-end;

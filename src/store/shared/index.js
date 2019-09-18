@@ -6,7 +6,8 @@ export default {
       width: 1024,
       height: 768
     },
-    showPlan: false
+    showPlan: false,
+    leftDrawerOpen: false,
   },
   mutations: {
     setLoading (state, payload) {
@@ -25,6 +26,9 @@ export default {
     setPlan(state, payload) {
       state.showPlan = payload;
     },
+    setLeftDrawerOpen(state, payload) {
+      state.leftDrawerOpen = payload;
+    }
   },
   actions: {
     clearError ({commit}) {
@@ -40,6 +44,9 @@ export default {
     toggleShowPlan({commit, state}) {
       commit('setPlan', !state.showPlan);
     },
+    toggleLeftDrawerOpen({commit, state}) {
+      commit('setLeftDrawerOpen', !state.leftDrawerOpen);
+    },
   },
   getters: {
     loading (state) {
@@ -53,6 +60,9 @@ export default {
     },
     showPlan (state) {
       return state.showPlan;
+    },
+    getLeftDrawerOpen (state) {
+      return state.leftDrawerOpen;
     }
   }
 };

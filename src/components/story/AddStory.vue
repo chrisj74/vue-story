@@ -172,7 +172,7 @@ export default {
           this.$store.commit('setSettings', payload);
           this.$store.commit('setMode', "text");
           this.$store.commit('setSubMode', "text");
-          this.$router.push({ path: '/story/'+newStoryId });
+          this.$router.push({ path: '/project/'+newStoryId });
         });
     },
 

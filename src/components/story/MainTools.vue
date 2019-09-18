@@ -1,5 +1,5 @@
 <template>
-  <div class="tools" v-if="pageDimensions" :style="{width: (pageDimensions.maxWidth) + 'px'}">
+  <div class="tools" v-if="pageDimensions" :style="{width: (pageDimensions.maxWidth) + 'px', left: leftDrawerOpen ? '300px' : 0}">
     <!-- HISTORY -->
     <q-btn icon="mdi-undo" round @click="undo()" :disable="!canUndo" :size="$q.screen.lt.sm ? 'sm' : 'md'"/>
     <q-btn icon="mdi-redo" round @click="redo()" :disable="!canRedo" :size="$q.screen.lt.sm ? 'sm' : 'md'"/>
@@ -133,6 +133,9 @@ export default {
     settings() {
       return this.$store.getters.getSettings;
     },
+    leftDrawerOpen() {
+      return this.$store.getters.getLeftDrawerOpen;
+    }
   },
   methods: {
     setText() {
@@ -236,6 +239,7 @@ export default {
   justify-content: center;
   flex-direction: row;
   background-color: #ddd;
+  transition: left .2s ease-in-out;
   > button {
     margin-right: 2px;
   }

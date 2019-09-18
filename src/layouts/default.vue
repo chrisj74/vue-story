@@ -43,9 +43,9 @@
           <q-item-side icon="mdi-home"/>
           <q-item-main label="HOME" />
         </q-item>
-        <q-item :link="true" to="/stories">
+        <q-item :link="true" to="/projects">
           <q-item-side icon="mdi-book"/>
-          <q-item-main label="MY STORIES" />
+          <q-item-main label="MY PROJECTS" />
         </q-item>
         <!-- <q-item :link="true" to="/profile" v-if="user">
           <q-item-side icon="mdi-account" />

@@ -1,6 +1,6 @@
 <template>
   <q-page class="story-index-container">
-    <h2>Stories <q-btn icon="mdi-plus-circle" round label="New Story" @click="showAddStory()" /></h2>
+    <h2>Projects <q-btn icon="mdi-plus-circle" round label="New Story" @click="showAddStory()" /></h2>
     <div class="row justify-end">
       <q-btn @click="showEdit()" v-if="!editStories">edit</q-btn>
       <q-btn @click="showEdit()" v-if="editStories">done</q-btn>
@@ -9,14 +9,14 @@
       <q-card v-for="(story) in stories" :key="story.id" class="story">
         <q-card-media :style="story.thumb ? {backgroundImage: 'url(' + story.thumb + ')'}
           : {backgroundImage: 'url(statics/image-area.svg)'}">
-          <router-link :to="'/story/'+story.id">
+          <router-link :to="'/project/'+story.id">
             <!-- <span v-if="!story.thumb">
               <svg style="width:300px;height:300px" viewBox="0 0 24 24"><path fill="#000000" d="M20,5A2,2 0 0,1 22,7V17A2,2 0 0,1 20,19H4C2.89,19 2,18.1 2,17V7C2,5.89 2.89,5 4,5H20M5,16H19L14.5,10L11,14.5L8.5,11.5L5,16Z" /></svg>
             </span> -->
           </router-link>
         </q-card-media>
         <q-card-title>
-          <router-link :to="'/story/'+story.id">
+          <router-link :to="'/project/'+story.id">
             <a>{{ story.title }}</a>
           </router-link>
         </q-card-title>
@@ -119,7 +119,7 @@ export default {
       this.$store.dispatch('cloneStory', payload)
         .then((newStoryId) => {
           console.log('done cloning id=', newStoryId);
-          this.$router.push({ path: '/story/'+newStoryId });
+          this.$router.push({ path: '/project/'+newStoryId });
         });
     },
 

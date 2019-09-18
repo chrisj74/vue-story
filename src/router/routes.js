@@ -28,22 +28,21 @@ const routes = [
         component: () => import("pages/index"),
         meta: { requiresAuth: true } },
       {
-        path: "/stories",
-        name: "Stories",
+        path: "/projects",
+        name: "Projects",
         component: () => import("pages/stories/index"),
         meta: { requiresAuth: true }
       },
     ]
   },
   {
-    path: "/story/:id",
-    name: "Story",
+    path: "/project/:id",
+    name: "Project",
     component: () => import("layouts/story"),
     meta: { requiresAuth: true },
     children: [
       {
         path: "/",
-        name: "Story",
         component: () => import("pages/stories/story"),
         meta: { requiresAuth: true },
         children: [

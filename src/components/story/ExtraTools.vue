@@ -1,6 +1,6 @@
 <template>
   <!-- EXTRA TOOLS -->
-  <div class="extra-tools" v-if="pageDimensions" :style="{left: leftPos}" key="extra-tools">
+  <div class="extra-tools" v-if="pageDimensions" :style="{left: leftPos()}" key="extra-tools">
     <!-- COLORS -->
     <swatches
       :value="settings.color"
@@ -359,12 +359,19 @@ export default {
     storeTextLayer() {
       return this.$store.getters.getPageTextLayer;
     },
-    leftPos() {
-      return (((this.pageDimensions.maxWidth - this.pageDimensions.width) / 2) + (this.pageDimensions.width + 20)) + 'px'
-    },
+
+    leftDrawerOpen() {
+      return this.$store.getters.getLeftDrawerOpen;
+    }
   },
   methods: {
-
+    leftPos() {
+      if (this.leftDrawerOpen) {
+        return ((((this.pageDimensions.maxWidth - this.pageDimensions.width) / 2) + (this.pageDimensions.width + 20)) + 300) + 'px';
+      } else {
+        return (((this.pageDimensions.maxWidth - this.pageDimensions.width) / 2) + (this.pageDimensions.width + 20)) + 'px';
+      }
+    },
 
     fillColor() {
       this.$store.commit('setSubMode', "fill");
@@ -581,6 +588,7 @@ export default {
   flex-direction: column;
   justify-content: center;
   width: 45px;
+  transition: left .2s ease-in-out;
 }
 
 .extra-tools > * {

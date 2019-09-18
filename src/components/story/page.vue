@@ -171,6 +171,7 @@ export default {
       maxWidthRatio: 0,
       pageHeight: 0,
       scrolling: false,
+      drawerTimer: null,
     };
   },
   computed: {
@@ -219,6 +220,9 @@ export default {
     leftPos() {
       return (((this.pageDimensions.maxWidth - this.pageDimensions.width) / 2) + (this.pageDimensions.width + 20)) + 'px'
     },
+    leftDrawerOpen() {
+      return this.$store.getters.getLeftDrawerOpen;
+    }
   },
   mounted() {
     /** Set page from route */
@@ -526,6 +530,16 @@ export default {
     showPlan: {
       handler: function(newPlan, oldPlan) {
         this.setDefaultZoom();
+      }
+    },
+    leftDrawerOpen: {
+      handler: function(newDrawer, oldDrawer) {
+
+        const _this = this;
+        this.drawerTimer = setTimeout(function() {
+          _this.setDefaultZoom();
+        }, 500);
+
       }
     }
   }

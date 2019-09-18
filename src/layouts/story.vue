@@ -7,7 +7,8 @@
       dense
       round
       size="lg"
-      @click="leftDrawerOpen = !leftDrawerOpen"
+      @click="toggleLeftDawer()"
+      :style="{left: leftDrawerOpen ? '300px' : 0}"
     >
       <q-icon name="mdi-menu" />
     </q-btn>
@@ -37,9 +38,9 @@
           <q-item-side icon="mdi-home"/>
           <q-item-main label="HOME" />
         </q-item>
-        <q-item :link="true" to="/stories">
+        <q-item :link="true" to="/projects">
           <q-item-side icon="mdi-book"/>
-          <q-item-main label="STORIES" />
+          <q-item-main label="MY PROJECTS" />
         </q-item>
         <q-item @click.native="onLogout" v-if="user">
           <q-item-side icon="mdi-power" />
@@ -70,7 +71,6 @@ export default {
   name: 'Story',
   data () {
     return {
-      leftDrawerOpen: false,
       storiesSet: false
     }
   },
@@ -87,6 +87,9 @@ export default {
     showPlan() {
       return this.$store.getters.showPlan;
     },
+    leftDrawerOpen() {
+      return this.$store.getters.getLeftDrawerOpen;
+    }
   },
   methods: {
    onLogout () {
@@ -94,8 +97,12 @@ export default {
       this.$router.push('/');
     },
     togglePlan() {
+      this.$store.commit('setLeftDrawerOpen', false);
       this.$store.dispatch('toggleShowPlan');
     },
+    toggleLeftDawer() {
+      this.$store.dispatch('toggleLeftDrawerOpen');
+    }
   },
 }
 </script>
