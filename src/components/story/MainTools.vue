@@ -50,7 +50,7 @@
     <!-- ZOOM IN -->
     <q-btn
       icon="mdi-magnify-plus"
-      :color="modes.mode === 'page' ? 'primary' : 'dark'"
+      color="dark"
       round
       :size="$q.screen.lt.sm ? 'sm' : 'md'"
       :disabled="!pageDimensions || pageDimensions.zoom >= pageDimensions.maxWidthRatio"
@@ -64,7 +64,7 @@
     <!-- ZOOM OUT -->
     <q-btn
       icon="mdi-magnify-minus"
-      :color="modes.mode === 'page' ? 'primary' : 'dark'"
+      color="dark"
       round
       :size="$q.screen.lt.sm ? 'sm' : 'md'"
       :disabled="!pageDimensions || pageDimensions.zoom <= pageDimensions.maxHeightRatio"
