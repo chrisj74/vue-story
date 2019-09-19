@@ -148,7 +148,14 @@
         v-if="pageDimensions"
         v-model="settings.showAddPage"
         :content-css="{minWidth: '350px', height: '90vh', maxWidth: '100%', width: pageDimensions.width+'px'}">
-        <add-page></add-page>
+            <q-modal-layout>
+                <add-page></add-page>
+                <q-toolbar slot="footer">
+                    <q-toolbar-title>
+                        <q-btn color="white" text-color="black" @click="closeModal('showAddPage')">Cancel</q-btn>
+                    </q-toolbar-title>
+                </q-toolbar>
+            </q-modal-layout>
         </q-modal>
 
         <!-- EDIT PLAN MODAL -->
@@ -156,7 +163,14 @@
         v-if="pageDimensions"
         v-model="settings.showEditPlan"
         :content-css="{minWidth: '350px', height: '90vh', maxWidth: '100%', width: '80%'}">
-            <edit-plan></edit-plan>
+            <q-modal-layout>
+                <edit-plan></edit-plan>
+                <q-toolbar slot="footer">
+                    <q-toolbar-title>
+                        <q-btn color="white" text-color="black" @click="closeModal('showEditPlan')">Cancel</q-btn>
+                    </q-toolbar-title>
+                </q-toolbar>
+            </q-modal-layout>
         </q-modal>
     </div>
 </template>
@@ -311,6 +325,12 @@ export default {
         this.$store.commit('resetPage');
     },
     methods: {
+        closeModal(type) {
+            const newSetting = {};
+            newSetting[type] = false;
+            this.$store.commit('setSettings', newSetting);
+        },
+
         /* Plan  */
         textHeight() {
           return this.$refs.planVideo ? (this.$refs.planContainer.clientHeight - (this.$refs.planVideo.clientHeight + 10)) : 0;

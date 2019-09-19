@@ -1,55 +1,66 @@
 <template>
-  <div>
-    <div class="modal-wrapper">
-      <h4>Add Story</h4>
-      <!-- Title -->
-      <q-input type="text" v-model="newStory.title" float-label="Story Name" class="text-input" />
-      <!-- Description -->
-      <q-input type="textarea"
-        v-model="newStory.description"
-        float-label="Story Description"
-        :max-height="100"
-        rows="3"
-        class="text-input" />
-      <!-- Cover -->
-      <div class="cover-image-container">
-        <div class="cover-image-thumb">
-          <img :src="coverImage" v-if="coverImage" />
-        </div>
-        <div class="cover-image-actions">
-          <q-btn color="negative" icon="mdi-delete" @click="removeCoverImage" v-if="coverImage">Remove Image</q-btn>
-          <q-btn color="primary" icon="mdi-image-plus" @click="showCoverImageModal()">{{ coverImage ? 'change Image' : 'Add Image'}}</q-btn>
-        </div>
-      </div>
-      <!-- Page size -->
-      <div class="page-size-wrapper">
-        <div class="page-size" @click="setSize(595, 842, 0)" :class="{selected: selectedIndex === 0}">
-          <div class="portrait outline"></div>
-          portrait
-        </div>
-        <div class="page-size" @click="setSize(842, 595, 1)" :class="{selected: selectedIndex === 1}">
-          <div class="landscape outline"></div>
-          landscape
-        </div>
-        <div class="page-size" @click="setSize(595, 595, 2)" :class="{selected: selectedIndex === 2}">
-          <div class="square outline"></div>
-          square
-        </div>
-      </div>
-      <!-- Actions -->
-      <div class="add-actions">
-        <q-btn color="dark" icon="mdi-close" @click="close()">Cancel</q-btn>
-        <q-btn color="primary" icon="mdi-plus-circle" @click="addStory()" :disabled="!selectedHeight || !selectedWidth || newStory.title.length === 0">Add Story</q-btn>
-      </div>
-    </div>
+    <q-modal-layout>
+      <!-- HEADER -->
+      <q-toolbar slot="header">
+        <q-toolbar-title>
+          Add Project
+        </q-toolbar-title>
+      </q-toolbar>
 
-    <!-- Image modal -->
-    <q-modal
-      v-model="settings.showImageModal"
-      :content-css="{minWidth: '350px', height: '90vh', maxWidth: '100%', width: '80vw'}">
-      <add-image></add-image>
-    </q-modal>
-  </div>
+      <!-- CONTENT -->
+      <div class="modal-inner-content">
+        <!-- Title -->
+        <q-input type="text" v-model="newStory.title" float-label="Story Name" class="text-input" />
+        <!-- Description -->
+        <q-input type="textarea"
+          v-model="newStory.description"
+          float-label="Story Description"
+          :max-height="100"
+          rows="3"
+          class="text-input" />
+        <!-- Cover -->
+        <div class="cover-image-container">
+          <div class="cover-image-thumb">
+            <img :src="coverImage" v-if="coverImage" />
+          </div>
+          <div class="cover-image-actions">
+            <q-btn color="negative" icon="mdi-delete" @click="removeCoverImage" v-if="coverImage">Remove Image</q-btn>
+            <q-btn color="primary" icon="mdi-image-plus" @click="showCoverImageModal()">{{ coverImage ? 'change Image' : 'Add Image'}}</q-btn>
+          </div>
+        </div>
+        <!-- Page size -->
+        <div class="page-size-wrapper">
+          <div class="page-size" @click="setSize(595, 842, 0)" :class="{selected: selectedIndex === 0}">
+            <div class="portrait outline"></div>
+            portrait
+          </div>
+          <div class="page-size" @click="setSize(842, 595, 1)" :class="{selected: selectedIndex === 1}">
+            <div class="landscape outline"></div>
+            landscape
+          </div>
+          <div class="page-size" @click="setSize(595, 595, 2)" :class="{selected: selectedIndex === 2}">
+            <div class="square outline"></div>
+            square
+          </div>
+        </div>
+      </div>
+
+      <!-- FOOTER -->
+      <q-toolbar slot="footer">
+        <q-btn color="white" text-color="black" @click="close()">Cancel</q-btn>
+        <q-toolbar-title></q-toolbar-title>
+        <q-btn color="secondary" text-color="black" icon="mdi-plus-circle" @click="addStory()" :disabled="!selectedHeight || !selectedWidth || newStory.title.length === 0">Add Project</q-btn>
+      </q-toolbar>
+
+      <!-- IMAGE MODAL -->
+      <template>
+        <q-modal
+          v-model="settings.showImageModal"
+          :content-css="{minWidth: '350px', height: '90vh', maxWidth: '100%', width: '80vw'}">
+          <add-image></add-image>
+        </q-modal>
+      </template>
+    </q-modal-layout>
 </template>
 
 <script>
@@ -217,7 +228,7 @@ export default {
 
 <style lang="stylus">
 @import '~variables';
-.modal-wrapper {
+.modal-inner-content {
   padding: 20px;
   h4 {
     margin-top: 0;

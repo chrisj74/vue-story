@@ -1,7 +1,14 @@
 <template>
-  <div>
-    <div class="modal-wrapper">
-      <h4>Add Story</h4>
+  <q-modal-layout>
+    <!-- HEADER -->
+    <q-toolbar slot="header">
+      <q-toolbar-title>
+        Edit Project
+      </q-toolbar-title>
+    </q-toolbar>
+
+    <!-- CONTENT -->
+    <div class="modal-inner-content layout-padding">
       <!-- Title -->
       <q-input type="text" v-model="newStory.title" float-label="Story Name" class="text-input" />
       <!-- Description -->
@@ -21,21 +28,24 @@
           <q-btn color="primary" icon="mdi-image-plus" @click="showCoverImageModal()">{{ coverImage ? 'change Image' : 'Add Image'}}</q-btn>
         </div>
       </div>
-
-      <!-- Actions -->
-      <div class="add-actions">
-        <q-btn color="dark" icon="mdi-close" @click="close()">Cancel</q-btn>
-        <q-btn color="primary" icon="mdi-plus-circle" @click="saveStory()" :disabled="newStory.title.length === 0">Save</q-btn>
-      </div>
     </div>
 
-    <!-- Image modal -->
-    <q-modal
-      v-model="settings.showImageModal"
-      :content-css="{minWidth: '350px', height: '90vh', maxWidth: '100%', width: '80vw'}">
-      <add-image></add-image>
-    </q-modal>
-  </div>
+    <!-- FOOTER -->
+    <q-toolbar slot="footer">
+        <q-btn color="white" text-color="black" @click="close()">Cancel</q-btn>
+        <q-toolbar-title></q-toolbar-title>
+        <q-btn color="secondary" text-color="black" icon="mdi-plus-circle" @click="saveStory()" :disabled="newStory.title.length === 0">Save</q-btn>
+    </q-toolbar>
+
+    <!-- IMAGE MODAL -->
+    <template>
+      <q-modal
+        v-model="settings.showImageModal"
+        :content-css="{minWidth: '350px', height: '90vh', maxWidth: '100%', width: '80vw'}">
+        <add-image></add-image>
+      </q-modal>
+    </template>
+  </q-modal-layout>
 </template>
 
 <script>
@@ -161,12 +171,7 @@ export default {
 
 <style lang="stylus">
 @import '~variables';
-.modal-wrapper {
-  padding: 20px;
-  h4 {
-    margin-top: 0;
-    margin-bottom: 5px;
-  }
+.modal-inner-content {
   .text-input {
     margin-bottom: 20px;
   }

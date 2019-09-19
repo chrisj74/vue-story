@@ -1,9 +1,9 @@
 <template>
   <q-page class="story-index-container">
-    <h2>Projects <q-btn icon="mdi-plus-circle" round label="New Story" @click="showAddStory()" /></h2>
-    <div class="row justify-end">
-      <q-btn @click="showEdit()" v-if="!editStories">edit</q-btn>
-      <q-btn @click="showEdit()" v-if="editStories">done</q-btn>
+    <h2>Projects <q-btn icon="mdi-plus-circle" dense flat size="xl" round label="New Story" @click="showAddStory()" /></h2>
+    <div class="row justify-start">
+      <q-btn outline dense @click="showEdit()" v-if="!editStories">Edit</q-btn>
+      <q-btn outline dense @click="showEdit()" v-if="editStories">Done</q-btn>
     </div>
     <div v-if="stories" class="story-wrapper">
       <q-card v-for="(story) in stories" :key="story.id" class="story">
@@ -41,8 +41,8 @@
     </q-modal>
 
     <q-modal
-        v-model="settings.showEditStory"
-        :content-css="{minWidth: '400px', height: '90vh', maxWidth: '100%', width: '80vw'}">
+      v-model="settings.showEditStory"
+      :content-css="{minWidth: '400px', height: '90vh', maxWidth: '100%', width: '80vw'}">
       <edit-story v-if="editStoryId" :storyId="editStoryId"></edit-story>
     </q-modal>
   </q-page>
@@ -81,6 +81,12 @@ export default {
     }
   },
   methods: {
+    closeModal(type) {
+      const newSetting = {};
+      newSetting[type] = false;
+      this.$store.commit('setSettings', newSetting);
+    },
+
     showAddStory() {
       const payload = {
         showAddStory: true,

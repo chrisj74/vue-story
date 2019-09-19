@@ -65,8 +65,8 @@
     <q-page-container>
       <router-view />
     </q-page-container>
-    <div v-if="loading" class="loading-box">
-      <q-spinner-bars color="primary" :size="100" v-if="loading" />
+    <div v-show="loading" class="loading-box">
+      <q-spinner-bars color="primary" :size="100" />
     </div>
   </q-layout>
 </template>

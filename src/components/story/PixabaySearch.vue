@@ -1,19 +1,32 @@
 <template>
-  <div class="search-container">
-    <div class="search-header">
-      <div class="flex row q-pa-sm" v-shortkey="['enter']" @shortkey="searchImages()">
-        <q-input v-model="searchString" float-label="Search for images" class="col-8"  />
-        <q-btn color="primary" icon="mdi-image-search" @click="searchImages()" class="col-1" />
-        <div class="col-2">
-          <image-uploader :debug="1" :maxHeight="2000" :maxWidth="2000" :quality="0.9" :autoRotate=true outputFormat="verbose" :preview=false :accept="'video/*,image/*'" doNotResize="['gif', 'svg', 'png']" @input="setImage" ref="imageUploader">
-            <label for="fileInput" slot="upload-label" class="upload-btn">
-              <q-icon color="primary" name="mdi-cloud-upload" label="Upload" />
-            </label>
-          </image-uploader>
+  <q-modal-layout>
+    <!-- HEADER -->
+    <q-toolbar slot="header" class="search-container">
+        <div class="search-header">
+          <div class="flex row items-center" v-shortkey="['enter']" @shortkey="searchImages()">
+            <q-search autofocus dark color="secondary" v-model="searchString" placeholder="Search for images" class="col-10"
+              :after="[
+                {
+                  icon: 'mdi-image-search',
+                  error: false,
+                  handler () {
+                    // do something...
+                    searchImages()
+                  }
+                }
+              ]"  />
+            <div class="col-2">
+              <image-uploader :debug="1" :maxHeight="2000" :maxWidth="2000" :quality="0.9" :autoRotate=true outputFormat="verbose" :preview=false :accept="'video/*,image/*'" doNotResize="['gif', 'svg', 'png']" @input="setImage" ref="imageUploader">
+                <label for="fileInput" slot="upload-label" class="upload-btn">
+                  <q-icon size="3rem" color="secondary" name="mdi-cloud-upload" label="Upload" />
+                </label>
+              </image-uploader>
+            </div>
+          </div>
         </div>
-      </div>
-    </div>
+    </q-toolbar>
 
+    <!-- CONTENT -->
     <div class="search-body">
       <div v-if="results" class="results-grid">
         <div v-for="(image, index) of results.hits" :key="index" class="results-thumb">
@@ -21,10 +34,15 @@
         </div>
 
         <!-- Load More -->
-        <q-btn class="load-more" @click="loadMore()" v-if="results && results.length > 0">Load More</q-btn>
+        <q-btn class="load-more" @click="loadMore()" v-if="(results.page * 50) < results.totalHits > 0">Load More</q-btn>
       </div>
     </div>
-  </div>
+
+    <!-- FOOTER -->
+    <q-toolbar slot="footer">
+      <q-btn color="white" text-color="black" @click="close()">Cancel</q-btn>
+    </q-toolbar>
+  </q-modal-layout>
 </template>
 
 <script>
@@ -51,6 +69,16 @@ export default {
     }
   },
   methods: {
+    close() {
+      const payload = {
+        showImageModal: false,
+      };
+      this.$store.commit("clearImageSearchResults");
+      this.$store.commit("clearInsertImage");
+      this.searchString = '';
+      this.$store.commit('setSettings', payload);
+    },
+
     searchImages() {
       const payload = {
         str: this.searchString,
@@ -107,15 +135,16 @@ export default {
 
     getImageDimensions(file) {
       return new Promise (function (resolved, rejected) {
-        var i = new Image()
+        const i = new Image();
         i.onload = function(){
           resolved({w: i.width, h: i.height})
         };
-        i.src = file
+        i.src = file;
       })
     },
 
     setImage(newImage) {
+      this.$store.commit('setLoading', true);
       const _user = this.user;
       const blob = b64toBlob(newImage.dataUrl.split(',')[1], newImage.type);
       this.getImageDimensions(newImage.dataUrl).then((dimensions) => {
@@ -128,7 +157,7 @@ export default {
             name: newImage.name,
           }
         }
-        this.$store.commit('setLoading', true);
+
         this.$store.dispatch('addImage', imgObj);
         this.searchString = '';
       });
@@ -152,13 +181,7 @@ export default {
   flex-direction: column;
 }
 .search-header {
-  position: absolute;
-  top: 0;
-  left: 0;
-  background: #fff;
-  border-bottom: solid 1px #999;
   width: 100%;
-  z-index: 2
 }
 .search-body {
   position: relative;
@@ -183,6 +206,7 @@ export default {
 }
 .load-more {
   flex-basis: 100%;
+  margin-bottom: 100px;
 }
 
 </style>

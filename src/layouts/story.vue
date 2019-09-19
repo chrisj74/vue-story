@@ -1,69 +1,69 @@
 <template>
-  <q-layout view="lHh Lpr lFf" :class="'dragging'">
-    <!-- left drawer -->
-    <q-btn
-      class="drawer-btn"
-      flat
-      dense
-      round
-      size="lg"
-      @click="toggleLeftDawer()"
-      :style="{left: leftDrawerOpen ? '300px' : 0}"
-    >
-      <q-icon name="mdi-menu" />
-    </q-btn>
-    <!-- plan -->
-    <q-btn
-      class="plan-btn"
-      flat
-      dense
-      round
-      size="lg"
-      @click="togglePlan()"
-    >
-      <q-icon :name="showPlan ? 'mdi-close' : 'mdi-file-document-box-outline'" />
-    </q-btn>
-
-    <q-layout-drawer
-      v-model="leftDrawerOpen"
-      content-class="bg-grey-2"
-    >
-      <q-list
-        no-border
-        link
-        inset-delimiter
+  <div>
+    <q-layout view="lHh Lpr lFf" :class="'dragging'">
+      <!-- left drawer -->
+      <q-btn
+        class="drawer-btn"
+        flat
+        dense
+        round
+        size="lg"
+        @click="toggleLeftDawer()"
+        :style="{left: leftDrawerOpen ? '300px' : 0}"
       >
-        <q-list-header>Essential Links</q-list-header>
-        <q-item :link="true" to="/">
-          <q-item-side icon="mdi-home"/>
-          <q-item-main label="HOME" />
-        </q-item>
-        <q-item :link="true" to="/projects">
-          <q-item-side icon="mdi-book"/>
-          <q-item-main label="MY PROJECTS" />
-        </q-item>
-        <q-item @click.native="onLogout" v-if="user">
-          <q-item-side icon="mdi-power" />
-          <q-item-main label="EXIT" />
-        </q-item>
-        <q-item :link="true" to="/login" v-else>
-          <q-item-side icon="mdi-account" />
-          <q-item-main label="Login" />
-        </q-item>
-      </q-list>
-    </q-layout-drawer>
+        <q-icon name="mdi-menu" />
+      </q-btn>
+      <!-- plan -->
+      <q-btn
+        class="plan-btn"
+        flat
+        dense
+        round
+        size="lg"
+        @click="togglePlan()"
+      >
+        <q-icon :name="showPlan ? 'mdi-close' : 'mdi-file-document-box-outline'" />
+      </q-btn>
 
-    <q-page-container>
-      <transition appear>
-        <router-view />
-      </transition>
-    </q-page-container>
+      <q-layout-drawer
+        v-model="leftDrawerOpen"
+        content-class="bg-grey-2"
+      >
+        <q-list
+          no-border
+          link
+          inset-delimiter
+        >
+          <q-list-header>Essential Links</q-list-header>
+          <q-item :link="true" to="/">
+            <q-item-side icon="mdi-home"/>
+            <q-item-main label="HOME" />
+          </q-item>
+          <q-item :link="true" to="/projects">
+            <q-item-side icon="mdi-book"/>
+            <q-item-main label="MY PROJECTS" />
+          </q-item>
+          <q-item @click.native="onLogout" v-if="user">
+            <q-item-side icon="mdi-power" />
+            <q-item-main label="EXIT" />
+          </q-item>
+          <q-item :link="true" to="/login" v-else>
+            <q-item-side icon="mdi-account" />
+            <q-item-main label="Login" />
+          </q-item>
+        </q-list>
+      </q-layout-drawer>
 
-    <div v-if="loading" class="loading-box">
-      <q-spinner-bars color="primary" :size="100" v-if="loading" />
+      <q-page-container>
+        <transition appear>
+          <router-view />
+        </transition>
+      </q-page-container>
+    </q-layout>
+    <div v-show="loading" class="loading-box">
+      <q-spinner-bars color="primary" :size="100" />
     </div>
-
-  </q-layout>
+</div>
 </template>
 
 <script>
