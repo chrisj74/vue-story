@@ -1,64 +1,65 @@
 <template>
   <q-page class="user-index-container" v-if="profiles && activeProfile">
     <transition name="fade" mode="out-in">
-      <div v-if="!profileSettings.editProfile" key="viewProfiles">
+      <div v-if="!profileSettings.editProfile && !profileSettings.addProfile" key="viewProfiles">
         <div class="row justify-center manage-profiles-wrapper" v-if="editProfiles">
           <span class="done-btn"><q-btn @click="showEdit()" size="sm">Done</q-btn></span>
           <h5>Manage Profiles</h5>
         </div>
         <div class="profiles-wrapper">
-          <div class="profiles-wrapper">
-            <div class="row justify-center">
-              <div class="profile"
-                v-for="profile in profiles"
-                :key="profile.id"
-                @click="editProfiles ? editProfileById(profile.id) : switchProfile(profile.id)"
-              >
-                <div class="profile-avatar">
-                    <div :style="{backgroundImage: 'url(' + profile.profilePic + ')'}" class="profile-img"
-                      :class="{'profile-active' : profile.id === activeProfile.id}"
-                      v-if="profile && profile.profilePic"
-                    ></div>
-                    <div v-else class="profile-initials" :class="{'profile-active' : profile.id === activeProfile.id}">
-                      {{ getInitials(profile.nickName)}}
-                    </div>
-                    <div class="profile-edit" v-if="editProfiles">
-                      <i class="mdi mdi-pencil"></i>
-                    </div>
-                </div>
-                <div class="profile-label" v-if="profile && profile.nickName">
-                  {{profile.nickName}}
-                </div>
+          <div class="row justify-center">
+            <div class="profile"
+              v-for="profile in profiles"
+              :key="profile.id"
+              @click="editProfiles ? editProfileById(profile.id) : switchProfile(profile.id)"
+            >
+              <div class="profile-avatar" :class="{'profile-active' : profile.id === activeProfile.id}">
+                  <div :style="{backgroundImage: 'url(' + profile.profilePic + ')'}" class="profile-img"
+                    v-if="profile && profile.profilePic"
+                  ></div>
+                  <div v-else class="profile-initials" :class="{'profile-active' : profile.id === activeProfile.id}">
+                    {{ getInitials(profile.nickName)}}
+                  </div>
+                  <div class="profile-edit" v-if="editProfiles">
+                    <i class="mdi mdi-pencil"></i>
+                  </div>
               </div>
-              <div class="profile" @click="addProfile()" v-if="!editProfiles">
-                <q-btn icon="mdi-plus-circle" round size="xl" label="New Story" />
-                <p>Add Profile</p>
+              <div class="profile-label" v-if="profile && profile.nickName">
+                {{profile.nickName}}
               </div>
             </div>
-            <div class="row justify-center" v-if="editProfiles">
-              <div class="profile" @click="addProfile()">
-                <q-btn icon="mdi-plus-circle" round size="xl" label="New Story" />
-                <p>Add Profile</p>
-              </div>
+            <div class="profile" @click="addProfile()" v-if="!editProfiles">
+              <q-btn icon="mdi-plus-circle" round size="xl" label="New Story" />
+              <p>Add Profile</p>
             </div>
-            <div class="row justify-center">
-              <q-btn @click="showEdit()" icon="mdi-pencil" size="sm" v-if="!editProfiles">Manage Profiles</q-btn>
+          </div>
+          <div class="row justify-center" v-if="editProfiles">
+            <div class="profile" @click="addProfile()">
+              <q-btn icon="mdi-plus-circle" round size="xl" label="New Story" />
+              <p>Add Profile</p>
             </div>
+          </div>
+          <div class="row justify-center">
+            <q-btn @click="showEdit()" icon="mdi-pencil" size="sm" v-if="!editProfiles">Manage Profiles</q-btn>
           </div>
         </div>
       </div>
-      <div v-else key="editProfile">
+      <div v-else-if="profileSettings.editProfile" key="editProfile">
         <edit-profile :profileId="profileToEdit"></edit-profile>
+      </div>
+      <div v-else-if="profileSettings.addProfile" key="editProfile">
+        <add-profile></add-profile>
       </div>
     </transition>
   </q-page>
 </template>
 
 <script>
-import EditProfile from '../../components/user/EditProfile'
+import EditProfile from '../../components/user/EditProfile';
+import AddProfile from '../../components/user/AddProfile'
 export default {
   name: 'Profiles',
-  components: {EditProfile},
+  components: {EditProfile, AddProfile},
   data() {
     return {
       editProfiles: false,
@@ -95,7 +96,10 @@ export default {
     },
 
     addProfile() {
-
+      const payload = {
+        addProfile: true
+      }
+      this.$store.commit('setProfileSettings', payload);
     },
 
     editProfileById(profileId){

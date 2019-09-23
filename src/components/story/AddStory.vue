@@ -9,11 +9,32 @@
 
       <!-- CONTENT -->
       <div class="modal-inner-content">
+        <!-- Profile -->
+        <p><strong>Profile</strong></p>
+        <div class="row justify-start profiles-sm">
+          <div class="profile"
+            v-for="profile in profiles"
+            :key="profile.id"
+            @click="changeProfile(profile.id)"
+          >
+            <div class="profile-avatar" :class="{'profile-active' : profile.id === profileId}">
+                <div :style="{backgroundImage: 'url(' + profile.profilePic + ')'}" class="profile-img"
+                  v-if="profile && profile.profilePic"
+                ></div>
+                <div v-else class="profile-initials" :class="{'profile-active' : profile.id === profileId}">
+                  {{ getInitials(profile.nickName)}}
+                </div>
+            </div>
+            <div class="profile-label" v-if="profile && profile.nickName">
+              {{profile.nickName}}
+            </div>
+          </div>
+        </div>
         <!-- Title -->
-        <q-input type="text" v-model="newStory.title" float-label="Story Name" class="text-input" />
+        <q-input type="text" v-model="title" float-label="Story Name" class="text-input" />
         <!-- Description -->
         <q-input type="textarea"
-          v-model="newStory.description"
+          v-model="description"
           float-label="Story Description"
           :max-height="100"
           rows="3"
@@ -49,7 +70,7 @@
       <q-toolbar slot="footer">
         <q-btn color="white" text-color="black" @click="close()">Cancel</q-btn>
         <q-toolbar-title></q-toolbar-title>
-        <q-btn color="secondary" text-color="black" icon="mdi-plus-circle" @click="addStory()" :disabled="!selectedHeight || !selectedWidth || newStory.title.length === 0">Add Project</q-btn>
+        <q-btn color="secondary" text-color="black" icon="mdi-plus-circle" @click="addStory()" :disabled="!selectedHeight || !selectedWidth || title.length === 0">Add Project</q-btn>
       </q-toolbar>
 
       <!-- IMAGE MODAL -->
@@ -73,45 +94,66 @@ export default {
         selectedWidth: null,
         selectedHeight: null,
         selectedIndex: null,
-        newStory: {
-          title: '',
-          description: ''
-        },
+        title: '',
+        description: '',
         coverImage: null,
+        profileId: null,
         submitting: false,
       }
   },
   mounted() {
     /** Reset data */
-    this.newStory.title = '';
-    this.newStory.description = '';
+    this.title = '';
+    this.description = '';
     this.selectedWidth = null;
     this.selectedHeight = null;
     this.selectedIndex = null;
     this.coverImage = null;
+    this.profileId = this.activeProfile.id;
     this.submitting = false
   },
   computed: {
-      user() {
-          return this.$store.getters.user;
-      },
-      loading() {
-          return this.$store.getters.loading;
-      },
-      screen() {
-          return this.$store.getters.screen;
-      },
-      modes() {
-        return this.$store.getters.getModes;
-      },
-      insertImage() {
-        return this.$store.getters.getInsertImage;
-      },
-      settings() {
-        return this.$store.getters.getSettings;
-      },
+    user() {
+        return this.$store.getters.user;
+    },
+    loading() {
+        return this.$store.getters.loading;
+    },
+    screen() {
+        return this.$store.getters.screen;
+    },
+    modes() {
+      return this.$store.getters.getModes;
+    },
+    insertImage() {
+      return this.$store.getters.getInsertImage;
+    },
+    settings() {
+      return this.$store.getters.getSettings;
+    },
+    profiles () {
+      return this.$store.getters.profiles;
+    },
+    activeProfile () {
+      return this.$store.getters.profile;
+    },
   },
   methods: {
+    changeProfile(profileId) {
+      this.profileId = profileId;
+    },
+
+    getInitials(name) {
+      let initialsStr = '';
+      let initials = name.split(' ');
+      initials.forEach((initial, index) => {
+        if (index === 0 || index === (initials.length -1)) {
+          initialsStr += initial.substr(0,1);
+        }
+      });
+      return initialsStr;
+    },
+
     close() {
       const payload = {
         showAddStory: false,
@@ -160,8 +202,10 @@ export default {
           storyKey: this.$route.params.id,
           pageKey: this.$route.params.pageId ? this.$route.params.pageId : null,
           newStory: {
-            title: this.newStory.title,
-            description: this.newStory.description,
+            title: this.title,
+            description: this.description,
+            modified: new Date(),
+            profile: this.activeProfile.id,
             plan: {
               video: null,
               text: null
@@ -173,9 +217,8 @@ export default {
       this.$store.dispatch('addStory', payload)
         .then((newStoryId) => {
           this.submitting = false;
-          this.newStory = {
-            title: "",
-          };
+          this.title = '';
+          this.description = '';
           this.coverImage = null;
           const payload = {
             showAddStory: false,

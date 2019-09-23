@@ -10,9 +10,12 @@ export default {
     authSet: false,
     profiles: null,
     activeProfile: null,
+    defaultProfile: null,
     profileSettings: {
       editProfile: false,
-      avatarModal: false
+      addProfile: false,
+      avatarModal: false,
+      confirmDelete: false
     }
   },
   mutations: {
@@ -27,6 +30,9 @@ export default {
     },
     setActiveProfile(state, payload) {
       state.activeProfile = payload;
+    },
+    setDefaultProfile(state, payload) {
+      state.defaultProfile = payload;
     },
     setProfiles(state, payload) {
       state.profiles = payload;
@@ -228,6 +234,7 @@ export default {
       firebase
       .firestore()
       .collection('accounts/'+ state.user.id + '/profiles')
+      .orderBy('nickName', 'asc')
       .onSnapshot(function(querySnapshot) {
         const profiles = [];
         querySnapshot.forEach(prof => {
@@ -249,6 +256,10 @@ export default {
           const newProfile = prof.data();
           newProfile.id = prof.id;
           /** Set active profile */
+          if (prof.data().default) {
+            commit('setDefaultProfile', newProfile);
+          }
+
           if (profileId && (prof.id === profileId)) {
             commit('setActiveProfile', newProfile);
           } else if (!profileId && prof.data().default) {
@@ -271,8 +282,42 @@ export default {
             resolve()
           });
       });
-    }
+    },
+
+    addProfile({commit, state}, payload) {
+      return new Promise((resolve, reject) => {
+        commit('setLoading', true);
+        commit('clearError');
+        let userProfiles = firebase
+        .firestore()
+        .collection('accounts/'+ state.user.id + '/profiles');
+        userProfiles.add(payload)
+          .then(() => {
+            commit('setLoading', false);
+            resolve()
+          });
+      });
+    },
+
+    deleteProfile({commit, state}, payload) {
+      return new Promise((resolve, reject) => {
+        commit('setLoading', true);
+        commit('clearError');
+        let userProfiles = firebase
+        .firestore()
+        .collection('accounts/'+ state.user.id + '/profiles').doc(payload.id);
+        userProfiles.delete()
+          .then(() => {
+            if (state.activeProfile.id === payload.id) {
+              commit('setActiveProfile', state.defaultProfile);
+            }
+            commit('setLoading', false);
+            resolve()
+          });
+      });
+    },
   },
+
   getters: {
     user (state) {
       return state.user;

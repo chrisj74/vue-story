@@ -1,37 +1,68 @@
 <template>
   <q-page class="story-index-container">
     <h2>Projects <q-btn icon="mdi-plus-circle" dense flat size="xl" round label="New Story" @click="showAddStory()" /></h2>
+    <div class="row justify-center items-end profiles-sm">
+      <div class="profile"
+        v-for="profile in profiles"
+        :key="profile.id"
+        @click="changeProfile(false, profile.id)"
+      >
+        <div class="profile-avatar" :class="{'profile-active' : profile.id === profileFilter}">
+            <div :style="{backgroundImage: 'url(' + profile.profilePic + ')'}" class="profile-img"
+              v-if="profile && profile.profilePic"
+            ></div>
+            <div v-else class="profile-initials" :class="{'profile-active' : profile.id === activeProfile.id}">
+              {{ getInitials(profile.nickName)}}
+            </div>
+        </div>
+        <div class="profile-label" v-if="profile && profile.nickName">
+          {{profile.nickName}}
+        </div>
+      </div>
+      <div class="profile profile-all" @click="changeProfile(true, null)" v-if="profiles.length > 1">
+        <div class="profile-avatar" :class="{'profile-active' : !profileFilter}">
+          <q-btn icon="mdi-account-group" round size="xl" label="All profiles" />
+        </div>
+        <div class="profile-label">ALL</div>
+      </div>
+    </div>
     <div class="row justify-start">
       <q-btn outline dense @click="showEdit()" v-if="!editStories">Edit</q-btn>
       <q-btn outline dense @click="showEdit()" v-if="editStories">Done</q-btn>
     </div>
     <div v-if="stories" class="story-wrapper">
-      <q-card v-for="(story) in stories" :key="story.id" class="story">
-        <q-card-media :style="story.thumb ? {backgroundImage: 'url(' + story.thumb + ')'}
-          : {backgroundImage: 'url(statics/image-area.svg)'}">
-          <router-link :to="'/project/'+story.id">
-            <!-- <span v-if="!story.thumb">
-              <svg style="width:300px;height:300px" viewBox="0 0 24 24"><path fill="#000000" d="M20,5A2,2 0 0,1 22,7V17A2,2 0 0,1 20,19H4C2.89,19 2,18.1 2,17V7C2,5.89 2.89,5 4,5H20M5,16H19L14.5,10L11,14.5L8.5,11.5L5,16Z" /></svg>
-            </span> -->
-          </router-link>
-        </q-card-media>
-        <q-card-title>
-          <router-link :to="'/project/'+story.id">
-            <a>{{ story.title }}</a>
-          </router-link>
-        </q-card-title>
-        <q-card-main v-if="story.description && story.description.length > 0">
-          <p>{{ story.description }}</p>
-        </q-card-main>
-        <template v-if="editStories">
-          <q-card-separator />
-          <q-card-actions align="between">
-            <q-btn icon="mdi-delete" @click="deleteStory(story.id)" round color="negative" size="sm"></q-btn>
-            <q-btn icon="mdi-content-copy" @click="cloneStory(story.id)" round color="tertiary" size="sm"></q-btn>
-            <q-btn round type="a" @click="showEditStory(story.id)" icon="mdi-pencil" size="sm" color="positive" />
-          </q-card-actions>
-        </template>
-      </q-card>
+      <template v-for="(story) in stories">
+        <q-card v-if="!story.profile || !profileFilter || story.profile === profileFilter" class="story" :key="story.id">
+          <q-card-media
+            :style="story.thumb ? {backgroundImage: 'url(' + story.thumb + ')'}
+            : {backgroundImage: 'url(statics/image-area.svg)'}">
+            <router-link :to="'/project/'+story.id">
+              <!-- <span v-if="!story.thumb">
+                <svg style="width:300px;height:300px" viewBox="0 0 24 24"><path fill="#000000" d="M20,5A2,2 0 0,1 22,7V17A2,2 0 0,1 20,19H4C2.89,19 2,18.1 2,17V7C2,5.89 2.89,5 4,5H20M5,16H19L14.5,10L11,14.5L8.5,11.5L5,16Z" /></svg>
+              </span> -->
+            </router-link>
+          </q-card-media>
+          <q-card-title>
+            <router-link :to="'/project/'+story.id">
+              <a>{{ story.title }}</a>
+            </router-link>
+          </q-card-title>
+          <q-card-main v-if="story.description && story.description.length > 0">
+            <p>{{ story.description }}</p>
+          </q-card-main>
+          <template v-if="editStories">
+            <q-card-separator />
+            <q-card-actions align="between">
+              <q-btn icon="mdi-delete" @click="deleteStory(story.id)" round color="negative" size="sm"></q-btn>
+              <q-btn icon="mdi-content-copy" @click="cloneStory(story.id)" round color="tertiary" size="sm"></q-btn>
+              <q-btn round type="a" @click="showEditStory(story.id)" icon="mdi-pencil" size="sm" color="positive" />
+            </q-card-actions>
+          </template>
+        </q-card>
+      </template>
+    </div>
+    <div class="row justify-center items-end">
+      <q-btn icon="mdi-plus-circle" label="New Story" @click="showAddStory()"></q-btn>
     </div>
 
     <q-modal
@@ -59,10 +90,12 @@ export default {
       submitting: false,
       editStories: false,
       editStoryId: null,
+      profileFilter: null,
     }
   },
   mounted() {
     /** Reset story & page so deleting doesn't create issues */
+    this.profileFilter = this.activeProfile.id;
     this.$store.commit('setStory', {});
     this.$store.commit('resetPage');
   },
@@ -78,9 +111,34 @@ export default {
     },
     settings() {
       return this.$store.getters.getSettings;
-    }
+    },
+    profiles () {
+      return this.$store.getters.profiles;
+    },
+    activeProfile () {
+      return this.$store.getters.profile;
+    },
   },
   methods: {
+    changeProfile(showAll, profileId) {
+      if (showAll) {
+        this.profileFilter = null;
+      } else {
+        this.profileFilter = profileId;
+      }
+    },
+
+    getInitials(name) {
+      let initialsStr = '';
+      let initials = name.split(' ');
+      initials.forEach((initial, index) => {
+        if (index === 0 || index === (initials.length -1)) {
+          initialsStr += initial.substr(0,1);
+        }
+      });
+      return initialsStr;
+    },
+
     closeModal(type) {
       const newSetting = {};
       newSetting[type] = false;
@@ -124,7 +182,6 @@ export default {
       }
       this.$store.dispatch('cloneStory', payload)
         .then((newStoryId) => {
-          console.log('done cloning id=', newStoryId);
           this.$router.push({ path: '/project/'+newStoryId });
         });
     },
@@ -132,6 +189,14 @@ export default {
     getPlaceholder() {
       const img = '<svg style="width:300px;height:300px" viewBox="0 0 24 24"><path fill="#000000" d="M20,5A2,2 0 0,1 22,7V17A2,2 0 0,1 20,19H4C2.89,19 2,18.1 2,17V7C2,5.89 2.89,5 4,5H20M5,16H19L14.5,10L11,14.5L8.5,11.5L5,16Z" /></svg>';
       return encodeURIComponent(img);
+    }
+  },
+  watch: {
+    activeProfile: {
+      handler: function(newProfile, oldProfile) {
+        this.profileFilter = this.activeProfile.id;
+      },
+      deep: true
     }
   }
 }
@@ -143,6 +208,25 @@ export default {
   padding: 10px;
   h2 {
     margin: 10px 0;
+  }
+}
+.profiles-sm {
+  .profile {
+    &.profile-all {
+      .profile-avatar {
+        width: 80px;
+      }
+    }
+    .profile-avatar {
+      width: 75px;
+      .profile-initials {
+        width: 75px;
+        height: 65px;
+      }
+      .profile-img {
+        height: 65px;
+      }
+    }
   }
 }
 .story-wrapper {

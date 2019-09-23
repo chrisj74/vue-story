@@ -22,10 +22,10 @@
       content-class="bg-grey-2"
     >
       <div class="profile">
-        <div class="profile-avatar" v-if="profile">
+        <div class="profile-avatar profile-active" v-if="profile">
           <router-link :to="'/profiles'">
-            <div :style="{backgroundImage: 'url(' + profile.profilePic + ')'}" class="profile-img profile-active" v-if="profile.profilePic"></div>
-            <div class="profile-initials profile-active" v-else>
+            <div :style="{backgroundImage: 'url(' + profile.profilePic + ')'}" class="profile-img" v-if="profile.profilePic"></div>
+            <div class="profile-initials" v-else>
               {{ getInitials(profile.nickName) }}
             </div>
           </router-link>
@@ -126,6 +126,7 @@ export default {
 </script>
 
 <style lang="stylus">
+@import '~variables';
 .profile {
   margin-top: 5px;
   display: flex;
@@ -141,21 +142,23 @@ export default {
     width: 150px;
     max-width: 100%;
     border-radius: 50%;
-    .profile-active {
+    border: transparent 5px solid;
+    box-sizing: border-box;
+    &.profile-active {
       box-shadow: 0 1px 5px rgba(0,0,0,0.2), 0 2px 2px rgba(0,0,0,0.14), 0 3px 1px -2px rgba(0,0,0,0.12);
-      border: solid 3px transparent;
+      border: solid 5px $primary;
     }
     .profile-img {
       border-radius: 50%;
       max-width: 100%;
-      height: 150px;
+      height: 140px;
       background-position: center center;
       background-size: cover;
     }
     .profile-initials {
       width: 150px;
       max-width: 100%;
-      height: 150px;
+      height: 140px;
       display: flex;
       border-radius: 50%;
       align-items: center;

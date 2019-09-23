@@ -1,6 +1,6 @@
 <template>
   <div class="edit-form">
-    <h5>Edit Profile</h5>
+    <h5>Add Profile</h5>
     <div v-if="profileData">
       <div  class="profile">
         <div class="profile-avatar">
@@ -8,7 +8,7 @@
               v-if="profileData.profilePic"
             ></div>
             <div v-else class="profile-initials">
-              {{ getInitials(profileData.nickName)}}
+              {{ getInitials(profileData.nickName ? profileData.nickName : '?')}}
             </div>
         </div>
       </div>
@@ -27,9 +27,6 @@
         v-model="profileData['age']"
         float-label="Age"
       />
-      <div class="row justify-center form-button-wrapper" v-if="!profileData.default">
-        <q-btn color="negative" size="sm" icon="mdi-delete" @click="showDeleteProfile()">Delete</q-btn>
-      </div>
       <div class="row justify-between form-button-wrapper">
         <q-btn color="white" text-color="black" icon="mdi-cancel" @click="close()">Cancel</q-btn>
         <q-btn color="primary" icon="mdi-save" @click="saveProfile()">Save</q-btn>
@@ -42,34 +39,6 @@
       :content-css="{minWidth: '350px', height: '90vh', maxWidth: '90vw', width: '800px'}">
       <add-image></add-image>
     </q-modal>
-
-    <!-- Confirm Delete Modal -->
-    <q-modal
-      v-model="profileSettings.confirmDelete"
-      :content-css="{minWidth: '350px', maxWidth: '100%', width: '80vw'}">
-      <q-modal-layout>
-        <q-toolbar slot="header">
-          <q-toolbar-title>
-            DELETE PROFILE
-          </q-toolbar-title>
-        </q-toolbar>
-
-        <q-toolbar slot="footer">
-          <q-btn @click="closeConfirmDelete()">Cancel</q-btn>
-          <q-toolbar-title></q-toolbar-title>
-          <q-btn color="negative" icon="mdi-delete" @click="deleteProfile()" :disabled="confirmDelete !== 'DELETE PROFILE'">Delete</q-btn>
-        </q-toolbar>
-
-        <div class="layout-padding">
-          <p>Are you sure you want to permanently delete this profile?</p>
-          <p>You cannot undo deleting a profile, so please confirm you want to this by typing <strong>DELETE PROFILE</strong> exactly like this in the box below.
-          Then click Delete</p>
-
-          <q-input type="text" v-model="confirmDelete" />
-
-        </div>
-      </q-modal-layout>
-    </q-modal>
   </div>
 </template>
 
@@ -79,13 +48,17 @@ import { required, email } from 'vuelidate/lib/validators';
 import AddImage from "../story/PixabaySearch";
 
 export default {
-  name: 'EditProfile',
+  name: 'AddProfile',
   components: { AddImage },
-  props: ['profileId'],
   data() {
     return {
-      profileData: null,
-      confirmDelete: ''
+      profileData: {
+        nickName: '',
+        default: false,
+        age: null,
+        profilePic: '',
+        email: '',
+      },
     }
   },
   validations: {
@@ -95,7 +68,6 @@ export default {
   },
   mounted() {
     /** Mounted */
-    this.setProfile(_.cloneDeep(this.profile));
   },
   computed: {
     user () {
@@ -103,9 +75,6 @@ export default {
     },
     loading () {
       return this.$store.getters.loading
-    },
-    profile () {
-      return this.$store.getters.getProfileById(this.profileId);
     },
     profileSettings () {
       return this.$store.getters.getProfileSettings;
@@ -115,35 +84,9 @@ export default {
     },
   },
   methods: {
-    showDeleteProfile() {
-      const payload = {
-        confirmDelete: true
-      }
-      this.$store.commit('setProfileSettings', payload);
-    },
-
-    closeConfirmDelete() {
-      this.confirmDelete = '';
-      const payload = {
-        confirmDelete: false
-      }
-      this.$store.commit('setProfileSettings', payload);
-    },
-
-    deleteProfile() {
-      this.closeConfirmDelete();
-      this.$store.dispatch('deleteProfile', JSON.parse(JSON.stringify(this.profileData)))
-        .then(() => {
-          this.close();
-        });
-    },
-
-    setProfile(newProfile) {
-      this.profileData = newProfile;
-    },
-
     saveProfile() {
-      this.$store.dispatch('updateProfile', JSON.parse(JSON.stringify(this.profileData)))
+      const payload = JSON.parse(JSON.stringify(this.profileData));
+      this.$store.dispatch('addProfile', payload)
         .then(() => {
           this.close();
         });
@@ -179,22 +122,16 @@ export default {
 
     close() {
       const payload = {
-        editProfile: false
+        addProfile: false
       }
       this.$store.commit('setProfileSettings', payload);
     }
   },
   watch: {
-    profile : {
-      handler: function(newProfile, oldProfile) {
-        this.profileData = _.cloneDeep(this.profile);
-      },
-      deep: true
-    },
     insertImage: {
       handler: function(newImage, oldImage) {
         this.$store.commit('setLoading', false);
-        if (newImage && this.profileSettings.editProfile) {
+        if (newImage && this.profileSettings.addProfile) {
           this.updateAvatar(newImage);
         }
       },
