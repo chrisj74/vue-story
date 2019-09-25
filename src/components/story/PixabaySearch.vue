@@ -16,7 +16,9 @@
                 }
               ]"  />
             <div class="col-2">
-              <q-btn size="3rem" color="secondary" danse flat round icon="mdi-cloud-upload" @click="croppa.chooseFile()"></q-btn>
+              <q-btn dense flat @click="croppa.chooseFile()">
+                <q-icon size="3rem" color="secondary" name="mdi-cloud-upload" label="Upload" />
+              </q-btn>
             </div>
           </div>
         </div>
@@ -53,7 +55,7 @@
           </croppa>
 
         </div>
-        <div class="croppa-slider" :style="{width: sizes[selectedIndex].w + 'px'}">
+        <div v-if="sliderMin > 0 && sliderMax > 0" class="croppa-slider" :style="{width: sizes[selectedIndex].w + 'px'}">
             <q-slider :min="sliderMin" :max="sliderMax" :step="sliderStep" :value="sliderVal" @input="val => onSliderChange(val)"></q-slider>
         </div>
         <!-- image size -->
@@ -204,13 +206,18 @@ export default {
     },
 
     close() {
-      const payload = {
+      let payload = {
         showImageModal: false,
       };
       this.$store.commit("clearImageSearchResults");
       this.$store.commit("clearInsertImage");
       this.searchString = '';
       this.$store.commit('setSettings', payload);
+
+      payload = {
+        avatarModal: false
+      }
+      this.$store.commit('setProfileSettings', payload);
     },
 
     searchImages() {
