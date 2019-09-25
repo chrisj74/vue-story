@@ -269,7 +269,7 @@ export default {
       });
     },
 
-    updateProfile ({commit, state}, payload) {
+    updateProfile ({commit, state, dispatch}, payload) {
       return new Promise((resolve, reject) => {
         commit('setLoading', true);
         commit('clearError');
@@ -278,8 +278,9 @@ export default {
         .collection('accounts/'+ state.user.id + '/profiles').doc(payload.id);
         userProfiles.set(payload, { merge: true })
           .then(() => {
+            this.dispatch('setProfile', state.activeProfile.id)
             commit('setLoading', false);
-            resolve()
+            resolve();
           });
       });
     },

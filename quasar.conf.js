@@ -11,7 +11,8 @@ module.exports = function (ctx) {
       'scrollto',
       'quill',
       'html2canvas',
-      'vuelidate'
+      'vuelidate',
+      'croppa'
     ],
     css: [
       'app.styl'

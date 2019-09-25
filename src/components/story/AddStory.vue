@@ -11,7 +11,7 @@
       <div class="modal-inner-content">
         <!-- Profile -->
         <p><strong>Profile</strong></p>
-        <div class="row justify-start profiles-sm">
+        <div class="row justify-start profiles-sm" v-if="profiles">
           <div class="profile"
             v-for="profile in profiles"
             :key="profile.id"
@@ -109,7 +109,7 @@ export default {
     this.selectedHeight = null;
     this.selectedIndex = null;
     this.coverImage = null;
-    this.profileId = this.activeProfile.id;
+    this.profileId = this.activeProfile ? this.activeProfile.id : null;
     this.submitting = false
   },
   computed: {

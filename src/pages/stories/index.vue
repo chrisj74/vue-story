@@ -1,7 +1,7 @@
 <template>
   <q-page class="story-index-container">
     <h2>Projects <q-btn icon="mdi-plus-circle" dense flat size="xl" round label="New Story" @click="showAddStory()" /></h2>
-    <div class="row justify-center items-end profiles-sm">
+    <div class="row justify-center items-end profiles-sm" v-if="profiles && activeProfile">
       <div class="profile"
         v-for="profile in profiles"
         :key="profile.id"
@@ -95,7 +95,7 @@ export default {
   },
   mounted() {
     /** Reset story & page so deleting doesn't create issues */
-    this.profileFilter = this.activeProfile.id;
+    this.profileFilter = this.activeProfile ? this.activeProfile.id : null;
     this.$store.commit('setStory', {});
     this.$store.commit('resetPage');
   },

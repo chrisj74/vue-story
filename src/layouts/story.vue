@@ -1,6 +1,6 @@
 <template>
   <div>
-    <q-layout view="lHh Lpr lFf" :class="'dragging'">
+    <q-layout view="lHh Lpr lFf" :class="'app-dragging'">
       <!-- left drawer -->
       <q-btn
         class="drawer-btn"
@@ -91,6 +91,9 @@ export default {
       return this.$store.getters.getLeftDrawerOpen;
     }
   },
+  mounted () {
+    this.$store.dispatch('setImages', this.user.id);
+  },
   methods: {
    onLogout () {
       this.$store.dispatch('logout');
@@ -108,7 +111,7 @@ export default {
 </script>
 
 <style>
-.dragging {
+.app-dragging {
   position: fixed;
 }
 .drawer-btn {

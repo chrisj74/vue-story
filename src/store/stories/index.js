@@ -1,9 +1,11 @@
 import * as firebase from "firebase";
 import * as _ from "lodash";
 import * as axios from 'axios';
+import { stat } from "fs";
 
 export default {
   state: {
+    images: [],
     nextPage: null,
     stories: [],
     pageImages: {},
@@ -15,7 +17,7 @@ export default {
       str: '',
       page: 0,
       totalHits: 0,
-      hits: [],
+      hits: null,
     },
     searchSize: 50,
     insertImage: null,
@@ -52,9 +54,15 @@ export default {
     toolAction: null,
   },
   mutations: {
+    setImages(state, payload) {
+      state.images = payload;
+    },
+    addImage(state, payload) {
+      state.images.unshift(payload)
+    },
     addStory(state, payload) {
       const newStory = payload;
-      state.stories.push(newStory);
+      state.stories.unshift(newStory);
     },
     setStories(state, payload) {
       state.stories = payload;
@@ -102,12 +110,15 @@ export default {
     clearImageSearchResults(state) {
       state.imageSearchResults.str = '';
       state.imageSearchResults.totalHits = 0;
-      state.imageSearchResults.hits = [];
+      state.imageSearchResults.hits = null;
       state.imageSearchResults.page = 0;
     },
     setImageSearchResults(state, payload) {
       state.imageSearchResults.str = payload.str;
       state.imageSearchResults.totalHits = payload.response.data.totalHits;
+      if (!state.imageSearchResults.hits) {
+        state.imageSearchResults.hits = [];
+      }
       state.imageSearchResults.hits = state.imageSearchResults.hits.concat(payload.response.data.hits);
       state.imageSearchResults.page += 1;
     },
@@ -465,6 +476,26 @@ export default {
       });
     },
 
+    setImages({ commit }, payload) {
+      return new Promise((resolve, reject) => {
+        const images = [];
+        // const ref = firebase.storage().ref();
+        const listRef = firebase.storage().ref('images/' + payload);
+          listRef.listAll().then(function(res) {
+            const promiseArray = []
+            res.items.forEach(function(itemRef) {
+              // All the items under listRef.
+              promiseArray.push(itemRef.getDownloadURL());
+            });
+            Promise.all(promiseArray)
+              .then(result => {
+                commit('setImages', result);
+                resolve();
+              })
+          });
+      });
+    },
+
     setStories({ commit, dispatch }, payload) {
       return new Promise((resolve, reject) => {
         firebase
@@ -699,7 +730,7 @@ export default {
         });
     },
 
-    addImage({ commit }, payload) {
+    addImage({ commit, state }, payload) {
       console.log('store addImage, payload=', payload);
       const ref = firebase.storage().ref();
       const path = 'images/' + payload.user.id + '/' + (+new Date()) + '-' + payload.image.name;
@@ -716,6 +747,7 @@ export default {
             webformatHeight: payload.image.dimensions.h,
           };
           commit('setInsertImage', imgObj);
+          commit('addImage', url);
         })
         .catch(console.error);
     },
@@ -731,20 +763,13 @@ export default {
       const fullPath = path + query + pageStr;
       axios.get(fullPath)
       .then((response) => {
+        console.log('search', response);
         const newPayload = {
           str: payload.str,
           response: response
         };
         commit('setImageSearchResults', newPayload);
       })
-      .catch(() => {
-        this.$q.notify({
-          color: 'negative',
-          position: 'top',
-          message: 'Loading failed',
-          icon: 'report_problem'
-        });
-      });
     },
 
     historyAdd({ commit, state }, payload) {
@@ -819,6 +844,9 @@ export default {
     },
     getPageImages(state) {
       return state.pageImages;
+    },
+    getAllImages(state) {
+      return state.images;
     }
   }
 };

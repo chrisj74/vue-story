@@ -111,6 +111,7 @@ export default {
   mounted () {
     if (this.user) {
       this.$store.dispatch('setStories', this.user.id);
+      this.$store.dispatch('setImages', this.user.id);
       this.storiesSet = true;
     }
   },
@@ -120,7 +121,7 @@ export default {
         this.$store.dispatch('setStories', this.user.id);
         this.storiesSet = true;
       }
-    }
+    },
   }
 }
 </script>
