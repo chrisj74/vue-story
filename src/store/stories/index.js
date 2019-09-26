@@ -1,27 +1,49 @@
 import * as firebase from "firebase";
 import * as _ from "lodash";
 import * as axios from 'axios';
+import { stat } from "fs";
 
 export default {
   state: {
-    stories: [
-
-    ],
+    images: [],
+    nextPage: null,
+    stories: [],
+    pageImages: {},
     story: {},
     pages: [],
-    page: {},
+    page: null,
+    pageDimensions: null,
     imageSearchResults: {
       str: '',
       page: 0,
       totalHits: 0,
-      hits: [],
+      hits: null,
     },
     searchSize: 50,
     insertImage: null,
     pdfImages: null,
     modes: {
-      mode: 'page',
+      mode: 'text',
       subMode: 'text',
+    },
+    settings: {
+      brushWidth: 2,
+      showBrushWidth: false,
+      imageOpacity: 1,
+      showImageOpacity: false,
+      color: '#000000',
+      isSelected: false,
+      showImageModal: false,
+      activeEditor: 0,
+      showAddPage: false,
+      showAddStory: false,
+      showEditStory: false,
+      showEditPlan: false,
+      showThumbs: false,
+      textBoxBorderWidth: 0,
+      textBoxBorderColor: '#ffffff00',
+      textBoxBackgroundColor: '#ffffffff',
+      textBoxOpacity: 0,
     },
     history: {
       undo: false,
@@ -29,11 +51,18 @@ export default {
       restoreIndex: -1,
       states: []
     },
+    toolAction: null,
   },
   mutations: {
+    setImages(state, payload) {
+      state.images = payload;
+    },
+    addImage(state, payload) {
+      state.images.unshift(payload)
+    },
     addStory(state, payload) {
       const newStory = payload;
-      state.stories.push(newStory);
+      state.stories.unshift(newStory);
     },
     setStories(state, payload) {
       state.stories = payload;
@@ -45,17 +74,51 @@ export default {
       state.pages = payload;
     },
     setPage (state, payload) {
-      state.page = payload;
+      let pageVal;
+      if (state.page && state.page.id === payload.page.id) {
+        pageVal = _.cloneDeep(state.page);
+        if(payload.page.textLayer.length !== pageVal.textLayer.length) {
+          pageVal.textLayer = payload.page.textLayer;
+        }
+        pageVal = _.merge(pageVal, payload.page);
+      } else {
+        pageVal = payload.page
+      }
+      state.page = pageVal;
+      if (payload.restoreIndex) {
+        /** Update history if it's not part of undo/redo */
+        pageVal.modes = _.cloneDeep(state.modes);
+        if (state.history.restoreIndex === state.history.states.length - 1) {
+          state.history.states.push(pageVal);
+        } else {
+          state.history.states = state.history.states.slice(0, state.history.restoreIndex + 1);
+          state.history.states.push(pageVal);
+        }
+        state.history.restoreIndex = state.history.restoreIndex + 1;
+      }
+    },
+    resetPage (state) {
+      state.page =  null;
+      state.pageDimensions = null;
+    },
+    setPageImage(state, payload) {
+      state.pageImages[payload.pageId] = payload.imageData;
+    },
+    clearPageImages(state) {
+      state.pageImages = {};
     },
     clearImageSearchResults(state) {
       state.imageSearchResults.str = '';
       state.imageSearchResults.totalHits = 0;
-      state.imageSearchResults.hits = [];
+      state.imageSearchResults.hits = null;
       state.imageSearchResults.page = 0;
     },
     setImageSearchResults(state, payload) {
       state.imageSearchResults.str = payload.str;
       state.imageSearchResults.totalHits = payload.response.data.totalHits;
+      if (!state.imageSearchResults.hits) {
+        state.imageSearchResults.hits = [];
+      }
       state.imageSearchResults.hits = state.imageSearchResults.hits.concat(payload.response.data.hits);
       state.imageSearchResults.page += 1;
     },
@@ -75,27 +138,52 @@ export default {
       state.modes.subMode = payload;
     },
     setHistoryAddStates(state, payload) {
-      console.log('setHistoryStates payload=', payload);
+      payload.modes = _.cloneDeep(state.modes);
       state.history.states.push(payload);
     },
+    setHistoryStates(state, payload) {
+      state.history.states = payload;
+    },
     setHistorySliceStates(state, payload) {
-      console.log('historySlice state=', state.history);
       state.history.states = state.history.states.slice(0, state.history.restoreIndex + 1);
+      payload.modes = _.cloneDeep(state.modes);
       state.history.states.push(payload);
     },
     setHistoryRestoreIndex(state, payload) {
-      console.log('setHistoryRestoreIndex payload=', payload);
       state.history.restoreIndex = payload;
+
     },
-    setHistoryUndo(state, payload){
-      state.history.undo = payload;
+    setHistoryUndo(state){
+      const modes = _.cloneDeep(state.history.states[state.history.restoreIndex].modes);
+      if (modes.mode === 'draw') {
+        /** issue with loading pad with erase mode, force brush */
+        modes.subMode = 'brush';
+      }
+      state.modes = modes;
+      state.page = _.cloneDeep(state.history.states[state.history.restoreIndex]);
     },
     setHistoryRedo(state, payload){
       state.history.redo = payload;
+    },
+    setPageDimensions(state, payload) {
+      let newDimensions = _.cloneDeep(state.pageDimensions);
+      newDimensions = _.merge(newDimensions, payload);
+      state.pageDimensions = newDimensions;
+    },
+    setSettings(state, payload) {
+      let settings = _.cloneDeep(state.settings);
+      settings = _.merge(settings, payload);
+      state.settings = settings;
+    },
+    setToolAction(state, payload) {
+      state.toolAction = payload;
+    },
+    setNextPage(state, payload) {
+      state.nextPage = payload;
     }
   },
   actions: {
-    addStory({ commit }, payload) {
+    addStory({ state }, payload) {
       return new Promise((resolve, reject) => {
         const userStories = firebase
           .firestore()
@@ -107,55 +195,116 @@ export default {
         userStories
           .collection('stories').add(payload.newStory)
           .then(function(docRef) {
-              docRef
-                .collection('pages').add({
-                  order: 0,
-                  canvasJson: '{}',
-                  textLayer: {
-                    text: '',
-                    x: 50,
-                    y: 25,
-                    width: (595 - 100),
-                    height: (842 - 100)
-                  },
-                  background: {
-                    color: '#ffffff',
-                    image: false,
-                  },
-                  pageSize: {
-                    width: 595,
-                    height: 842,
-                  }
+            const _docRef = docRef
+            docRef
+              .collection('pages').add(payload.page)
+                .then(function(pageRef) {
+                  const newStoryId = _docRef.id;
+                  resolve(newStoryId);
                 });
           })
           .catch(function(error) {
               console.error("Error adding document: ", error);
           });
-          resolve();
       });
     },
 
-    updateStory({ commit }, payload) {
-      // console.log('updateStory');
-      const payloadRef = payload;
-      const userStory = firebase
-      .firestore()
-      .collection('users/' + payload.user.id + '/stories/').doc(payload.storyKey);
-      // console.log('payloadRef=', payloadRef);
-      if (payloadRef.thumbUrl) {
-        userStory.update({
-          thumb: payloadRef.thumbUrl
+    cloneStory({ commit, state }, payload) {
+      return new Promise((resolve, reject) => {
+        let sourceStory;
+        state.stories.forEach(story => {
+          if (story.id === payload.storyKey) {
+            sourceStory = _.cloneDeep(story);
+            sourceStory.modified = new Date();
+          }
         });
-      }
-      if (payloadRef.plan) {
-        userStory.update({
-          plan: payloadRef.plan
+        sourceStory.title = sourceStory.title + ' copy';
+
+        const sourcePages = [];
+        firebase.firestore()
+          .collection('users/' + payload.user.id + '/stories/' + payload.storyKey + '/pages').orderBy('order', 'asc')
+          .onSnapshot(function(querySnapshot) {
+            querySnapshot.forEach(function(doc) {
+              sourcePages.push({
+                photoLayer: doc.data().photoLayer,
+                textLayer: doc.data().textLayer,
+                thumb: doc.data().thumb ? doc.data().thumb : '',
+                // preview: doc.data().preview,
+                background: doc.data().background,
+                drawingLayer: doc.data().drawingLayer,
+                pageSize: doc.data().pageSize,
+                order: doc.data().order,
+                commit: 0,
+              });
+            });
+          });
+        const userStories = firebase
+          .firestore()
+          .collection("users/").doc(payload.user.id);
+        userStories.set({
+          lastUpdated: new Date(),
         });
-      }
+
+        userStories
+          .collection('stories').add(sourceStory)
+          .then(function(docRef) {
+            const newStoryId = docRef.id;
+            sourcePages.forEach(page => {
+              docRef
+              .collection('pages').add(_.cloneDeep(page))
+            });
+            resolve(newStoryId);
+          })
+          .catch(function(error) {
+              console.error("Error adding document: ", error);
+          });
+        });
     },
 
-    updatePageOrder({ commit }, payload) {
+    updateStoryModified({ commit }, payload) {
+      const userStory = firebase
+        .firestore()
+        .collection('users/' + payload.user.id + '/stories/').doc(payload.storyKey);
+        userStory.update({
+          modified: new Date()
+        });
+    },
+
+    updateStory({ dispatch }, payload) {
       return new Promise((resolve, reject) => {
+        dispatch('updateStoryModified', payload);
+        const payloadRef = payload;
+        const userStory = firebase
+        .firestore()
+        .collection('users/' + payload.user.id + '/stories/').doc(payload.storyKey);
+        // console.log('payloadRef=', payloadRef);
+        if (payloadRef.thumb) {
+          userStory.update({
+            thumb: payloadRef.thumb
+          });
+        }
+        if (payloadRef.title) {
+          userStory.update({
+            title: payloadRef.title
+          });
+        }
+        if (payloadRef.plan) {
+          userStory.update({
+            plan: payloadRef.plan
+          });
+        }
+        if (payloadRef.profile) {
+          userStory.update({
+            profile: payloadRef.profile
+          });
+        }
+        resolve();
+      });
+    },
+
+    updatePageOrder({ commit, dispatch }, payload) {
+      return new Promise((resolve, reject) => {
+        dispatch('updateStoryModified', payload);
         const userStory = firebase
           .firestore()
           .collection('users/' + payload.user.id + '/stories/' + payload.storyKey + '/pages/');
@@ -172,56 +321,96 @@ export default {
       });
     },
 
-    updatePage( {commit }, payload) {
-      // console.log('updatePage payload =', payload);
+    updatePage( {commit, state, dispatch }, payload) {
+      const statePage = _.cloneDeep(state.page);
+      const newState = _.merge(statePage, payload.page);
+      newState.commit++;
+      commit('setPage', {page: newState, restoreIndex: payload.restoreIndex});
+      return new Promise((resolve, reject) => {
+        dispatch('updateStoryModified', payload);
+        const userPage = firebase
+          .firestore()
+          .collection('users/' + payload.user.id + '/stories/' + payload.storyKey + '/pages/').doc(payload.pageKey);
+          if (payload.page.drawingLayer) {
+            userPage.update({
+              commit: newState.commit,
+              drawingLayer: payload.page.drawingLayer,
+            });
+          }
+          if (payload.page.background){
+            userPage.update({
+              commit: newState.commit,
+              background: payload.page.background
+            });
+          }
+          if (payload.page.photoLayer){
+            userPage.update({
+              commit: newState.commit,
+              photoLayer: payload.page.photoLayer
+            });
+          }
+          if (payload.page.textLayer){
+            userPage.update({
+              commit: newState.commit,
+              textLayer: payload.page.textLayer
+            });
+          }
+        resolve();
+      });
+    },
+
+    updatePageText( {commit, state, dispatch }, payload) {
+      dispatch('updateStoryModified', payload);
+      const newState = _.cloneDeep(state.page);
+      if (newState.textLayer[payload.index]) {
+        if (payload.textLayer) {
+          newState.textLayer[payload.index] = _.merge(newState.textLayer[payload.index], payload.textLayer);
+          newState.textLayer[payload.index].delta = payload.textLayer.delta;
+        } else {
+          newState.textLayer.splice(payload.index, 1);
+        }
+      } else {
+        newState.textLayer.push(payload.textLayer)
+      }
+
+      newState.commit++;
+      commit('setPage', {page: newState, restoreIndex: true});
       return new Promise((resolve, reject) => {
         const userStory = firebase
           .firestore()
           .collection('users/' + payload.user.id + '/stories/' + payload.storyKey + '/pages/').doc(payload.pageKey);
           userStory.update({
-            canvasJson: payload.page.json,
-            background: payload.page.background
+            commit: newState.commit,
+            textLayer: newState.textLayer
           });
         resolve();
       });
     },
 
-
-    updatePageText( {commit }, payload) {
-      // console.log('updatePage payload =', payload);
+    addPage( { dispatch }, payload) {
       return new Promise((resolve, reject) => {
-        const userStory = firebase
-          .firestore()
-          .collection('users/' + payload.user.id + '/stories/' + payload.storyKey + '/pages/').doc(payload.pageKey);
-          userStory.update({
-            textLayer: {
-              y: payload.textLayer.y,
-              x: payload.textLayer.x,
-              width: payload.textLayer.width,
-              height: payload.textLayer.height,
-              text: payload.textLayer.text
-            }
-          });
-        resolve();
-      });
-    },
-
-    addPage( {commit }, payload) {
-      return new Promise((resolve, reject) => {
+        dispatch('updateStoryModified', payload);
         let newId = null;
         const newOrder = payload.order;
-        const userStory = firebase
-          .firestore()
-          .collection('users/' + payload.user.id + '/stories/' + payload.storyKey + '/pages/');
-          userStory.add({
-            canvasJson: null,
-            textLayer: {
-              text: '',
+        let page = payload.page
+        if (!page) {
+          /** Set default */
+          page = {
+            commit: 0,
+            photoLayer: {},
+            drawingLayer: {},
+            textLayer: [{
+              text: ' ',
               x: 50,
               y: 25,
               width: (595 - 100),
-              height: (842 -100)
-            },
+              height: (150),
+              borderWidth: 0,
+              borderColor: '#ffffff00',
+              backgroundColor: '#ffffffff',
+              opacity: 0,
+              delta: []
+            }],
             background: {
               color: '#ffffff',
               image: false,
@@ -231,16 +420,22 @@ export default {
               width: 595,
               height: 842,
             }
-          }).then(function(docRef) {
+          }
+        }
+        const userStory = firebase
+          .firestore()
+          .collection('users/' + payload.user.id + '/stories/' + payload.storyKey + '/pages/');
+          userStory.add(page).then(function(docRef) {
             newId = docRef.id;
             resolve(newId);
           });
       });
     },
 
-    deletePage( { commit }, payload) {
+    deletePage( { dispatch }, payload) {
       const payloadRef = payload;
       return new Promise((resolve, reject) => {
+        dispatch('updateStoryModified', payload);
         const userStory = firebase
           .firestore()
           .collection('users/' + payloadRef.user.id + '/stories/' + payloadRef.storyKey + '/pages/');
@@ -281,11 +476,32 @@ export default {
       });
     },
 
+    setImages({ commit }, payload) {
+      return new Promise((resolve, reject) => {
+        const images = [];
+        // const ref = firebase.storage().ref();
+        const listRef = firebase.storage().ref('images/' + payload);
+          listRef.listAll().then(function(res) {
+            const promiseArray = []
+            res.items.forEach(function(itemRef) {
+              // All the items under listRef.
+              promiseArray.push(itemRef.getDownloadURL());
+            });
+            Promise.all(promiseArray)
+              .then(result => {
+                commit('setImages', result);
+                resolve();
+              })
+          });
+      });
+    },
+
     setStories({ commit, dispatch }, payload) {
       return new Promise((resolve, reject) => {
         firebase
             .firestore()
             .collection('users/' + payload + '/stories/')
+            .orderBy('modified', 'desc')
             .onSnapshot(function(querySnapshot) {
               const stories = [];
               querySnapshot.forEach(function(doc) {
@@ -293,9 +509,11 @@ export default {
                   id: doc.id,
                   title: doc.data().title,
                   thumb: doc.data().thumb,
-                  preview: doc.data().preview
+                  profile: doc.data().profile,
+                  description: doc.data().description,
+                  plan: doc.data().plan,
+                  modified: doc.data().modified ? doc.data().modified.toDate() : new Date(),
                 });
-
               });
               commit('setStories', stories);
           });
@@ -324,14 +542,26 @@ export default {
         .onSnapshot(function(querySnapshot) {
           const pages = [];
           querySnapshot.forEach(function(doc) {
-              pages.push({
+            pages.push({
+              id: doc.id,
+              order: doc.data().order,
+              thumb: doc.data().thumb,
+              preview: doc.data().preview,
+              background: doc.data().background,
+              pageSize: doc.data().pageSize,
+              page: {
+                photoLayer: doc.data().photoLayer,
+                textLayer: doc.data().textLayer,
                 id: doc.id,
-                order: doc.data().order,
                 thumb: doc.data().thumb,
                 preview: doc.data().preview,
                 background: doc.data().background,
+                drawingLayer: doc.data().drawingLayer,
                 pageSize: doc.data().pageSize,
-              });
+                order: doc.data().order,
+                commit: doc.data().commit,
+              }
+            });
 
           });
           commit('setPages', pages);
@@ -367,41 +597,62 @@ export default {
         });
     },
 
-    setPage({ commit }, payload) {
-      // console.log('setPage payload=', payload);
+    setPage({ commit, state }, payload) {
+      const _payload = payload;
+      commit('setNextPage', _payload.pageKey)
       firebase
         .firestore()
-        .collection('users/' + payload.user.id + '/stories/' + payload.storyKey + '/pages').orderBy('order', 'asc')
+        .collection('users/' + _payload.user.id + '/stories/' + _payload.storyKey + '/pages').orderBy('order', 'asc')
         .onSnapshot(function(querySnapshot) {
           let page;
-          if (payload.pageKey) {
+          if (state.nextPage) {
             querySnapshot.docs.forEach(doc => {
-              if (doc.id === payload.pageKey)
+              if (
+                (doc.id === state.nextPage)
+                && (!state.page
+                  || state.page.id !== doc.id
+                  || doc.data().commit > state.page.commit
+                  || state.page.commit == 0)
+                ) {
                 page = {
-                  canvasJson: doc.data().canvasJson,
+                  photoLayer: doc.data().photoLayer,
                   textLayer: doc.data().textLayer,
                   id: doc.id,
                   thumb: doc.data().thumb,
                   preview: doc.data().preview,
                   background: doc.data().background,
+                  drawingLayer: doc.data().drawingLayer,
                   pageSize: doc.data().pageSize,
                   order: doc.data().order,
+                  commit: doc.data().commit,
                 };
+                page = _.cloneDeep(page);
+                commit('setPage', {page: page, restoreIndex: true});
+              }
             });
-          } else {
+
+          } else if (state.story &&
+            (!state.page
+            || state.page.id !== querySnapshot.docs[0].id
+            || querySnapshot.docs[0].data().commit > state.page.commit
+            || state.page.commit == 0)) {
             /** cater for index without id */
             page = {
-              canvasJson : querySnapshot.docs[0].data().canvasJson,
+              photoLayer : querySnapshot.docs[0].data().photoLayer,
               textLayer : querySnapshot.docs[0].data().textLayer,
               id: querySnapshot.docs[0].id,
               thumb: querySnapshot.docs[0].data().thumb,
               preview: querySnapshot.docs[0].data().preview,
               background: querySnapshot.docs[0].data().background,
+              drawingLayer: querySnapshot.docs[0].data().drawingLayer,
               pageSize: querySnapshot.docs[0].data().pageSize,
               order: querySnapshot.docs[0].data().order,
+              commit: querySnapshot.docs[0].data().commit,
             };
+            page = _.cloneDeep(page);
+            commit('setPage', {page: page, restoreIndex: true});
           }
-          commit('setPage', page);
+
       });
     },
 
@@ -479,7 +730,8 @@ export default {
         });
     },
 
-    addImage({ commit }, payload) {
+    addImage({ commit, state }, payload) {
+      console.log('store addImage, payload=', payload);
       const ref = firebase.storage().ref();
       const path = 'images/' + payload.user.id + '/' + (+new Date()) + '-' + payload.image.name;
       const metadata = {
@@ -495,6 +747,7 @@ export default {
             webformatHeight: payload.image.dimensions.h,
           };
           commit('setInsertImage', imgObj);
+          commit('addImage', url);
         })
         .catch(console.error);
     },
@@ -504,26 +757,19 @@ export default {
         commit('clearImageSearchResults');
       }
       const pageStr = '&page=' + (state.imageSearchResults.page +1);
-      let path = 'https://pixabay.com/api/?key=11945260-36d09543fa5ee7da289366856&image_type=all&per_page='
+      let path = 'https://pixabay.com/api/?key=11945260-36d09543fa5ee7da289366856&image_type=all&per_page=';
       path += state.searchSize + '&safesearch=true&q=';
       const query = encodeURIComponent(payload.str);
       const fullPath = path + query + pageStr;
       axios.get(fullPath)
       .then((response) => {
+        console.log('search', response);
         const newPayload = {
           str: payload.str,
           response: response
         };
         commit('setImageSearchResults', newPayload);
       })
-      .catch(() => {
-        this.$q.notify({
-          color: 'negative',
-          position: 'top',
-          message: 'Loading failed',
-          icon: 'report_problem'
-        });
-      });
     },
 
     historyAdd({ commit, state }, payload) {
@@ -532,7 +778,6 @@ export default {
     },
 
     historySlice({ commit, state }, payload) {
-      console.log('historySlice', payload);
       commit('setHistorySliceStates', payload);
       commit('setHistoryRestoreIndex', state.history.restoreIndex + 1);
     },
@@ -545,8 +790,17 @@ export default {
     getStory(state) {
       return state.story;
     },
+    getStoryById: (state) => (id) => {
+      let activeStory;
+      state.stories.forEach(story => {
+        if (story.id === id) {
+          activeStory = story;
+        }
+      });
+      return activeStory;
+    },
     getStoryPlan(state) {
-      return state.story.plan;
+      return state.story ? state.story.plan : null;
     },
     getPages(state) {
       return state.pages;
@@ -554,16 +808,12 @@ export default {
     getPage(state) {
       return state.page;
     },
-    getPageText(state) {
+    getPageTextLayer(state) {
       if (state.page && state.page.textLayer) {
-        return state.page.textLayer.text;
+        return state.page.textLayer;
       } else {
         return 'Loading';
       }
-
-    },
-    getPageTextDimensions(state) {
-      return state.page.textLayer;
     },
     getImageSearchResults(state) {
       return state.imageSearchResults;
@@ -579,7 +829,24 @@ export default {
     },
     getHistory(state) {
       return state.history;
+    },
+    getPageDimensions(state) {
+      return state.pageDimensions;
+    },
+    getSettings(state) {
+      return state.settings;
+    },
+    getToolAction(state) {
+      return state.toolAction;
+    },
+    getPageImageById: (state) => (id) => {
+      return state.pageImages[id];
+    },
+    getPageImages(state) {
+      return state.pageImages;
+    },
+    getAllImages(state) {
+      return state.images;
     }
-
   }
 };

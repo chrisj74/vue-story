@@ -4,19 +4,44 @@ import * as firebase from 'firebase';
 export default {
   state: {
     user: null,
-    profile: null,
-    authSet: false
+    account: {
+      admin: false,
+    },
+    authSet: false,
+    profiles: null,
+    activeProfile: null,
+    defaultProfile: null,
+    profileSettings: {
+      editProfile: false,
+      addProfile: false,
+      avatarModal: false,
+      confirmDelete: false
+    }
   },
   mutations: {
     setUser (state, payload) {
       state.user = payload;
     },
-    setProfile (state, payload) {
-      state.profile = payload;
+    setAccount (state, payload) {
+      state.account = payload;
     },
     setAuth (state, payload) {
       state.authSet = payload;
-    }
+    },
+    setActiveProfile(state, payload) {
+      state.activeProfile = payload;
+    },
+    setDefaultProfile(state, payload) {
+      state.defaultProfile = payload;
+    },
+    setProfiles(state, payload) {
+      state.profiles = payload;
+    },
+    setProfileSettings(state, payload) {
+      let settings = _.cloneDeep(state.profileSettings);
+      settings = _.merge(settings, payload);
+      state.profileSettings = settings;
+    },
   },
   actions: {
     setAuth ({ commit }, payload) {
@@ -196,46 +221,132 @@ export default {
     logout ({commit}) {
       AUTH.signOut();
       commit('setUser', null);
+      this.$router.push('/');
     },
-    setProfile ({commit}, payload) {
-      if (payload.val()) {
-        const newProfile = {
-          age: payload.val().age
-        };
-        commit('setProfile', newProfile);
-      }
+
+    setAccount ({commit, dispatch}, payload) {
+      commit('setAccount', payload);
+      dispatch('setProfiles');
+      dispatch('setProfile');
     },
-    updateProfile ({commit}, payload) {
-      commit('setLoading', true);
-      commit('clearError');
-      firebase.database().ref('profiles/' + payload.user.id).set(payload.profile)
-        .then(
-          () => {
-            commit('setLoading', false);
-            const newProfile = {
-              age: payload.profile.age
-            };
-            commit('setProfile', newProfile);
+
+    setProfiles ({ commit, state }) {
+      firebase
+      .firestore()
+      .collection('accounts/'+ state.user.id + '/profiles')
+      .orderBy('nickName', 'asc')
+      .onSnapshot(function(querySnapshot) {
+        const profiles = [];
+        querySnapshot.forEach(prof => {
+          const newProfile = prof.data();
+          newProfile.id = prof.id;
+          /** Add profile to array */
+          profiles.push(newProfile);
+        });
+        commit('setProfiles', profiles);
+      });
+    },
+
+    setProfile({ commit, state}, profileId) {
+      const profiles = firebase
+      .firestore()
+      .collection('accounts/'+ state.user.id + '/profiles');
+      profiles.get().then(function(querySnapshot) {
+        querySnapshot.forEach(prof => {
+          const newProfile = prof.data();
+          newProfile.id = prof.id;
+          /** Set active profile */
+          if (prof.data().default) {
+            commit('setDefaultProfile', newProfile);
           }
-        )
-        .catch(
-          error => {
-            commit('setLoading', false);
-            commit('setError', error);
-            console.log(error);
+
+          if (profileId && (prof.id === profileId)) {
+            commit('setActiveProfile', newProfile);
+          } else if (!profileId && prof.data().default) {
+            commit('setActiveProfile', newProfile);
           }
-        );
-    }
+        });
+      });
+    },
+
+    updateProfile ({commit, state, dispatch}, payload) {
+      return new Promise((resolve, reject) => {
+        commit('setLoading', true);
+        commit('clearError');
+        let userProfiles = firebase
+        .firestore()
+        .collection('accounts/'+ state.user.id + '/profiles').doc(payload.id);
+        userProfiles.set(payload, { merge: true })
+          .then(() => {
+            this.dispatch('setProfile', state.activeProfile.id)
+            commit('setLoading', false);
+            resolve();
+          });
+      });
+    },
+
+    addProfile({commit, state}, payload) {
+      return new Promise((resolve, reject) => {
+        commit('setLoading', true);
+        commit('clearError');
+        let userProfiles = firebase
+        .firestore()
+        .collection('accounts/'+ state.user.id + '/profiles');
+        userProfiles.add(payload)
+          .then(() => {
+            commit('setLoading', false);
+            resolve()
+          });
+      });
+    },
+
+    deleteProfile({commit, state}, payload) {
+      return new Promise((resolve, reject) => {
+        commit('setLoading', true);
+        commit('clearError');
+        let userProfiles = firebase
+        .firestore()
+        .collection('accounts/'+ state.user.id + '/profiles').doc(payload.id);
+        userProfiles.delete()
+          .then(() => {
+            if (state.activeProfile.id === payload.id) {
+              commit('setActiveProfile', state.defaultProfile);
+            }
+            commit('setLoading', false);
+            resolve()
+          });
+      });
+    },
   },
+
   getters: {
     user (state) {
       return state.user;
     },
     profile (state) {
-      return state.profile;
+      return state.activeProfile;
+    },
+    profiles (state) {
+      return state.profiles;
     },
     setAuth (state) {
       return state.authSet;
-    }
+    },
+    isAdmin (state) {
+      return state.account.admin;
+    },
+    getProfileSettings (state) {
+      return state.profileSettings;
+    },
+    getProfileById: (state) => (id) => {
+      let profile = null;
+      if (state.profiles && state.profiles.length > 0)
+      state.profiles.forEach(prof => {
+        if (prof.id === id) {
+          profile = prof;
+        }
+      });
+      return profile;
+    },
   }
 };

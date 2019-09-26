@@ -10,7 +10,9 @@ module.exports = function (ctx) {
       'uploader',
       'scrollto',
       'quill',
-      'html2canvas'
+      'html2canvas',
+      'vuelidate',
+      'croppa'
     ],
     css: [
       'app.styl'

@@ -1,95 +1,69 @@
 <template>
-  <q-layout view="lHh Lpr lFf">
-    <!-- left drawer -->
-    <q-btn
-      class="drawer-btn"
-      flat
-      dense
-      round
-      size="lg"
-      @click="leftDrawerOpen = !leftDrawerOpen"
-    >
-      <q-icon name="mdi-menu" />
-    </q-btn>
-    <!-- plan -->
-    <q-btn
-      class="plan-btn"
-      flat
-      dense
-      round
-      size="lg"
-      @click="togglePlan()"
-    >
-      <q-icon :name="showPlan ? 'mdi-close' : 'mdi-file-document-box-outline'" />
-    </q-btn>
-    <!-- titlebar -->
-    <!-- <q-layout-header v-if="screen.width > screen.height">
-      <q-toolbar color="primary">
-        <q-btn
-          flat
-          dense
-          round
-          size="lg"
-          @click="leftDrawerOpen = !leftDrawerOpen"
-        >
-          <q-icon name="mdi-menu" />
-        </q-btn>
-
-        <q-toolbar-title>
-          Quasar + Firebase Auth
-          <div slot="subtitle">Quasar Framework 0.15.6 + Firebase Auth</div>
-        </q-toolbar-title>
-        <q-btn
-          flat
-          dense
-          round
-          size="lg"
-          @click="togglePlan()"
-        >
-          <q-icon name="mdi-menu" />
-        </q-btn>
-      </q-toolbar>
-    </q-layout-header> -->
-
-    <q-layout-drawer
-      v-model="leftDrawerOpen"
-      content-class="bg-grey-2"
-    >
-      <q-list
-        no-border
-        link
-        inset-delimiter
+  <div>
+    <q-layout view="lHh Lpr lFf" :class="'app-dragging'">
+      <!-- left drawer -->
+      <q-btn
+        class="drawer-btn"
+        flat
+        dense
+        round
+        size="lg"
+        @click="toggleLeftDawer()"
+        :style="{left: leftDrawerOpen ? '300px' : 0}"
       >
-        <q-list-header>Essential Links</q-list-header>
-        <q-item :link="true" to="/">
-          <q-item-side icon="mdi-home"/>
-          <q-item-main label="HOME" />
-        </q-item>
-        <q-item :link="true" to="/stories">
-          <q-item-side icon="mdi-book"/>
-          <q-item-main label="STORIES" />
-        </q-item>
-        <q-item @click.native="onLogout" v-if="user">
-          <q-item-side icon="mdi-power" />
-          <q-item-main label="EXIT" />
-        </q-item>
-        <q-item :link="true" to="/login" v-else>
-          <q-item-side icon="mdi-account" />
-          <q-item-main label="Login" />
-        </q-item>
-      </q-list>
-    </q-layout-drawer>
+        <q-icon name="mdi-menu" />
+      </q-btn>
+      <!-- plan -->
+      <q-btn
+        class="plan-btn"
+        flat
+        dense
+        round
+        size="lg"
+        @click="togglePlan()"
+      >
+        <q-icon :name="showPlan ? 'mdi-close' : 'mdi-file-document-box-outline'" />
+      </q-btn>
 
-    <q-page-container>
-      <transition appear>
-        <router-view />
-      </transition>
-    </q-page-container>
-    <div v-if="loading" class="loading-box">
+      <q-layout-drawer
+        v-model="leftDrawerOpen"
+        content-class="bg-grey-2"
+      >
+        <q-list
+          no-border
+          link
+          inset-delimiter
+        >
+          <q-list-header>Essential Links</q-list-header>
+          <q-item :link="true" to="/">
+            <q-item-side icon="mdi-home"/>
+            <q-item-main label="HOME" />
+          </q-item>
+          <q-item :link="true" to="/projects">
+            <q-item-side icon="mdi-book"/>
+            <q-item-main label="MY PROJECTS" />
+          </q-item>
+          <q-item @click.native="onLogout" v-if="user">
+            <q-item-side icon="mdi-power" />
+            <q-item-main label="EXIT" />
+          </q-item>
+          <q-item :link="true" to="/login" v-else>
+            <q-item-side icon="mdi-account" />
+            <q-item-main label="Login" />
+          </q-item>
+        </q-list>
+      </q-layout-drawer>
+
+      <q-page-container>
+        <transition appear>
+          <router-view />
+        </transition>
+      </q-page-container>
+    </q-layout>
+    <div v-show="loading" class="loading-box">
       <q-spinner-bars color="primary" :size="100" />
     </div>
-
-  </q-layout>
+</div>
 </template>
 
 <script>
@@ -97,7 +71,6 @@ export default {
   name: 'Story',
   data () {
     return {
-      leftDrawerOpen: false,
       storiesSet: false
     }
   },
@@ -114,6 +87,12 @@ export default {
     showPlan() {
       return this.$store.getters.showPlan;
     },
+    leftDrawerOpen() {
+      return this.$store.getters.getLeftDrawerOpen;
+    }
+  },
+  mounted () {
+    this.$store.dispatch('setImages', this.user.id);
   },
   methods: {
    onLogout () {
@@ -121,27 +100,20 @@ export default {
       this.$router.push('/');
     },
     togglePlan() {
+      this.$store.commit('setLeftDrawerOpen', false);
       this.$store.dispatch('toggleShowPlan');
     },
+    toggleLeftDawer() {
+      this.$store.dispatch('toggleLeftDrawerOpen');
+    }
   },
-  mounted () {
-    /* if (this.user) {
-      this.$store.dispatch('setStories', this.user.id);
-      this.storiesSet = true;
-    } */
-  },
-  watch: {
-    /* user(newUser) {
-      if (!this.storiesSet) {
-        this.$store.dispatch('setStories', this.user.id);
-        this.storiesSet = true;
-      }
-    } */
-  }
 }
 </script>
 
 <style>
+.app-dragging {
+  position: fixed;
+}
 .drawer-btn {
   position: absolute;
   top: 0;

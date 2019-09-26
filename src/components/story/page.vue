@@ -1,215 +1,125 @@
 <template>
   <div class="main-content-wrapper">
     <!-- MAIN TOOLS -->
-    <div class="tools" :style="{top: toolsPos.top, left: toolsPos.left}">
-      <!-- HISTORY -->
-      <q-btn icon="mdi-undo" round @click="undo()" :disable="!canUndo" :size="$q.screen.lt.sm ? 'sm' : 'md'"/>
-        <q-btn icon="mdi-redo" round @click="redo()" :disable="!canRedo" :size="$q.screen.lt.sm ? 'sm' : 'md'"/>
-      <!-- PHOTO -->
-      <q-btn
-        icon="mdi-camera"
-        :color="modes.mode === 'photo' ? 'primary' : 'dark'"
-        round
-        :size="$q.screen.lt.sm ? 'sm' : 'md'"
-        @click="addPhoto()"
-      >
-        <q-tooltip>
-          Add an image
-        </q-tooltip>
-      </q-btn>
-      <!-- PAGE -->
-      <q-btn
-        icon="mdi-file-image"
-        :color="modes.mode === 'page' ? 'primary' : 'dark'"
-        round
-        :size="$q.screen.lt.sm ? 'sm' : 'md'"
-        @click="setPage()"
-      />
-      <!-- DRAW -->
-      <q-btn
-        icon="mdi-pencil"
-        :color="modes.mode === 'draw' ? 'primary' : 'dark'"
-        round
-        :size="$q.screen.lt.sm ? 'sm' : 'md'"
-        @click="setDraw()"
-      />
-    </div>
-    <!-- PAGE TEXT EDITOR -->
-    <text-editor v-if="canvas && activePage" :print="false" :active="modes.mode === 'page' && modes.subMode === 'text'" :zoom="page.zoom" :pageWidth="activePage.pageSize.width" :pageHeight="activePage.pageSize.height" ></text-editor>
-
-    <!-- TEXT LAYER -->
-    <!-- <text-editor v-if="canvas && activePage" :print="false" :active="true" :zoom="page.zoom" :pageWidth="activePage.pageSize.width" :pageHeight="activePage.pageSize.height" ></text-editor> -->
+    <main-tools></main-tools>
 
     <!-- MAIN CONTENT -->
-    <div class="main-content">
-      <!-- Canvas -->
-      <div class="canvas-ref" ref="page">
-        <div class="canvas-wrapper">
-          <div v-if="page" class="canvas-bg-img-wrapper" :style="{width: page.width+'px', height: page.height+'px'}">
-            <div v-if="canvas && background.color" class="canvas-bg-img" :style="{backgroundColor: background.color,
-              backgroundImage: background.image? 'url('+background.image+')' : 'none',
-              width: (canvas.width * (page.zoom / canvas.getZoom())) + 'px',
-              height: (canvas.height * (page.zoom / canvas.getZoom())) + 'px',
+    <div class="main-content" ref="mainContent">
+      <div class="page-ref" ref="page">
+        <!-- PAGE TEXT EDITOR -->
+        <template v-if="pageDimensions">
+          <div
+            v-for="(textLayer, layerIndex) in activePage.textLayer"
+            :key="'toolbar'+layerIndex"
+            class="text-toolbar-wrapper"
+            :style="{width: (pageDimensions.maxWidth) + 'px'}">
+            <div :id="'toolbar'+layerIndex" :style="{width: (pageDimensions.width) + 'px'}" v-show="textLayerActive && settings.activeEditor === layerIndex">
+              <span class="ql-format-group">
+                <button type="button" class="ql-bold"></button>
+                <button type="button" class="ql-italic"></button>
+                <button type="button" class="ql-underline" v-if="$q.screen.gt.sm"></button>
+                <button type="button" class="ql-blockquote" v-if="$q.screen.gt.sm"></button>
+                <select class="ql-align"></select>
+
+                <button type="button" class="ql-list" value="ordered"></button>
+                <button type="button" class="ql-list" value="bullet"></button>
+
+                <select class="ql-size"></select>
+                <select class="ql-font" v-if="$q.screen.gt.sm">
+                  <option selected>Normal</option>
+                  <option value="schoolbell">Handwriting</option>
+                </select>
+
+                <select class="ql-color"></select>
+                <select class="ql-background"></select>
+
+                <button class="ql-link"></button>
+                <button class="ql-video"></button>
+                <button :id="'table'+layerIndex"><i class="mdi mdi-table"></i></button>
+              </span>
+            </div>
+          </div>
+        </template>
+
+        <!-- Canvas -->
+        <div v-if="pageDimensions" ref="canvasWrapper" class="canvas-wrapper" :style="{width: pageDimensions.width+'px', height: pageDimensions.height+'px'}">
+          <div
+            v-if="pageDimensions"
+            :style="{
+            transform: 'scale(' + pageDimensions.zoom + ')',
+            transformOrigin: 'top left',
+            height: (activePage.pageSize.height - 50)+'px',
+            width: activePage.pageSize.width+'px',
+            pointerEvents: textLayerActive ? 'all' : 'none',
+            userSelect: textLayerActive ? 'all' : 'none'}"
+            class="text-layer">
+            <template v-for="(textLayer, index) in activePage.textLayer">
+              <text-editor
+                v-if="textLayer.width"
+                :key="index"
+                :print="false"
+                :zoom="pageDimensions.zoom"
+                :pageWidth="activePage.pageSize.width"
+                :pageHeight="activePage.pageSize.height"
+                :textLayerIndex="index" >
+              </text-editor>
+            </template>
+          </div>
+          <div class="canvas-bg-img-wrapper" :style="{width: pageDimensions.width+'px', height: pageDimensions.height+'px'}">
+            <div v-if="activePage.background" class="canvas-bg-img" :style="{
+              backgroundColor: activePage.background.color,
+              backgroundImage: activePage.background.image? 'url('+activePage.background.image+')' : 'none',
+              width: pageDimensions.width + 'px',
+              height: pageDimensions.height + 'px',
               top: 0,
               left: 0}">
             </div>
+            <fabric-canvas type="photo"></fabric-canvas>
+            <drawing-canvas></drawing-canvas>
           </div>
-          <canvas
-            id="storyCanvas"
-            ref="canvas"
-            key="canvas">
-          </canvas>
         </div>
       </div>
+    </div>
 
-      <!-- EXTRA TOOLS -->
-      <div class="extra-tools" v-if="canvas" key="extra-tools" :style="{top: extraToolsPos.top, right: extraToolsPos.right}">
-        <!-- COLORS -->
-        <swatches
-          v-model="color"
-          colors="text-advanced"
-          :popover-to="screen.width > screen.height ? 'left' : 'right'"
-          :trigger-style="{ width: '30px', height: '30px', borderRadius: '50%' }"
-          :disabled="modes.mode === 'page' && modes.subMode === 'text'"
-        ></swatches>
-        <!-- PAGE TOOLS -->
-          <!-- TEXT -->
-          <q-btn
-            v-if="modes.mode === 'page'"
-            icon="mdi-format-text"
-            :color="modes.subMode === 'text' ? 'primary' : 'dark'"
-            round
-            size="sm"
-            @click="addText()"
-          />
-          <!-- BG COLOR -->
-          <q-btn
-            v-if="modes.mode === 'page'"
-            icon="mdi-format-color-fill"
-            :color="modes.subMode === 'backgroundColor' ? 'primary' : 'dark'"
-            round
-            size="sm"
-            @click="backgroundColor()"
-          />
-          <!-- BG IMAGE -->
-          <q-btn
-            v-if="modes.mode === 'page'"
-            key="bgImageButton"
-            icon="mdi-camera"
-            size="sm"
-            :color="'dark'"
-            round
-            @click="addBgPhoto()"
-          />
-        <!-- DRAWING TOOLS -->
-        <!-- MOVE -->
-        <q-btn
-          v-if="modes.mode === 'draw'"
-          icon="mdi-cursor-move"
-          :color="modes.subMode === 'select' ? 'primary' : 'dark'"
-          round
-          size="sm"
-          @click="setSelect()"
-        />
-        <!-- RULER -->
-        <q-btn v-if="modes.mode === 'draw'" icon="mdi-ruler" :color="modes.subMode === 'line' ? 'primary' : 'dark'" round @click="line()" size="sm"/>
-        <!-- FILL OBJ -->
-        <q-btn
-          v-if="modes.mode === 'draw'"
-          icon="mdi-format-color-fill"
-          :color="modes.subMode === 'fill' ? 'primary' : 'dark'"
-          round
-          size="sm"
-          @click="fillColor()"
-          :disabled="!isSelected"
-        />
-        <!-- BRUSH -->
-        <q-btn
-          v-if="modes.mode === 'draw'"
-          key="pencil"
-          icon="mdi-pencil"
-          size="sm"
-          :color="modes.subMode === 'brush'? 'primary' : 'dark'"
-          round
-          @click="setDraw()"
-        />
-        <!-- ERASER -->
-        <q-btn
-          v-if="modes.mode === 'draw'"
-          key="eraser"
-          size="sm"
-          :color="modes.subMode === 'eraser' ? 'primary' : 'dark'"
-          icon="mdi-eraser"
-          round
-          @click="setEraser()"
-        />
-        <!-- TEXT -->
-        <q-btn
-          v-if="modes.mode === 'draw'"
-          icon="mdi-format-text"
-          :color="modes.subMode === 'text' ? 'primary' : 'dark'"
-          round
-          size="sm"
-          @click="canvasText()"
-        />
-        <!-- TEXT SIZE -->
-        <div class="tool-slider" v-if="modes.mode === 'draw' && (modes.subMode === 'text' || modes.subMode === 'selectText')">
-          <q-btn size="sm" color="primary" icon="mdi-format-size" round @click="toggleTextSize()"/>
-          <div class="q-slider-wrap" v-if="showTextSize">
-            <q-slider v-model="text.size" :min="5" :max="100" :step="1" label snap/>
-          </div>
-        </div>
-        <!-- BRUSH SIZE -->
-        <div class="tool-slider" v-if="modes.mode === 'draw' && (modes.subMode === 'brush' || modes.subMode === 'eraser')">
-          <q-btn
-            size="sm"
-            icon="mdi-signal"
-            round
-            :color="showBrushWidth ? 'primary' : 'dark'"
-            @click="toggleBrushWidth()"
-          />
-          <div class="q-slider-wrap" v-if="showBrushWidth">
-            <q-slider v-model="brush.width" :min="1" :max="50" :step="1" label snap/>
-          </div>
-        </div>
-        <!-- LINE WIDTH -->
-        <div class="tool-slider" v-if="modes.mode === 'draw' && modes.subMode === 'line'">
-          <q-btn
-            size="sm"
-            icon="mdi-signal"
-            round
-            :color="showLineWidth ? 'primary' : 'dark'"
-            @click="toggleLineWidth()"
-          />
-          <div class="q-slider-wrap" v-if="showLineWidth">
-            <q-slider v-model="lineObj.width" :min="1" :max="20" :step="1" label snap/>
-          </div>
-        </div>
-        <!-- DELETE OBJ -->
-        <q-btn
-          v-if="isSelected"
-          size="sm"
-          color="negative"
-          icon="mdi-delete"
-          round
-          @click="deleteObj()"
-          :disabled="!isSelected"
-        />
-        <!-- CLEAR -->
-        <q-btn v-if="modes.mode === 'draw'" icon="mdi-close" round @click="clearCanvas()" size="sm"/>
+    <!-- EXTRA TOOLS -->
+    <extra-tools></extra-tools>
+
+    <!-- scrollers -->
+    <div class="page-scrollers"
+      v-if="pageDimensions && pageDimensions.height > pageHeight"
+      :style="{left: leftPos}">
+      <div class="scroll-btn">
+        <button
+          class="q-btn inline relative-position q-btn-item non-selectable q-btn-round q-focusable q-hoverable bg-dark text-white"
+          :style="{fontSize: $q.screen.lt.sm ? '14px' : '14px'}"
+          v-on:mousedown="startScroll('up', true)"
+          v-on:mouseup="stopScroll()"
+        >
+          <q-icon name="mdi-chevron-up"></q-icon>
+        </button>
+      </div>
+      <div class="scroll-btn">
+        <button
+          class="q-btn inline relative-position q-btn-item non-selectable q-btn-round q-focusable q-hoverable bg-dark text-white"
+          :style="{fontSize: $q.screen.lt.sm ? '14px' : '14px'}"
+          v-on:mousedown="startScroll('down', true)"
+          v-on:mouseup="stopScroll()"
+        >
+        <q-icon name="mdi-chevron-down"></q-icon>
+        </button>
       </div>
     </div>
 
     <!-- IMAGE MODAL -->
     <q-modal
-      v-if="canvas"
-      v-model="imageModal"
-      :content-css="{minWidth: '350px', height: '90vh', maxWidth: '100%', width: canvas.width+'px'}">
+      v-if="pageDimensions"
+      v-model="settings.showImageModal"
+      :content-css="{minWidth: '350px', height: '90vh', maxWidth: '100%', width: pageDimensions.width+'px'}">
       <add-image v-if="modes.mode === 'photo' || modes.subMode === 'background'"></add-image>
     </q-modal>
     <!-- SHORTCUTS -->
     <span
-      v-if="modes.subMode !== 'text' && !showPlan"
+      v-if="modes.subMode !== 'text' && modes.mode !== 'photo' && !showPlan"
       v-shortkey="{undoWin:['ctrl', 'z'], undoMac:['meta', 'z'], deleteKey:['del'], backspaceKey:['backspace']}"
       @shortkey="shortKeys($event)"
     ></span>
@@ -222,19 +132,17 @@ import Swatches from "vue-swatches";
 import "vue-swatches/dist/vue-swatches.min.css";
 import AddImage from "./PixabaySearch";
 import TextEditor from "./TextEditor";
+import DrawingCanvas from './DrawingCanvas';
+import FabricCanvas from './FabricCanvas';
+import MainTools from './MainTools';
+import ExtraTools from './ExtraTools';
+import { setTimeout } from 'timers';
 
 export default {
   name: "Page",
-  components: { Swatches, AddImage, TextEditor },
+  components: { Swatches, AddImage, TextEditor, DrawingCanvas, FabricCanvas, MainTools, ExtraTools },
   data() {
     return {
-      page: {
-        width: 0,
-        height: 0,
-        zoom: 1,
-        offsetY: 0,
-        offsetX: 0
-      },
       background: {
         color: null,
         image: false
@@ -251,21 +159,19 @@ export default {
       lineObj: {
         width: 5
       },
-      color: "#000000",
-      canvas: null,
       canUndo: false,
       canRedo: false,
-      panning: {
-        timer: null,
-        active: false
-      },
       imageModal: false,
       textModal: false,
 
       showTextSize: false,
-      showBrushWidth: false,
       showLineWidth: false,
-      windowWidth: 1024
+      windowWidth: 1024,
+      maxHeightRatio: 0,
+      maxWidthRatio: 0,
+      pageHeight: 0,
+      scrolling: false,
+      drawerTimer: null,
     };
   },
   computed: {
@@ -299,50 +205,24 @@ export default {
     showPlan() {
       return this.$store.getters.showPlan;
     },
-    toolsPos() {
-      let pos = {
-        top: 0,
-        right: 0
-      };
-      if (this.canvas) {
-        if (this.screen.width < this.screen.height) {
-          // Portrait
-          pos = {
-            top: 0,
-            left: 0,
-          }
-        } else {
-          // landscape
-          pos = {
-            top: '45px',
-            left: this.canvas.width+'px',
-          }
-        }
-      }
-      return pos;
+    pageDimensions() {
+      return this.$store.getters.getPageDimensions;
     },
-    extraToolsPos() {
-      let pos = {
-        top: 0,
-        right: 0
-      };
-      if (this.canvas) {
-        if (this.screen.width < this.screen.height) {
-          // Portrait
-          pos = {
-            top: (this.canvas.height + 10) + 'px',
-            right: 0,
-          }
-        } else {
-          // landscape
-          pos = {
-            top: '50px',
-            right: (this.screen.width - (this.canvas.width + 300)) + 'px',
-          }
-        }
-      }
-      return pos;
+    settings() {
+      return this.$store.getters.getSettings;
     },
+    toolAction() {
+      return this.$store.getters.getToolAction;
+    },
+    textLayerActive() {
+      return this.modes.mode === 'text'; // && this.modes.subMode === 'text'
+    },
+    leftPos() {
+      return (((this.pageDimensions.maxWidth - this.pageDimensions.width) / 2) + (this.pageDimensions.width + 20)) + 'px'
+    },
+    leftDrawerOpen() {
+      return this.$store.getters.getLeftDrawerOpen;
+    }
   },
   mounted() {
     /** Set page from route */
@@ -355,177 +235,26 @@ export default {
       this.$store.dispatch('setPage', payload);
     }
     const _this = this;
-    if (this.activePage && !this.canvas && this.story.id === this.$route.params.id) {
-      if (this.activePage.background) {
-        this.background.color = this.activePage.background.color;
-        this.background.image = this.activePage.background.image;
-      }
-
-      if (this.activePage.canvasJson) {
-        this.canvasInit();
-        this.canvas.loadFromJSON(this.activePage.canvasJson, function() {
-          _this.canvas.renderAll.bind(_this.canvas);
-          _this.setDefaultZoom();
-          _this.addHistory();
-        });
+    if (this.activePage && !this.pageDimensions) {
+      if (this.activePage) {
+        _this.setDefaultZoom();
       }
     }
-    /** Trigger canvas resize on browser resize */
+    /** Trigger page resize on browser resize */
 
     window.addEventListener("resize", function(event) {
       this.windowWidth = window.innerWidth;
       _this.$nextTick()
           .then(function () {
               // DOM updated
-              _this.canvas.setHeight(_this.activePage.pageSize.height);
-              _this.canvas.setWidth(_this.activePage.pageSize.width);
               _this.setDefaultZoom();
           })
     });
     this.windowWidth = window.innerWidth;
   },
   methods: {
-    canvasInit() {
-      /** Main canvas */
-      this.canvas = new fabric.Canvas("storyCanvas");
-      const _this = this;
-      const canvas = this.canvas;
 
-      this.canvas.targetFindTolerance = 4;
-      this.canvas.preserveObjectStacking = true;
-      canvas.renderAll.bind(canvas);
-
-      /** Canvas events */
-      let line;
-      const ctx = canvas.getContext("2d");
-      this.canvas.on("path:created", function(e) {
-        if (_this.modes.subMode === 'eraser') {
-          e.path.globalCompositeOperation = "destination-out";
-          canvas.renderAll();
-        }
-        _this.addHistory();
-      });
-      this.canvas.on("object:moved", () => {
-        canvas.renderAll.bind(canvas);
-        _this.addHistory();
-      });
-      this.canvas.on("selection:created", function(o) {
-        _this.isSelected = true;
-      });
-      this.canvas.on("selection:cleared", function(o) {
-        _this.isSelected = false;
-      });
-      /** MOUSE DOWN */
-      this.canvas.on("mouse:down", o => {
-        _this.isDown = true;
-        _this.showtextSize = false;
-        _this.showBrushWidth = false;
-        _this.showLineWidth = false;
-        /** BRUSH */
-        if (_this.modes.subMode === "brush") {
-          _this.brush.active = true;
-        }
-        /** SELECT */
-        if (_this.modes.subMode === "select") {
-          if (canvas.getActiveObject()) {
-            _this.isSelected = true;
-          } else {
-            _this.isSelected = false;
-          }
-        }
-        /** LINE */
-        if (_this.modes.subMode === "line") {
-          canvas.selection = false;
-          const pointer = canvas.getPointer(o.e);
-          const points = [pointer.x, pointer.y, pointer.x, pointer.y];
-          line = new fabric.Line(points, {
-            strokeWidth: _this.lineObj.width,
-            fill: _this.color,
-            stroke: _this.color,
-            originX: "center",
-            originY: "center"
-          });
-          canvas.add(line);
-        }
-        /** TEXT */
-        if (_this.modes.mode === 'draw' && _this.modes.subMode === "text") {
-          if (
-            !canvas.getActiveObject() ||
-            !canvas.getActiveObject().isEditing
-          ) {
-            const pointer = canvas.getPointer(o.e);
-            const textOptions = {
-              fontSize: _this.text.size,
-              fill: _this.color,
-              left: pointer.x,
-              top: pointer.y,
-              radius: 10,
-              borderRadius: "25px",
-              hasRotatingPoint: true,
-              lockScalingX: true,
-              lockScalingY: true,
-              hiddenTextarea: true,
-              editingBorderColor: "#999999"
-            };
-            const text = new fabric.IText("Start typing...", textOptions);
-            canvas.add(text).setActiveObject(text);
-            text.enterEditing();
-            text.selectAll();
-            _this.modes.subMode = "selectText";
-            _this.addHistory();
-          } else {
-          }
-        }
-        /** FILL */
-        if (_this.modes.subMode === "fill") {
-          const activeObject = canvas.getActiveObject();
-          if (activeObject) {
-            if (activeObject.stroke) {
-              activeObject.set("fill", _this.color);
-              activeObject.set("stroke", activeObject.stroke);
-            } else if (activeObject.stroke && activeObject.fill) {
-              activeObject.set("fill", _this.color);
-              activeObject.set("stroke", _this.color);
-            }
-            canvas.renderAll.bind(canvas);
-          }
-          _this.addHistory();
-        }
-      });
-      this.canvas.on("mouse:move", o => {
-        if (!_this.isDown) return;
-        if (_this.modes.subMode === "line") {
-          const pointer = canvas.getPointer(o.e);
-          line.set({ x2: pointer.x, y2: pointer.y });
-          canvas.renderAll();
-        }
-      });
-      this.canvas.on("mouse:up", o => {
-        _this.isDown = false;
-        canvas.selection = false;
-        if (_this.modes.subMode === "line") {
-          _this.addHistory();
-        }
-        if (_this.modes.subMode === "brush") {
-          _this.brush.active = false;
-        }
-      });
-      this.canvas.setHeight(this.activePage.pageSize.height);
-      this.canvas.setWidth(this.activePage.pageSize.width);
-      // this.draw();
-    },
-
-    addPage() {
-      const payload = {
-        user: this.user,
-        storyKey: this.$route.params.id,
-        pageKey: this.$route.params.pageId ? this.$route.params.pageId : null,
-        order: this.pages.length
-      };
-      this.$store.dispatch("addPage", payload).then(newPage => {
-        this.$router.push({ path: newPage });
-      });
-    },
+    /** SETUP */
 
     shortKeys(e) {
       switch (e.srcKey) {
@@ -540,172 +269,167 @@ export default {
       }
     },
 
-    deleteObj() {
-      const activeObject = this.canvas.getActiveObject();
-      if (activeObject && !activeObject.isEditing) {
-        this.canvas.remove(activeObject);
-        this.canvas.renderAll.bind(this.canvas);
-      }
-      this.addHistory();
-    },
-
-    setPageSize() {
-      this.page.height = this.$refs.page.clientHeight;
-      this.page.width = this.$refs.page.clientWidth;
-    },
-
     setDefaultZoom() {
-      this.setPageSize();
-      const maxHeightRatio = this.page.height / this.canvas.height;
-      const maxWidthRatio = this.page.width / this.canvas.width;
-      if (maxHeightRatio < maxWidthRatio) {
-        this.page.zoom = maxHeightRatio;
-        this.canvas.setHeight(this.canvas.height * maxHeightRatio);
-        this.canvas.setWidth(this.canvas.width * maxHeightRatio);
-        this.canvas.setZoom(maxHeightRatio);
-        this.canvas.renderAll();
+      this.pageHeight = this.$refs.page.clientHeight;
+      this.maxHeightRatio = this.$refs.page.clientHeight / this.activePage.pageSize.height;
+      this.maxWidthRatio = this.$refs.page.clientWidth / this.activePage.pageSize.width;
+
+      let dimensions;
+      if (this.maxHeightRatio < this.maxWidthRatio) {
+        dimensions = {
+          maxWidth: this.$refs.page.clientWidth,
+          maxWidthRatio: this.maxWidthRatio,
+          maxHeightRatio: this.maxHeightRatio,
+          height: (this.activePage.pageSize.height * this.maxHeightRatio),
+          width: (this.activePage.pageSize.width * this.maxHeightRatio),
+          zoom: this.maxHeightRatio,
+          pixelRatio: window.devicePixelRatio
+        }
       } else {
-        this.page.zoom = maxWidthRatio;
-
-        this.canvas.setHeight(this.canvas.height * maxWidthRatio);
-        this.canvas.setWidth(this.canvas.width * maxWidthRatio);
-        this.canvas.setZoom(maxWidthRatio);
+        dimensions = {
+          maxWidth: this.$refs.page.clientWidth,
+          maxWidthRatio: this.maxWidthRatio,
+          maxHeightRatio: this.maxHeightRatio,
+          height: (this.activePage.pageSize.height * this.maxWidthRatio),
+          width: (this.activePage.pageSize.width * this.maxWidthRatio),
+          zoom: this.maxWidthRatio,
+          pixelRatio: window.devicePixelRatio
+        }
       }
-      this.scaleBrushWidth();
+      this.$store.commit('setPageDimensions', dimensions);
     },
 
-    setSelect() {
-      this.$store.commit('setSubMode', "select");
-      this.canvas.isDrawingMode = false;
-      this.canvas.forEachObject(function(object) {
-        object.selectable = true;
-      });
+    setZoom(dir) {
+      let newZoom = this.pageDimensions.zoom;
+      if (dir === 'inc' && this.maxWidthRatio) {
+        if (this.pageDimensions.zoom < (this.maxWidthRatio - 0.1)) {
+          newZoom = this.pageDimensions.zoom + 0.1;
+        } else if (this.pageDimensions.zoom < this.maxWidthRatio) {
+          newZoom = this.maxWidthRatio;
+        }
+      } else {
+        if (this.pageDimensions.zoom > (this.maxHeightRatio + 0.1)) {
+          newZoom = this.pageDimensions.zoom - 0.1
+        } else if (this.pageDimensions.zoom > this.maxHeightRatio) {
+          newZoom = this.maxHeightRatio;
+        }
+      }
+      if (newZoom !== this.pageDimensions.zoom){
+        /** Only reset if changed */
+        const dimensions = {
+          height: (this.activePage.pageSize.height * newZoom),
+          width: (this.activePage.pageSize.width * newZoom),
+          zoom: newZoom,
+        }
+        this.$store.commit('setPageDimensions', dimensions);
+      }
+      this.$store.commit('setToolAction', null);
     },
 
-    fillColor() {
-      this.$store.commit('setSubMode', "fill");
-      this.canvas.isDrawingMode = false;
-      this.canvas.forEachObject(function(object) {
-        object.selectable = true;
-      });
-    },
-
-    line() {
-      this.canvas.forEachObject(function(object) {
-        object.selectable = false;
-      });
-      this.$store.commit('setSubMode', "line");
-      this.canvas.isDrawingMode = false;
-    },
-
-    addPhoto() {
-      this.$store.commit('setMode', "photo");
-      this.imageModal = true;
-      this.canvas.isDrawingMode = false;
-      this.canvas.forEachObject(function(object) {
-        object.selectable = true;
-      });
-    },
-
-    canvasText() {
-      this.$store.commit('setSubMode', "text");
-      this.canvas.isDrawingMode = false;
-      this.canvas.forEachObject(function(object) {
-        object.selectable = true;
-      });
-    },
-
-    backgroundColor() {
-      this.$store.commit('setSubMode', "backgroundColor");
-    },
-
-    pageText() {
-      this.$store.commit('setSubMode', "text");
-      this.textModal = true;
-    },
-
-    canvasInsertImage(imageObj) {
-      this.imageModal = false;
-      this.$store.commit("clearInsertImage");
-      this.$store.commit("clearImageSearchResults");
-
-      const canvas = this.canvas;
-      const _this = this;
-      fabric.Image.fromURL(
-        imageObj.webformatURL,
-        function(myImg) {
-          myImg.set({
-            left: canvas.width / 4,
-            top: 100,
-            width: imageObj.webformatWidth,
-            height: imageObj.webformatHeight
-          });
-          myImg.scaleToWidth(canvas.width / 2);
-          canvas.add(myImg);
-          _this.addHistory();
-        },
-        { crossOrigin: "Anonymous" }
-      );
-    },
+    /** ACTIONS */
 
     backgroundAddImage(imageObj) {
       this.imageModal = false;
       this.$store.commit("clearInsertImage");
       this.$store.commit("clearImageSearchResults");
       this.background.image = imageObj.webformatURL;
-      this.addHistory();
+      this.saveStory();
       this.$store.commit('setSubMode', "text");
+      const newSetting = {
+        showImageModal: false,
+      };
+      this.$store.commit('setSettings', newSetting);
     },
 
-    setDraw() {
-      this.canvas.forEachObject(function(object) {
-        object.selectable = true;
-      });
-      this.$store.commit('setMode', "draw");
-      this.$store.commit('setSubMode', "brush");
-      this.setFreeBrush();
+    backgroundRemoveImage() {
+      this.background.image = null;
+      this.saveStory();
+      this.$store.commit('setToolAction', null);
     },
 
-    setEraser() {
-      this.$store.commit('setSubMode', "eraser");
-      this.canvas.freeDrawingBrush.color = "rgba(255,255,255,.95)";
-    },
-
-    setFreeBrush() {
-      this.canvas.isDrawingMode = true;
-      this.canvas.freeDrawingBrush.color = this.color;
-      this.canvas.freeDrawingBrush.width = this.brush.width;
-    },
-
-    setPage() {
-      this.$store.commit('setMode', "page");
-      this.$store.commit('setSubMode', "text");
-      this.canvas.isDrawingMode = false;
-    },
-
-    setBackground() {
-      this.$store.commit('setSubMode', "background");
-      this.canvas.isDrawingMode = false;
+    setBackgroundColor() {
+      this.background.color = this.settings.color;
+      this.saveStory();
+      this.$store.commit('setToolAction', null);
     },
 
     addBgPhoto() {
-      this.imageModal = true;
+      const newSetting = {
+        showImageModal: true,
+      };
+      this.$store.commit('setSettings', newSetting);
       this.$store.commit('setSubMode', "background");
-      this.canvas.forEachObject(function(object) {
-        object.selectable = true;
-      });
-      this.canvas.isDrawingMode = false;
+    },
+
+    addTextBlock() {
+      const payload = {
+        user: this.user,
+        storyKey: this.$route.params.id,
+        pageKey: this.activePage.id,
+        index: this.activePage.textLayer.length,
+        textLayer:  {
+          text: '',
+          x: 50,
+          y: 25,
+          width: (200),
+          height: (200),
+          borderWidth: 0,
+          borderColor: '#ffffff',
+          opacity: 0,
+          backgroundColor: '#ffffff',
+          delta: []
+        }
+      };
+      this.$store.dispatch('updatePageText', payload);
+      this.$store.commit('setToolAction', null);
+    },
+
+    deleteTextBlock() {
+      const payload = {
+        user: this.user,
+        storyKey: this.$route.params.id,
+        pageKey: this.activePage.id,
+        index: this.settings.activeEditor,
+        textLayer:  null
+      };
+      this.$store.dispatch('updatePageText', payload);
+      this.$store.commit('setToolAction', null);
+    },
+
+    /** UTILITIES */
+
+    startScroll(dir, init) {
+      if (init) {
+        this.scrolling = true;
+      }
+      if (this.scrolling) {
+        if (dir === 'down'
+        && this.$refs.mainContent.scrollTop < (this.$refs.canvasWrapper.clientHeight - this.$refs.mainContent.clientHeight)) {
+          this.$refs.mainContent.scrollTop += 20;
+        } else if (dir === 'up'
+        && this.$refs.mainContent.scrollTop > 0) {
+          this.$refs.mainContent.scrollTop -= 20;
+        }
+        const _this = this;
+        const _dir = dir;
+        setTimeout(function() {
+          _this.startScroll(_dir, false)
+        }, 50)
+      }
+    },
+
+    stopScroll() {
+      this.scrolling = false;
     },
 
     saveStory() {
-      const jsonObj = this.canvas.toJSON(["globalCompositeOperation"]);
       if (this.activePage) {
         const payload = {
           user: this.user,
           storyKey: this.$route.params.id,
           pageKey: this.activePage.id,
+          restoreIndex: true,
           page: {
-            json: JSON.stringify(jsonObj),
             background: {
               color: this.background.color,
               image: this.background.image
@@ -714,90 +438,6 @@ export default {
         };
         this.$store.dispatch("updatePage", payload);
       }
-    },
-
-    addHistory() {
-      const snapshot = {
-        json: this.canvas.toJSON(["globalCompositeOperation"]),
-        background: {
-          color: this.background.color,
-          image: this.background.image
-        }
-      };
-      if (this.history.restoreIndex === this.history.states.length - 1) {
-        this.$store.dispatch('historyAdd', snapshot);
-      } else {
-        this.$store.dispatch('historySlice', snapshot);
-      }
-      this.canUndo = this.history.states.length > 1;
-      this.canRedo = this.history.restoreIndex < this.history.states.length - 1;
-      this.saveStory();
-    },
-
-    undo() {
-      if (this.history.restoreIndex > 0) {
-        this.$store.commit('setHistoryRestoreIndex', this.history.restoreIndex - 1)
-        // this.restoreIndex--;
-        this.canvas.loadFromJSON(this.history.states[this.history.restoreIndex].json);
-        this.canvas.renderAll.bind(this.canvas);
-        this.background = {
-          color: this.history.states[this.history.restoreIndex].background.color,
-          image: this.history.states[this.history.restoreIndex].background.image
-        };
-        this.saveStory();
-        if (this.history.states.length === this.history.restoreIndex + 1) {
-          this.canredo = false;
-        } else {
-          this.canRedo = true;
-        }
-        if (this.history.restoreIndex === 0) {
-          this.canUndo = false;
-        }
-      }
-    },
-
-    redo() {
-      if (this.history.restoreIndex < this.history.states.length - 1) {
-        this.$store.commit('setHistoryRestoreIndex', this.history.restoreIndex + 1)
-        // this.restoreIndex++;
-        this.canvas.loadFromJSON(this.history.states[this.history.restoreIndex].json);
-        this.canvas.renderAll.bind(this.canvas);
-        this.background = {
-          color: this.history.states[this.history.restoreIndex].background.color,
-          image: this.history.states[this.history.restoreIndex].background.image
-        };
-        this.saveStory();
-        if (this.history.states.length === this.history.restoreIndex + 1) {
-          this.canRedo = false;
-          this.canUndo = true;
-        }
-      } else {
-        this.canUndo = true;
-        this.canRedo = false;
-      }
-    },
-
-    clearCanvas() {
-      this.canvas.clear();
-      this.addHistory();
-    },
-
-    scaleBrushWidth() {
-      this.canvas.freeDrawingBrush.width = Math.ceil(
-        this.brush.width * this.canvas.getZoom()
-      );
-    },
-
-    toggleTextSize() {
-      this.showTextSize = !this.showTextSize;
-    },
-
-    toggleBrushWidth() {
-      this.showBrushWidth = !this.showBrushWidth;
-    },
-
-    toggleLineWidth() {
-      this.showLineWidth = !this.showLineWidth;
     },
   },
   watch: {
@@ -809,15 +449,6 @@ export default {
           !to.params.pageId
         ) {
           // same story new page
-          // detroy canvas
-          if (this.canvas) {
-            this.canvas.dispose();
-            this.canvas = null;
-            this.background = {
-              color: null,
-              image: "none"
-            };
-          }
           // reset history
           this.$store.commit('setHistoryStates', []);
           this.$store.commit('setHistoryRestoreIndex', -1)
@@ -830,81 +461,59 @@ export default {
               : null
           };
           this.$store.dispatch("setPage", payload);
+          const settingsPayload = {
+            showThumbs: false,
+          };
+          this.$store.commit('setSettings', settingsPayload);
         }
       },
       deep: true
     },
-    brush: {
-      handler: function(newBrush, oldVal) {
-        if (this.canvas.freeDrawingBrush.width !== newBrush.width) {
-          this.canvas.freeDrawingBrush.width = newBrush.width;
+
+    toolAction: {
+      handler: function(newAction, oldAction) {
+        if (this.toolAction === 'addTextBlock') {
+          this.addTextBlock();
+        }
+        if (this.toolAction === 'deleteTextBlock') {
+          this.deleteTextBlock();
+        }
+        if (this.toolAction === 'backgroundRemoveImage') {
+          this.backgroundRemoveImage()
+        }
+        if (this.toolAction === 'setBackgroundColor') {
+          this.setBackgroundColor();
+        }
+        if (this.toolAction === 'zoomIn') {
+          this.setZoom('inc');
+        }
+        if (this.toolAction === 'zoomOut') {
+          this.setZoom('dec');
         }
       },
       deep: true
     },
-    color: {
-      handler: function(newColor, oldColor) {
-        this.canvas.freeDrawingBrush.color = newColor;
-        if (this.modes.mode === "page" && this.modes.subMode === 'backgroundColor') {
-          this.background.color = newColor;
-          this.addHistory();
-        } else if (this.modes.mode === 'draw') {
-          if (this.canvas.getActiveObject()) {
-            const textObj = this.canvas.getActiveObject();
-            textObj.setSelectionStyles({'fill': newColor})
-          }
-          this.canvas.renderAll();
-          this.addHistory();
-        }
-      }
-    },
-    text: {
-      handler: function(newText, oldText) {
-        if (this.canvas.getActiveObject()) {
-          const textObj = this.canvas.getActiveObject();
-          textObj.setSelectionStyles({'fontSize': this.text.size});''
-          this.canvas.renderAll();
-          this.addHistory();
-        }
-      },
-      deep: true
-    },
+
     insertImage: {
       handler: function(newImage, oldImage) {
         this.$store.commit('setLoading', false);
-        if (newImage && this.modes.mode === "photo") {
-          this.canvasInsertImage(newImage);
-        } else if (newImage && this.modes.subMode === "background") {
+        if (newImage && this.modes.subMode === "background") {
           this.backgroundAddImage(newImage);
         }
       }
     },
+
     activePage: {
       handler: function(newPage, oldPage) {
-        if (!this.canvas && newPage && newPage.canvasJson) {
-          this.background.color = this.activePage.background.color;
-          this.background.image = this.activePage.background.image;
-          this.canvasInit();
-          this.canvas.forEachObject(function(object) {
-            object.selectable = true;
-          });
-          this.setFreeBrush();
-          const _this = this;
-          this.canvas.loadFromJSON(this.activePage.canvasJson, function() {
-            _this.canvas.renderAll.bind(_this.canvas);
-            _this.setDefaultZoom();
-            _this.addHistory();
-          });
-        } else if (!this.canvas) {
-          this.background.color = this.activePage.background.color;
-          this.background.image = this.activePage.background.image;
-          this.canvasInit();
+        if ((!this.pageDimensions && this.activePage.pageSize)
+        || (oldPage.pageSize.height !== newPage.pageSize.height)
+        || (oldPage.pageSize.width !== newPage.pageSize.width)) {
           this.setDefaultZoom();
-          this.addHistory();
         }
       },
       deep: true
     },
+
     user: {
       handler: function(newUser) {
         if (!this.story) {
@@ -916,46 +525,72 @@ export default {
           this.storiesSet = true;
         }
       }
+    },
+
+    showPlan: {
+      handler: function(newPlan, oldPlan) {
+        this.setDefaultZoom();
+      }
+    },
+    leftDrawerOpen: {
+      handler: function(newDrawer, oldDrawer) {
+
+        const _this = this;
+        this.drawerTimer = setTimeout(function() {
+          _this.setDefaultZoom();
+        }, 500);
+
+      }
     }
   }
 };
 </script>
 
 <style lang="stylus">
-@import '~variables'
+@import '~variables';
 .main-content-wrapper {
   flex-grow: 1;
   display: flex;
   flex-direction: column;
   align-items: stretch;
   justify-content: stretch;
-  margin-right: 90px;
-  width: calc(100vw - 240px);
+  margin: 60px 0 0 0;
+  width: calc(100vw - 200px);
   position: relative;
+  z-index: 1;
 }
 .main-content {
-  width: 100%;
+  width: calc(100% - 50px);
   display: flex;
   flex-wrap: nowrap;
   justify-content: flex-start;
   align-items: flex-start;
   flex-grow: 1;
   position: relative;
+  height: calc(100vh - 80px);
+  overflow: auto;
 }
 
-.canvas-ref {
+.page-ref {
   display: flex;
-  height: calc(100vh - 20px);
-  overflow: hidden;
-  max-width: calc(100vw - 190px);
+  max-width: calc(100vw - 160px);
   flex-grow: 2;
+  align-self: stretch;
+  height: calc(100vh - 100px);
+  justify-content: center;
+}
+
+.text-layer {
+  position: absolute;
+  z-index: 100;
+  top: 40px;
+  left: 0;
+  transform-origin: top left;
 }
 
 .canvas-wrapper {
   position: relative;
   overflow: hidden;
-  /* max-height: calc(100vh - 70px);
-    overflow: hidden; */
 }
 .canvas-bg-img-wrapper {
   position: absolute;
@@ -976,171 +611,89 @@ export default {
   background-position: center center;
 }
 
-#storyCanvas {
-  position: relative;
-  z-index: 2;
-  height: 595px;
-}
-.upper-canvas {
-  z-index: 2
-}
-
-.color-picker-input {
-  visibility: none;
-}
-
-.tools {
-  position: absolute;
-  z-index: 3;
+.text-toolbar-wrapper {
+  position: fixed;
+  top: 45px;
+  left: 110px;
+  width: 100%;
+  z-index: 101;
   display: flex;
-  flex-direction: column;
-}
-
-.tools > * {
-  margin-right: 5px;
-  margin-bottom: 5px;
-}
-
-.extra-tools {
-  width: 60px;
-  display: flex;
-  position: absolute;
-  z-index: 3;
-  flex-direction: column;
   justify-content: center;
+  > * {
+    &.ql-toolbar.ql-snow  {
+      background: #fff;
+      position: relative;
+      width: 100%;
+      display: flex;
+      flex-direction: row;
+      padding: 0;
+      .ql-formats {
+        display: flex;
+        flex-direction: row;
+      }
+      .ql-snow .ql-picker-options {
+        z-index: 102;
+      }
+      .ql-picker.ql-font {
+        span[data-label="Handwriting"]::before {
+          font-family: "Schoolbell", cursive;
+        }
+      }
+    }
+  }
 }
 
-.extra-tools > * {
-  margin-bottom: 5px;
+.page-scrollers {
+  position: fixed;
+  right: 3px;
+  bottom: 3px;
+  z-index: 100;
+  .scroll-btn:last-child {
+    margin-top: 10px;
+  }
 }
 
-.pan-controls {
-  display: inline-flex;
-  display: none;
-  font-size: 2em;
-  position: absolute;
-  bottom: 10px;
-  right: 10px;
-  z-index: 999;
-  flex-direction: column;
-  align-items: center;
-  background: rgba(255, 255, 255, 0.8);
-}
-
-.zoom-controls {
-  display: inline-flex;
-  display: none;
-  font-size: 2em;
-  position: absolute;
-  top: 10px;
-  right: 10px;
-  z-index: 999;
-  flex-direction: column;
-  align-items: center;
-  background: rgba(255, 255, 255, 0.8);
-}
-.zoom-controls .disabled {
-  color: #bbb;
-}
-
-.color-btn {
-  width: 42px;
-  height: 42px;
-  border: none;
-  padding: 0;
-  border-radius: 50%;
-  cursor: pointer;
-}
-
-.tool-slider {
-  position: relative;
-}
-.tool-slider .q-slider-wrap {
-  position: absolute;
-  width: 200px;
-  right: 60px;
-  top: 0;
-  z-index: 1000;
-}
-
-.zoom-in {
-  cursor: zoom-in;
-}
-
-.zoom-out {
-  cursor: zoom-out;
-}
-
-.pan-up {
-  cursor: n-resize;
-}
-
-.pan-left {
-  cursor: w-resize;
-}
-
-.pan-right {
-  cursor: e-resize;
-}
-
-.pan-down {
-  cursor: s-resize;
-}
-
-.reset-canvas {
-  cursor: crosshair;
-}
 .text-modal {
   display: flex;
   justify-content: center;
   align-items: center;
 }
-@media (orientation: portrait) {
+/* @media (orientation: portrait) { */
   .main-content-wrapper {
-    margin-right: 0;
+    margin-left: 5px;
     width: 100%;
   }
   .main-content {
     display: block;
   }
-  .canvas-ref {
+  .page-ref {
     padding-left: 0;
-    max-width: calc(100vw - 10px);
-        height: calc(100vh - 220px);
+    max-width: calc(100vw - 57px);
   }
-  .tools {
-    display: flex;
-    justify-content: center;
-    position: relative;
-    flex-direction: row;
+  .text-toolbar-wrapper {
+    left: 15px;
   }
-  .extra-tools {
-    flex-direction: row;
-    width: 100%;
-  }
-  .tool-slider .q-slider-wrap {
-    width: 200px;
-    left: -20px;
-    right: auto;
-    top: -30px;
-    z-index: 1000;
-  }
-}
-@media(max-width: $breakpoint-md) and (orientation: landscape) {
-  .canvas-ref {
-    height: calc(100vh - 20px);
-  }
-  .tools {
-    margin-top: -25px;
-  }
-}
+/* } */
 @media(max-width: $breakpoint-md) and (orientation: portrait) {
   .main-content-wrapper {
-    max-height: calc(100vh - 170px);
-    overflow: hidden;
+    max-height: calc(100vh - 100px);
   }
-  .canvas-ref {
-    height: calc(100vh - 250px);
+  .page-ref {
+    max-width: calc(100vw - 40px);
+  }
+}
+
+@media(max-width: $breakpoint-xs) and (orientation: portrait) {
+  body.mobile {
+    .page-ref {
+      height: calc(100vh - 150px);
+    }
+  }
+}
+
+@media(max-width: $breakpoint-xs) {
+  .main-content {
+    width: calc(100% - 35px);
   }
 }
 </style>

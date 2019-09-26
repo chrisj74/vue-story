@@ -1,21 +1,57 @@
 <template>
     <div>
-        <q-page class="story-page row justify-center">
+        <q-page class="story-page row justify-center" v-if="activePage">
             <!-- Thumbs -->
-            <div class="thumbs">
-                <div class="actiion-buttons">
-                    <q-btn size="sm" :round="true" @click="isEdit = !isEdit" :icon="isEdit? 'mdi-check-outline' : 'mdi-pencil'"></q-btn>
-                    <q-btn size="sm" :round="true" @click="getPageImages()" icon="mdi-cloud-download"></q-btn>
+            <div class="thumbs" :class="{'active': settings.showThumbs && !leftDrawerOpen, 'hidden-thumbs': leftDrawerOpen}">
+                <div class="action-buttons">
+                    <q-btn size="sm" :round="true" @click="toggleEdit()" :icon="isEdit? 'mdi-check-outline' : 'mdi-pencil'"></q-btn>
+                    <q-btn size="sm" :round="true" @click="getPageImages(true, true)" icon="mdi-cloud-download"></q-btn>
                 </div>
 
                 <!-- List thumbs -->
-                <div id="thumb-wrapper" v-if="isActiveRoute()">
-                    <draggable v-model="pages" :disabled="!isEdit">
-                        <div class="thumb" v-for="(page, index) of pages" :key="page.id" :id="'thumb'+page.id" :style="{backgroundColor: thumbBgColor(page)}" :class="{'active-thumb': activePage && page.id === activePage.id}">
-                            <router-link :to="'/story/'+$route.params.id+'/'+page.id">
-                                <img :src="getThumb(page)" style="max-width: 100%" />
+                <div id="thumb-wrapper" >
+                    <draggable class="thumb-draggable" v-model="pages" :disabled="!isEdit">
+                        <div
+                            class="thumb" v-for="(page, index) of pages" :key="page.id"
+                            :id="'thumb'+page.id"
+                            :style="{
+                                backgroundColor: thumbBgColor(page.page),
+                                backgroundImage: thumbBgImage(page.page),
+                                width: (page.pageSize.width * 0.1) + 'px',
+                                height: (page.pageSize.height * 0.1) + 'px'
+                            }"
+                            :class="{'active-thumb': activePage && page.id === activePage.id}">
+                            <router-link :to="'/project/'+$route.params.id+'/'+page.id">
+                                <img :src="getThumbDrawing(page.page)" style="max-width: 100%" class="thumb-drawing" />
+                                <img :src="getThumbPhoto(page.page)" style="max-width: 100%" class="thumb-photo" />
+                                <div class="thumb-text ql-editor"
+                                    :style="{
+                                        width: page.pageSize.width + 'px',
+                                        height: page.pageSize.height + 'px',
+                                    }">
+                                    <div v-for="(pageText, tIndex) of page.page.textLayer" :key="page.id+'text'+tIndex"
+                                        :style="{
+                                            top: pageText.y + 'px',
+                                            left: pageText.x + 'px',
+                                            width: pageText.width +'px',
+                                            height: pageText.height + 'px',
+                                            borderWidth: pageText.borderWidth + 'px',
+                                            borderColor: pageText.borderColor,
+                                            background: getTextBoxBg(pageText)
+                                        }"
+                                        class="thumb-text-block text-render" v-html="pageText.text">
+                                    </div>
+                                </div>
                             </router-link>
-                            <div v-if="isEdit" class="delete-page" @click="deletePage(page.id, pages[index-1].id)"><q-icon v-if="index !== 0" size="sm" color="negative" name="mdi-delete" /></div>
+                            <div class="thumb-actions" v-if="isEdit" :style="{
+                                height: (page.pageSize.height * 0.1) + 'px'
+                            }">
+                                <div @click="showEditActions(page.id)" class="thumb-actions-toggle"><q-icon name="mdi-dots-vertical" /></div>
+                                <div class="active-thumb-actions" v-if="activeEditActions === page.id">
+                                    <div class="download-page" @click="downloadPage(index)"><q-icon name="mdi-cloud-download" /></div>
+                                    <div class="delete-page" @click="deletePage(page.id, pages[index-1].id)"><q-icon v-if="index !== 0" color="negative" name="mdi-delete" /></div>
+                                </div>
+                            </div>
                         </div>
                     </draggable>
                 </div>
@@ -23,36 +59,119 @@
                 <div class="add-page">
                     <q-btn color="primary" icon="mdi-plus-circle" :size="$q.screen.lt.sm ? 'md' : 'lg'" round @click="addPage()" />
                 </div>
-                <!-- Thumb canvas -->
-                <div class="thumb-generator" ref="thumbGenerator">
-                    <div v-if="activePage && activePage.pageSize" class="canvas-bg-img-wrapper" :style="{width: activePage.pageSize.width+'px', height: activePage.pageSize.height+'px'}">
-                        <div v-if="activePage && activePage.background" class="canvas-bg-img" :style="{backgroundColor: activePage.background.color,
-                        backgroundImage: activePage.background.image? 'url('+activePage.background.image+')' : 'none'}">
 
+                <!-- Handle -->
+                <div class="handle" @click="toggleThumbs()">
+                    <i class="mdi" :class="{'mdi-chevron-double-right': !settings.showThumbs, 'mdi-chevron-double-left': settings.showThumbs}"></i>
+                </div>
+
+                <!-- Preview -->
+                <div class="preview-generator" ref="previewGenerator" v-if="pages && pages.length > 0 && photoImagesGenerated">
+                    <div
+                        :style="{
+                            backgroundColor: thumbBgColor(pages[previewIndex].page),
+                            backgroundImage: thumbBgImage(pages[previewIndex].page),
+                            width: (pages[previewIndex].pageSize.width) + 'px',
+                            height: (pages[previewIndex].pageSize.height) + 'px'
+                        }">
+                        <img :src="getThumbDrawing(pages[previewIndex].page)" style="max-width: 100%" class="preview-drawing" />
+                        <img :src="pageImages[pages[previewIndex].page.id]" style="max-width: 100%" class="preview-photo" />
+                        <div class="preview-text ql-editor"
+                            :style="{
+                                width: pages[previewIndex].pageSize.width + 'px',
+                                height: pages[previewIndex].pageSize.height + 'px',
+                                top: '40px'
+                            }">
+                            <div v-for="(pageText, tIndex) of pages[previewIndex].page.textLayer" :key="pages[previewIndex].page.id+'PreviewText'+tIndex"
+                                :style="{
+                                    top: pageText.y + 'px',
+                                    left: pageText.x + 'px',
+                                    width: pageText.width +'px',
+                                    height: pageText.height + 'px',
+                                    borderWidth: pageText.borderWidth + 'px',
+                                    borderColor: pageText.borderColor,
+                                    borderStyle: 'solid',
+                                    background: getTextBoxBg(pageText)
+                                }"
+                                class="preview-text-block text-render" v-html="pageText.text">
+                            </div>
                         </div>
                     </div>
-
-                    <canvas id="thumbCanvas"></canvas>
-                    <img :src="thumbImgSrc" class="thumb-canvas-img" />
-
-                    <div class="text-layer">
-                        <!-- TEXT EDITOR -->
-                        <text-editor :print="true" v-if="activePage && activePage.pageSize" :active="false" :zoom="1" :pageWidth="activePage.pageSize.width" :pageHeight="activePage.pageSize.height" ></text-editor>
-                    </div>
                 </div>
-                <!-- <img :src="previewSrc" class=preview /> -->
-                <!-- <div id="pdf" style="position: absolute; top: 0; background: red; z-index: 1000;">
-                    <a :href="pdf" :download="'test'">download</a>
-                </div> -->
+                <!-- Download image link -->
+                <div class="image-download-link" v-if="previewImages.length === 1">
+                    <a :href="previewImages[0]" ref="imageDownloadLink" download="page">Download</a>
+                    <img :src="previewImages[0]" style="max-width: 100%" />
+                </div>
+
+                <!-- Photo image generator -->
+                <div class="photo-generator" v-if="pages && pages.length > 0">
+                    <canvas
+                        id="photoCanvas"
+                        ref="photoCanvas"
+                        key="photoCanvas"
+                        v-if="pageDimensions"
+                        :style="{
+                        width: (pages[previewIndex].pageSize.width * pageDimensions.pixelRatio) + 'px',
+                        height: (pages[previewIndex].pageSize.height * pageDimensions.pixelRatio) + 'px',
+                        top: 0,
+                        left: 0,
+                        }">
+                    </canvas>
+                </div>
             </div>
 
             <!-- Canvas -->
             <transition appear>
                 <router-view />
             </transition>
+            <!-- PLAN -->
+            <div class="plan" v-show="showPlan" ref="planContainer">
+                <div v-if="story.plan.video" class="plan-video" ref="planVideo">
+                    <iframe style="width: 100%" :src="story.plan.video" frameborder="0" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen v-if="videoSource === 'youtube'"></iframe>
+                    <iframe :src="story.plan.video" frameborder="0" allow="autoplay; fullscreen" allowfullscreen v-if="videoSource === 'vimeo'"></iframe>
+                </div>
+                <div v-html="story.plan.text" class="plan-text ql-editor" :style="{maxHeight: textHeight() + 'px'}">
+
+                </div>
+                <div class="edit-plan-btn">
+                    <q-btn color="primary" @click="showEditPlan()">
+                        edit
+                    </q-btn>
+                </div>
+            </div>
 
 
         </q-page>
+        <!-- ADD PAGE MODAL -->
+        <q-modal
+        v-if="pageDimensions"
+        v-model="settings.showAddPage"
+        :content-css="{minWidth: '350px', height: '90vh', maxWidth: '100%', width: pageDimensions.width+'px'}">
+            <q-modal-layout>
+                <add-page></add-page>
+                <q-toolbar slot="footer">
+                    <q-toolbar-title>
+                        <q-btn color="white" text-color="black" @click="closeModal('showAddPage')">Cancel</q-btn>
+                    </q-toolbar-title>
+                </q-toolbar>
+            </q-modal-layout>
+        </q-modal>
+
+        <!-- EDIT PLAN MODAL -->
+        <q-modal
+        v-if="pageDimensions"
+        v-model="settings.showEditPlan"
+        :content-css="{minWidth: '350px', height: '90vh', maxWidth: '100%', width: '80%'}">
+            <q-modal-layout>
+                <edit-plan></edit-plan>
+                <q-toolbar slot="footer">
+                    <q-toolbar-title>
+                        <q-btn color="white" text-color="black" @click="closeModal('showEditPlan')">Cancel</q-btn>
+                    </q-toolbar-title>
+                </q-toolbar>
+            </q-modal-layout>
+        </q-modal>
     </div>
 </template>
 
@@ -62,6 +181,10 @@ import * as b64toBlob from 'b64-to-blob';
 import * as _ from 'lodash';
 import draggable from 'vuedraggable';
 import TextEditor from "../../components/story/TextEditor";
+import DrawingCanvas from '../../components/story/DrawingCanvas';
+import AddPage from '../../components/story/AddPage';
+import EditPlan from '../../components/story/EditPlan';
+
 
 
 import pdfMake from "pdfmake/build/pdfmake";
@@ -72,47 +195,36 @@ export default {
     name: 'Story',
     components: {
         draggable,
-        TextEditor
+        TextEditor,
+        DrawingCanvas,
+        AddPage,
+        EditPlan
     },
     data() {
         return {
             thumbCanvas: null,
-            editorConfig: {
-                modules: {
-                    blotFormatter: {},
-                    toolbar: [
-                        ['bold', 'italic', 'underline'],        // toggled buttons
-                        ['blockquote'],
-
-                        // [{ 'header': 1 }, { 'header': 2 }],               // custom button values
-                        [{ 'list': 'ordered'}, { 'list': 'bullet' }],
-                        // [{ 'script': 'sub'}, { 'script': 'super' }],      // superscript/subscript
-                        // [{ 'indent': '-1'}, { 'indent': '+1' }],          // outdent/indent
-                        // [{ 'direction': 'rtl' }],                         // text direction
-
-                        [{ 'size': ['small', false, 'large', 'huge'] }],  // custom dropdown
-                        // [{ 'header': [1, 2, 3, 4, 5, 6, false] }],
-
-                        [{ 'color': [] }, { 'background': [] }],          // dropdown with defaults from theme
-                        [{ 'font': [] }],
-                        [{ 'align': [] }],
-                        ['link', 'video']
-
-                        // ['clean']                                         // remove formatting button
-                    ]
-                }
-            },
-            imageKey: 0,
+            previewIndex: 0,
+            previewImages: [],
             scrollTop: -1,
             cursorSelection: null,
             isEdit: false,
             thumbImgSrc: '',
             previewSrc: '',
             downloadPdf: false,
-            // pdf: '',
+            showAddPage: false,
+            canvas: null,
+            activeEditActions: null,
+            photoImagesGenerated: false,
         }
     },
     computed: {
+        videoSource() {
+            if (this.story.plan.video && this.story.plan.video.indexOf('youtube.') != -1) {
+                return 'youtube';
+            }if (this.story.plan.video && this.story.plan.video.indexOf('vimeo.') != -1) {
+                return 'vimeo';
+            }
+        },
         editor() {
             return this.$refs.guideEditor.quill
         },
@@ -128,8 +240,14 @@ export default {
         story() {
             return this.$store.getters.getStory;
         },
-        pdfImages() {
-            return this.$store.getters.getPdfImages;
+        pageDimensions() {
+          return this.$store.getters.getPageDimensions;
+        },
+        settings() {
+            return this.$store.getters.getSettings;
+        },
+        pageImages() {
+            return this.$store.getters.getPageImages;
         },
         editorContent: {
             get() {
@@ -169,13 +287,12 @@ export default {
         },
         screen() {
             return this.$store.getters.screen;
+        },
+        leftDrawerOpen() {
+           return this.$store.getters.getLeftDrawerOpen;
         }
     },
     mounted() {
-        this.imageKey = Math.random();
-        /* if(this.activePage && this.activePage.canvasJson) {
-            this.canvasInit();
-        } */
         /** Set story from route */
         if ((!this.story || !this.story.hasOwnProperty('id') || this.story.id !== this.$route.params.id) && this.user) {
             const payload = {
@@ -202,23 +319,125 @@ export default {
             }
             this.$store.dispatch('setPages', payload);
         }
-
+    },
+    destroyed() {
+        console.log('story destroyed');
+        this.$store.commit('resetPage');
     },
     methods: {
-        getPageImages() {
-            // console.log('getPageImages');
-            const payload = {
-                user: this.user,
-                storyKey: this.$route.params.id,
+        closeModal(type) {
+            const newSetting = {};
+            newSetting[type] = false;
+            this.$store.commit('setSettings', newSetting);
+        },
+
+        /* Plan  */
+        textHeight() {
+          return this.$refs.planVideo ? (this.$refs.planContainer.clientHeight - (this.$refs.planVideo.clientHeight + 10)) : 0;
+        },
+        /** EDIT */
+        toggleEdit(){
+            if (this.isEdit) {
+                this.activeEditActions = null;
+                this.isEdit = false;
+            } else {
+                this.isEdit = true
             }
-            this.$store.dispatch('genPdfImages', payload);
+        },
+
+        showEditActions(pageId) {
+            if (this.activeEditActions && this.activeEditActions === pageId) {
+                this.activeEditActions = null;
+            } else {
+                this.activeEditActions = pageId;
+            }
+        },
+        /** PHOTO */
+        photoCanvasInit() {
+            /** Photo canvas */
+            this.canvas = new fabric.Canvas("photoCanvas");
+            const _this = this;
+            const canvas = this.canvas;
+
+            this.canvas.targetFindTolerance = 4;
+            this.canvas.preserveObjectStacking = true;
+            canvas.renderAll.bind(canvas);
+        },
+
+        generatePhotoImages() {
+            this.previewIndex = 0;
+            this.generatePhotoImage()
+        },
+
+        generatePhotoImage() {
+            const _this = this;
+            this.canvas.setHeight(this.pages[this.previewIndex].pageSize.height * this.pageDimensions.pixelRatio);
+            this.canvas.setWidth(this.pages[this.previewIndex].pageSize.width * this.pageDimensions.pixelRatio);
+            this.canvas.setZoom(this.pageDimensions.pixelRatio);
+            if (this.pages[this.previewIndex].page.photoLayer.photoCanvasJson) {
+                this.canvas.loadFromJSON(this.pages[this.previewIndex].page.photoLayer.photoCanvasJson, function() {
+                    const imagePayload = {
+                        pageId: _this.pages[_this.previewIndex].page.id,
+                        imageData: _this.canvas.toDataURL(),
+                    }
+                    _this.$store.commit('setPageImage', imagePayload);
+                    if (_this.previewIndex < (_this.pages.length -1)) {
+                        _this.previewIndex++;
+                        _this.generatePhotoImage();
+                    } else {
+                        _this.photoImagesGenerated = true;
+                    }
+                });
+            } else if (this.previewIndex < (this.pages.length -1)) {
+                    this.previewIndex++;
+                    this.generatePhotoImage();
+            } else {
+                this.photoImagesGenerated = true;
+            }
+        },
+        /** DOWNLOAD */
+        getPageImages(pdf, allPages) {
             this.$store.commit('setLoading', true);
-            this.downloadPdf = true;
+            this.previewIndex = 0;
+            this.previewImages = [];
+            this.getPageImage(pdf, allPages);
+        },
+
+        getPageImage(pdf, allPages, pageIndex) {
+            if (!allPages && pageIndex) {
+                this.$store.commit('setLoading', true);
+                this.previewIndex = pageIndex;
+                this.previewImages = [];
+            }
+
+            const el = this.$refs.previewGenerator;
+            const _this = this;
+            const _allPages = allPages, _pdf = pdf, _pageIndex = pageIndex;
+            const options = {
+                type: 'dataURL',
+                useCORS: true,
+                logging: false
+            }
+            this.$nextTick()
+                .then(function () {
+                    _this.$html2canvas(el, options).then(th => {
+                        let thumbImg = th;
+                        _this.previewImages.push(th);
+                        if (_this.previewIndex < (_this.pages.length -1) && _allPages) {
+                            _this.previewIndex++;
+                            _this.getPageImage(_pdf, _allPages);
+                        } else if (_pdf) {
+                            _this.createPdf();
+                        } else if (!_allPages && _pageIndex) {
+                            _this.$store.commit('setLoading', false);
+                            _this.doDownload();
+                        }
+                    });
+                });
         },
 
         createPdf() {
             // const iframe = document.getElementById('pdf');
-            console.log('createPdf');
             const docDefinition = {
                 pageSize: 'A4',
 
@@ -228,9 +447,9 @@ export default {
                 // [left, top, right, bottom] or [horizontal, vertical] or just a number for equal margins
                 pageMargins: [ 40, 60, 40, 60 ],
             content: []};
-            this.pdfImages.forEach(image => {
+            this.previewImages.forEach(image => {
                 docDefinition.content.push({
-                    image: 'data:image/png;base64, ' + image,
+                    image: image,
                     fit: [(595 - 80), (868 - 120)],
                 })
             })
@@ -239,55 +458,73 @@ export default {
             this.$store.commit('setLoading', false);
         },
 
+        downloadPage(pageIndex) {
+            this.previewIndex = pageIndex;
+            this.getPageImage(false, false, pageIndex)
+        },
+
+        doDownload() {
+            const _this = this;
+            this.$nextTick()
+                .then(function () {
+                    // DOM updated
+                    _this.$refs.imageDownloadLink.click();
+                });
+        },
+
         onEditorFocus(quill){
             this.cursorSelection = quill.getSelection();
         },
-        isActiveRoute() {
-            if ((this.activePage && this.$route.params.pageId === this.activePage.id)
-                || !this.$route.params.pageId) {
-                    return true;
-            } else {
-                return false;
+
+        getTextBoxBg(pageText) {
+            let hexOpacity = (pageText.opacity * 255).toString(16);
+            while (hexOpacity.length < 2) {
+                hexOpacity = "0" + hexOpacity;
             }
+            let bgColor = pageText.backgroundColor;
+
+            /* manipulate color to include opacity */
+            return bgColor.substring(0, 7) + hexOpacity;
         },
-        getThumb(page) {
-            const isActive = this.activePage && this.activePage.id === page.id ? true : false;
-            if (isActive) {
-                return this.previewSrc;
-            } else {
-                return page.thumb + '&rnd=' + this.imageKey;
-            }
-            return isActive;
-        },
+
         thumbBgColor(page) {
-            if (this.activePage && page.id === this.activePage.id) {
-                return this.activePage.background.color;
+            return page.background.color;
+        },
+
+        thumbBgImage(page) {
+            if (page.background.image){
+                return 'url('+page.background.image+')';
             } else {
-                return page.background.color;
+                return null
             }
         },
-        canvasInit() {
-            /** Thumbnail canvas */
-            this.thumbCanvas = new fabric.Canvas('thumbCanvas');
-            this.thumbCanvas.setHeight(595);
-            this.thumbCanvas.setWidth(842);
-            if (this.activePage && this.activePage.canvasJson) {
-                this.generateThumb()
-            }
+        getThumbDrawing(page) {
+            return page.drawingLayer['drawingCanvasImage'];
+        },
+
+        getThumbPhoto(page) {
+            return this.$store.getters.getPageImageById(page.id);
+        },
+
+        toggleThumbs() {
+            const payload = {
+                showThumbs: !this.settings.showThumbs,
+            };
+            this.$store.commit('setSettings', payload);
         },
 
         addPage() {
             const payload = {
-                user: this.user,
-                storyKey: this.$route.params.id,
-                pageKey: this.$route.params.pageId ? this.$route.params.pageId : null,
-                order: this.pages.length,
-            }
-            const storyKey = this.$route.params.id;
-            this.$store.dispatch('addPage', payload)
-            .then(newPage => {
-                this.$router.push({ path: '/story/'+storyKey+'/'+newPage })
-            }) ;
+                showAddPage: true,
+            };
+            this.$store.commit('setSettings', payload);
+        },
+
+        showEditPlan() {
+            const payload = {
+                showEditPlan: true,
+            };
+            this.$store.commit('setSettings', payload);
         },
 
         deletePage(pageId, prevId) {
@@ -316,102 +553,7 @@ export default {
             .catch(() => {
                 // Picked "Cancel" or dismissed
             })
-
-
         },
-
-        setZoom(factor) {
-            /** change zoom to load or export */
-            this.thumbCanvas.setHeight(842 * factor);
-            this.thumbCanvas.setWidth(595 * factor)
-            this.thumbCanvas.setZoom(factor);
-            this.thumbCanvas.renderAll();
-        },
-
-        generateThumb() {
-            this.setZoom(1);
-            const _this = this;
-            this.thumbCanvas.clear();
-            this.thumbCanvas.loadFromJSON(
-                this.activePage.canvasJson,
-                function() {
-                    _this.thumbCanvas.renderAll.bind(_this.thumbCanvas);
-                    _this.thumbImgSrc = _this.thumbCanvas.toDataURL('png');
-                    const el = _this.$refs.thumbGenerator;
-                    // add option type to get the image version
-                    // if not provided the promise will return
-                    // the canvas.
-                    const options = {
-                        type: 'dataURL',
-                        useCORS: true,
-                        logging: false
-                    }
-                    _this.$html2canvas(el, options).then(th => {
-                        let thumbImg = th;
-                        _this.previewSrc = th;
-                        _this.addThumbBack(thumbImg);
-                    });
-                });
-        },
-
-        addThumbBack(thumbImg) {
-            /** export preview image */
-            const previewBlob = b64toBlob(thumbImg.split(',')[1], 'image/png');
-            this.setPreview(previewBlob);
-            const _this = this;
-            /** add canvas image back */
-            fabric.Image.fromURL(thumbImg, function(myImg) {
-                myImg.set({ left: 0, top: 0 });
-                _this.thumbCanvas.add(myImg);
-                _this.thumbCanvas.renderAll.bind(_this.thumbCanvas);
-                /** export final image */
-                _this.setZoom(0.5);
-                const thumbImg = _this.thumbCanvas.toDataURL('png');
-                /** convert to blob */
-                const thumbBlob = b64toBlob(thumbImg.split(',')[1], 'image/png');
-                _this.setThumb(thumbBlob);
-            });
-        },
-
-        setPreview(previewImg) {
-            const payload = {
-                user: this.user,
-                storyKey: this.$route.params.id,
-                pageKey: this.activePage.id,
-                image: {
-                    type: 'image/png',
-                    dataUrl: previewImg,
-                },
-            };
-            this.$store.dispatch('setPreview', payload);
-        },
-
-        setThumb(thumbImg) {
-            const payload = {
-                user: this.user,
-                storyKey: this.$route.params.id,
-                pageKey: this.activePage.id,
-                image: {
-                    type: 'image/png',
-                    dataUrl: thumbImg,
-                },
-                order: this.activePage.order
-            };
-            const _this = this;
-            this.$store.dispatch('setThumb', payload)
-                .then(imgUrl => {
-                    /** If this is page 1, set image as story cover */
-                    if (this.activePage.order === 0) {
-                        const payload = {
-                            user: this.user,
-                            storyKey : this.$route.params.id,
-                            thumbUrl: imgUrl
-                        };
-                        this.$store.dispatch('updateStory', payload);
-                    }
-                });
-        },
-
     },
     watch: {
         user: {
@@ -428,15 +570,14 @@ export default {
         },
         activePage: {
             handler: function(newPage, oldPage) {
-                if (!this.thumbCanvas) {
-                    this.canvasInit();
-                }
                 if (newPage
                     && oldPage
                     && (newPage.canvasJson || newPage.textLayer.text)
-                    && (newPage.canvasJson != oldPage.canvasJson || newPage.id !== oldPage.id || newPage.textLayer.text !== oldPage.textLayer.text)
+                    && (newPage.canvasJson != oldPage.canvasJson
+                        || newPage.id !== oldPage.id
+                        || newPage.textLayer.text !== oldPage.textLayer.text
+                        || newPage.background !== oldPage.background)
                     && (newPage.id === this.$route.params.pageId || !this.$route.params.pageId)) {
-                    this.generateThumb();
 
                     /** Scroll active thumb into view */
                     const _this = this;
@@ -468,20 +609,27 @@ export default {
         $route: {
             handler: function(from, to){
                 if(from.params.id === to.params.id && from.params.pageId != to.params.pageId) {
-                    /** key to force refresh of thumbs and keep them fresh after page navigation */
-                    this.imageKey = Math.random();
                     this.scrollTop = -1;
+                }
+                if (!from.params.id || (from.params.id !== to.params.id)) {
+                    // changed story
+                    if (!this.canvas) {
+                        this.photoCanvasInit();
+                    }
                 }
             },
             deep: true
         },
-        pdfImages: {
-            handler: function(newImages, oldImages) {
-                console.log('pdfImages Watcher');
-                if (this.downloadPdf) {
-                    this.createPdf();
+        pages: {
+            handler: function(oldPages, newPages){
+                if(Object.keys(this.pageImages).length === 0) {
+                    if (!this.canvas) {
+                        this.photoCanvasInit();
+                    }
+                    this.generatePhotoImages();
                 }
-            }
+            },
+            deep: true
         }
     },
 }
@@ -491,42 +639,104 @@ export default {
 @import '~variables'
 
 .story-page {
-    padding: 10px;
+    padding: 10px 0 10px 10px;
     background: #ddd;
     flex-wrap: nowrap;
     overflow: hidden;
     justify-content: flex-start;
 }
 
-.side-bar {
+.plan {
     min-width: 20%;
     max-width: 50%;
-    width: 400px;
-    position: fixed;
-    top: 50px;
+    width: 500px;
+    position: relative;
+    top: 30px;
     right: 0;
     height: calc(100vh - 50px);
     background: rgba(255,255,255,.8);
     z-index: 3;
+    box-shadow: 0 1px 5px rgba(0,0,0,0.2), 0 2px 2px rgba(0,0,0,0.14), 0 3px 1px -2px rgba(0,0,0,0.12);
+    .edit-plan-btn {
+        position: absolute;
+        bottom: 0;
+        right: 0;
+    }
 }
-.actiion-buttons {
+.plan-video {
+    position: relative;
+    padding-bottom: 56.25%; /* 16:9 */
+    height: 0;
+    margin-bottom: 10px;
+    iframe, object, embed {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    }
+}
+.plan-text {
+    max-height: calc(100% - 300px);
+    overflow: scroll;
+}
+.action-buttons {
     display: flex;
-    justify-comtent: space-between;
+    justify-content: space-around;
     flex-direction: row;
 }
 .add-page {
     text-align: center;
-    width: 61px;
 }
+
 .thumbs {
     margin-top: 35px;
-    width: 81px;
+    width: 100px;
     align-self: flex-start;
+    position: fixed;
+    left: -79px;
+    transition: all .5s ease-in-out;
+    z-index: 2002;
+    &.active {
+        left: 0;
+        background: #fff;
+        .handle {
+            right: -20px;
+        }
+    }
+    &.hidden-thumbs {
+        left: -150px;
+    }
+    #thumb-wrapper .thumb-draggable {
+        align-items: flex-end;
+    }
+    .handle {
+        display: flex;
+        position: absolute;
+        bottom: 0;
+        right: -10px;
+        width: 35px;
+        height: 35px;
+        border-radius: 0 5px 5px 0;
+        border: none;
+        justify-content: center;
+        align-items: center;
+        font-size: 1.5em;
+        background-color: #fff;
+        box-shadow: 0 1px 5px rgba(0,0,0,0.2), 0 2px 2px rgba(0,0,0,0.14), 0 3px 1px -2px rgba(0,0,0,0.12);
+    }
 }
 #thumb-wrapper {
     margin-top: 5px;
-    max-height: calc(100vh - 160px);
+    padding-top: 3px;
+    max-height: calc(100vh - 190px);
     overflow: auto;
+    .thumb-draggable {
+        display: flex;
+        flex-direction: column;
+        justify-content: flex-end;
+        align-items: center;
+    }
 }
 .thumb {
     height: 84px;
@@ -534,124 +744,147 @@ export default {
     display: flex;
     justify-content: center;
     align-items: stretch;
-    margin-bottom: 5px;
+    margin-bottom: 10px;
     margin-right: 10px;
     background-size: cover;
     background-repeat: no-repeat;
     background-color: #fff;
+    background-position: center center;
     position: relative;
-    border: solid 3px #aeaeae;
-    -webkit-transition: border-color 1s; /* Safari */
-    transition: border-color 1s;
+    outline: solid 3px #aeaeae;
+    -webkit-transition: outline-color 1s; /* Safari */
+    transition: outline-color 1s;
+    position: relative;
+    a {
+        color: #000;
+    }
+    .thumb-drawing {
+        position: absolute;
+        z-index: 3;
+    }
+    .thumb-photo {
+        position: absolute;
+        z-index: 2;
+    }
+    .thumb-text {
+        position: absolute;
+        z-index: 4;
+        transform: scale(0.1);
+        transform-origin: top left;
+        overflow: hidden;
+        top: calc(40px * 0.1);
+        .thumb-text-block {
+            position: absolute;
+            border-style: solid;
+        }
+    }
 }
-.delete-page {
-    opacity: 0.5;
-    cursor: pointer;
-    transform-origin: top right;
+.thumb-actions {
     position: absolute;
-    top: 2px;
-    right: 2px;
+    top: -3px;
+    right: -3px;
+    z-index: 5;
+    background: rgba(255,255,255,0.95);
+    display: flex;
+    flex-direction: row;
+    justify-content: flex-start;
+    align-items: center;
+    padding: 0 5px;
+    .thumb-actions-toggle {
+        cursor: pointer;
+        font-size: 20px;
+    }
+    .active-thumb-actions{
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        .delete-page, .download-page {
+            cursor: pointer;
+            font-size: 26px;
+        }
+    }
 }
-.thumb:hover .delete-page {
-    opacity: 1;
-}
-.delete-page:hover {
-    -ms-transform: scale(1.5, 1.5); /* IE 9 */
-    -webkit-transform: scale(1.5, 1.5); /* Safari */
-    transform: scale(1.5, 1.5);
 
-}
 .thumb.active-thumb {
-    border: solid 3px $primary;
+    outline: solid 3px $primary;
 }
 .thumb a {
     width: 100%;
 }
-.thumb-generator {
+.photo-generator {
+    position: absolute;
+    top: 5000px;
+    left: -5000px;
+    z-index: 1000;
+}
+
+.image-download-link {
+    display: none;
+}
+.preview-generator {
     position: absolute;
     top: 0;
     left: -5000px;
     z-index: 999;
     border: solid 1px #999;
-    background: #fff;
-    .text-layer {
+    background-size: cover;
+    background-repeat: no-repeat;
+    background-color: #fff;
+    background-position: center center;
+    .preview-drawing {
         position: absolute;
-        top: 0;
-        left: 0;
-        bottom: 0;
-        right: 0;
-        z-index: 6;
+        z-index: 3;
     }
-    #thumbCanvas {
-        display: none;
-    }
-    .thumb-canvas-img {
+    .preview-photo {
         position: absolute;
-        top: 0;
-        left: 0;
-        bottom: 0;
-        right: 0;
-        z-index: 5;
+        z-index: 2;
     }
-    .canvas-bg-img-wrapper {
+    .preview-text {
         position: absolute;
-        overflow: hidden;
-        top: 0;
-        left: 0;
-        bottom: 0;
-        right: 0;
         z-index: 4;
-        .canvas-bg-img {
+        transform-origin: top left;
+        overflow: hidden;
+        .preview-text-block {
             position: absolute;
-            top: 0;
-            bottom: 0;
-            width: 100%;
-            z-index: 1;
-            background: #fff;
-            background-repeat: no-repeat;
-            background-size: cover;
-            background-position: center center;
         }
     }
 }
 @media(orientation: portrait) {
-    .actiion-buttons {
-        flex-direction: column;
-    }
-    .story-page {
-        flex-direction: column
-    }
-    .side-bar {
-        height: calc(100vh - (50px + 100px));
-    }
     .thumbs {
-        display: flex;
-        flex-wrap: nowrap;
-        flex-direction: row;
-        justify-content: flex-start;
-        align-items: center;
-        order: 2;
-        width: 100%;
-        margin-top: 5px;
-    }
-    #thumb-wrapper {
-        >div {
-            max-height: 60px;
-            overflow: auto;
-            display: flex;
-            flex-direction: row;
-            justify-content: flex-end;
-            .thumb {
-                width: 700px;
-                height: 50px;
-                flex-basis: 70px;
-                min-width: 70px;
-                margin-right: 5px;
-                .delete-page {
-                    display: none;
-                }
+        position: fixed;
+        left: -79px;
+        transition: all .5s ease-in-out;
+        z-index: 2002;
+        &.active {
+            left: 0;
+            background: #fff;
+            .handle {
+                right: -20px;
             }
         }
+        #thumb-wrapper .thumb-draggable {
+            align-items: flex-end;
+        }
+        .handle {
+            display: flex;
+            position: absolute;
+            bottom: 0;
+            right: -10px;
+            width: 35px;
+            height: 35px;
+            border-radius: 0 5px 5px 0;
+            border: none;
+            justify-content: center;
+            align-items: center;
+            font-size: 1.5em;
+            background-color: #fff;
+        }
+    }
+}
+@media(orientation: portrait) {
+    .side-bar {
+        height: calc(100vh - (50px + 100px));
     }
 }
 </style>
