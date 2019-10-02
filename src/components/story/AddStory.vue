@@ -78,7 +78,7 @@
         <q-modal
           v-model="settings.showImageModal"
           :content-css="{minWidth: '350px', height: '90vh', maxWidth: '100%', width: '80vw'}">
-          <add-image></add-image>
+          <add-image :maxWidth="500" :aspectRatio="1.5"></add-image>
         </q-modal>
       </template>
     </q-modal-layout>

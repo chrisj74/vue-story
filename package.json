@@ -28,6 +28,7 @@
     "vue-draggable-resizable": "^2.0.0-rc2",
     "vue-html2canvas": "0.0.4",
     "vue-image-upload-resize": "^2.0.4",
+    "vue-owl-carousel": "^2.0.3",
     "vue-quill-editor": "https://github.com/chrisj74/vue-quill-editor/tarball/8442324fc3f47e5e53bb4ef418025824e9e74bfb",
     "vue-scrollto": "^2.15.0",
     "vue-shortkey": "^3.1.6",

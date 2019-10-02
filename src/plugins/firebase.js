@@ -16,6 +16,7 @@ export default ({ Vue, store, router }) => {
         redirect: router.currentRoute.query
       };
       await store.dispatch('autoSignIn', payload );
+      store.dispatch('setProjects');
       let userAccount = firebase
       .firestore()
       .collection('accounts/').doc(user.uid);

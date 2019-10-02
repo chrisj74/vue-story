@@ -86,6 +86,7 @@ module.exports = function (ctx) {
         'QSpinner',
         'QSpinnerBars',
         'QTooltip',
+        'QChipsInput'
       ],
       directives: [
         'Ripple',

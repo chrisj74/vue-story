@@ -47,14 +47,15 @@
               <a>{{ story.title }}</a>
             </router-link>
           </q-card-title>
-          <q-card-main v-if="story.description && story.description.length > 0">
+          <!-- <q-card-main v-if="story.description && story.description.length > 0">
             <p>{{ story.description }}</p>
-          </q-card-main>
+          </q-card-main> -->
           <template v-if="editStories">
             <q-card-separator />
             <q-card-actions align="between">
               <q-btn icon="mdi-delete" @click="deleteStory(story.id)" round color="negative" size="sm"></q-btn>
               <q-btn icon="mdi-content-copy" @click="cloneStory(story.id)" round color="tertiary" size="sm"></q-btn>
+              <q-btn icon="mdi-library-books" v-if="isAdmin" @click="showPublishStory(story.id)" round color="tertiary" size="sm"></q-btn>
               <q-btn round type="a" @click="showEditStory(story.id)" icon="mdi-pencil" size="sm" color="positive" />
             </q-card-actions>
           </template>
@@ -62,7 +63,7 @@
       </template>
     </div>
     <div class="row justify-center items-end">
-      <q-btn icon="mdi-plus-circle" label="New Story" @click="showAddStory()"></q-btn>
+      <q-btn icon="mdi-plus-circle" label="New Project" @click="showAddStory()"></q-btn>
     </div>
 
     <q-modal
@@ -76,20 +77,28 @@
       :content-css="{minWidth: '400px', height: '90vh', maxWidth: '100%', width: '80vw'}">
       <edit-story v-if="editStoryId" :storyId="editStoryId"></edit-story>
     </q-modal>
+
+    <q-modal
+      v-model="settings.showPublishStory"
+      :content-css="{minWidth: '400px', height: '90vh', maxWidth: '100%', width: '80vw'}">
+      <publish-story v-if="publishStoryId" :storyId="publishStoryId"></publish-story>
+    </q-modal>
   </q-page>
 </template>
 
 <script>
 import AddStory from '../../components/story/AddStory';
 import EditStory from '../../components/story/EditStory';
+import PublishStory from '../../components/story/PublishStory';
 export default {
   name: 'StoriesIndex',
-  components: { AddStory, EditStory },
+  components: { AddStory, EditStory, PublishStory },
   data() {
     return {
       submitting: false,
       editStories: false,
       editStoryId: null,
+      publishStoryId: null,
       profileFilter: null,
     }
   },
@@ -118,6 +127,9 @@ export default {
     activeProfile () {
       return this.$store.getters.profile;
     },
+    isAdmin () {
+      return this.$store.getters.isAdmin;
+    }
   },
   methods: {
     changeProfile(showAll, profileId) {
@@ -160,6 +172,14 @@ export default {
       this.$store.commit('setSettings', payload);
     },
 
+    showPublishStory(id) {
+      this.publishStoryId = id;
+      const payload = {
+        showPublishStory: true,
+      };
+      this.$store.commit('setSettings', payload);
+    },
+
     showEdit() {
       this.editStories = !this.editStories;
     },
@@ -193,6 +213,18 @@ export default {
   },
   watch: {
     activeProfile: {
+      handler: function(newSettings, oldSettings) {
+        this.profileFilter = this.activeProfile.id;
+        if (!this.settings.showPublishStory) {
+          this.publishStoryId = null;
+        }
+        if (!this.settings.showEditStory) {
+          this.editStoryId = null;
+        }
+      },
+      deep: true
+    },
+    settings: {
       handler: function(newProfile, oldProfile) {
         this.profileFilter = this.activeProfile.id;
       },

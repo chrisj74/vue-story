@@ -5,6 +5,7 @@ import { stat } from "fs";
 
 export default {
   state: {
+    projects: [],
     images: [],
     nextPage: null,
     stories: [],
@@ -35,9 +36,11 @@ export default {
       isSelected: false,
       showImageModal: false,
       activeEditor: 0,
+      showProjectModal: false,
       showAddPage: false,
       showAddStory: false,
       showEditStory: false,
+      showPublishStory: false,
       showEditPlan: false,
       showThumbs: false,
       textBoxBorderWidth: 0,
@@ -54,6 +57,9 @@ export default {
     toolAction: null,
   },
   mutations: {
+    setProjects(state, payload) {
+      state.projects = payload;
+    },
     setImages(state, payload) {
       state.images = payload;
     },
@@ -209,56 +215,66 @@ export default {
       });
     },
 
-    cloneStory({ commit, state }, payload) {
+    cloneStory({ commit, state, dispatch }, payload) {
       return new Promise((resolve, reject) => {
+        const _payload = payload;
+        /* Get the source story */
+        const sourceUserId = payload.projectUserId ? payload.projectUserId : payload.user.id;
         let sourceStory;
-        state.stories.forEach(story => {
-          if (story.id === payload.storyKey) {
-            sourceStory = _.cloneDeep(story);
-            sourceStory.modified = new Date();
+        const sourceCollection = firebase
+          .firestore()
+          .collection('users/' + sourceUserId + '/stories/');
+        sourceCollection.doc(payload.storyKey).get().then((querySnapshot) => {
+          if (payload.newStory) {
+            /* Merge if passed new story from template */
+            sourceStory = {...querySnapshot.data(),...payload.newStory};
+          } else {
+            sourceStory = querySnapshot.data();
+            sourceStory.title = sourceStory.title + ' copy';
           }
-        });
-        sourceStory.title = sourceStory.title + ' copy';
-
-        const sourcePages = [];
-        firebase.firestore()
-          .collection('users/' + payload.user.id + '/stories/' + payload.storyKey + '/pages').orderBy('order', 'asc')
-          .onSnapshot(function(querySnapshot) {
-            querySnapshot.forEach(function(doc) {
-              sourcePages.push({
-                photoLayer: doc.data().photoLayer,
-                textLayer: doc.data().textLayer,
-                thumb: doc.data().thumb ? doc.data().thumb : '',
-                // preview: doc.data().preview,
-                background: doc.data().background,
-                drawingLayer: doc.data().drawingLayer,
-                pageSize: doc.data().pageSize,
-                order: doc.data().order,
-                commit: 0,
+          /* Get all the pages and push into an array */
+          const sourcePages = [];
+          firebase.firestore()
+            .collection('users/' + sourceUserId + '/stories/' + payload.storyKey + '/pages').orderBy('order', 'asc')
+            .get().then((pages) => {
+              pages.forEach(function(page) {
+                sourcePages.push({
+                  photoLayer: page.data().photoLayer,
+                  textLayer: page.data().textLayer,
+                  thumb: page.data().thumb ? page.data().thumb : '',
+                  // preview: page.data().preview,
+                  background: page.data().background,
+                  drawingLayer: page.data().drawingLayer,
+                  pageSize: page.data().pageSize,
+                  order: page.data().order,
+                  commit: 0,
+                });
+              });
+              /* Set the modified timestamp */
+              const userStories = firebase
+                .firestore()
+                .collection("users/").doc(payload.user.id);
+              userStories.update({
+                lastUpdated: new Date(),
+              });
+              /* Add the story */
+              userStories
+              .collection('stories').add(sourceStory)
+              .then(function(docRef) {
+                /* Add each page */
+                const newStoryId = docRef.id;
+                sourcePages.forEach(page => {
+                  docRef
+                  .collection('pages').add(_.cloneDeep(page))
+                });
+                resolve(newStoryId);
+              })
+              .catch(function(error) {
+                  console.error("Error adding document: ", error);
               });
             });
-          });
-        const userStories = firebase
-          .firestore()
-          .collection("users/").doc(payload.user.id);
-        userStories.set({
-          lastUpdated: new Date(),
         });
-
-        userStories
-          .collection('stories').add(sourceStory)
-          .then(function(docRef) {
-            const newStoryId = docRef.id;
-            sourcePages.forEach(page => {
-              docRef
-              .collection('pages').add(_.cloneDeep(page))
-            });
-            resolve(newStoryId);
-          })
-          .catch(function(error) {
-              console.error("Error adding document: ", error);
-          });
-        });
+      });
     },
 
     updateStoryModified({ commit }, payload) {
@@ -288,6 +304,11 @@ export default {
             title: payloadRef.title
           });
         }
+        if (payloadRef.description) {
+          userStory.update({
+            description: payloadRef.description
+          });
+        }
         if (payloadRef.plan) {
           userStory.update({
             plan: payloadRef.plan
@@ -296,6 +317,11 @@ export default {
         if (payloadRef.profile) {
           userStory.update({
             profile: payloadRef.profile
+          });
+        }
+        if (payload.publishId) {
+          userStory.update({
+            publishId: payloadRef.publishId
           });
         }
         resolve();
@@ -477,7 +503,7 @@ export default {
     },
 
     setImages({ commit }, payload) {
-      return new Promise((resolve, reject) => {
+      /* return new Promise((resolve, reject) => {
         const images = [];
         // const ref = firebase.storage().ref();
         const listRef = firebase.storage().ref('images/' + payload);
@@ -485,6 +511,7 @@ export default {
             const promiseArray = []
             res.items.forEach(function(itemRef) {
               // All the items under listRef.
+              console.log('itenRef=', itemRef);
               promiseArray.push(itemRef.getDownloadURL());
             });
             Promise.all(promiseArray)
@@ -493,6 +520,12 @@ export default {
                 resolve();
               })
           });
+      }); */
+      firebase
+        .firestore()
+        .collection('users/').doc(payload)
+        .onSnapshot(function(querySnapshot) {
+          commit('setImages', querySnapshot.data().images ? querySnapshot.data().images : []);
       });
     },
 
@@ -513,6 +546,7 @@ export default {
                   description: doc.data().description,
                   plan: doc.data().plan,
                   modified: doc.data().modified ? doc.data().modified.toDate() : new Date(),
+                  publishId: doc.data().publishId,
                 });
               });
               commit('setStories', stories);
@@ -731,7 +765,6 @@ export default {
     },
 
     addImage({ commit, state }, payload) {
-      console.log('store addImage, payload=', payload);
       const ref = firebase.storage().ref();
       const path = 'images/' + payload.user.id + '/' + (+new Date()) + '-' + payload.image.name;
       const metadata = {
@@ -781,6 +814,55 @@ export default {
       commit('setHistorySliceStates', payload);
       commit('setHistoryRestoreIndex', state.history.restoreIndex + 1);
     },
+
+    addPublishStory( {commit, state, dispatch }, payload) {
+      return new Promise((resolve, reject) => {
+        const _payload = payload
+        const publishStory = firebase
+          .firestore()
+          .collection('projects/');
+          publishStory.add(payload).then(function(docRef) {
+            console.log('docRef=', docRef.id);
+            // console.log('docRef.data()=', docRef.data());
+            const newId = docRef.id;
+            const storyPayload = {
+              publishId: newId,
+              user: {
+                id: _payload.projectUserId,
+              },
+              storyKey: _payload.projectId
+            }
+            dispatch('updateStory', storyPayload);
+            resolve(newId);
+          });
+      });
+    },
+
+    updatePublishStory( {commit, state, dispatch }, payload) {
+      return new Promise((resolve, reject) => {
+        const _payload = payload
+        const publishStory = firebase
+          .firestore()
+          .collection('projects/').doc(payload.publishId);
+          publishStory.set(payload).then(function(docRef) {
+            resolve();
+          });
+      });
+    },
+
+    setProjects({ commit }) {
+      firebase
+        .firestore()
+        .collection('projects/').orderBy('dateCreated', 'asc')
+        .onSnapshot(function(querySnapshot) {
+          const projects = [];
+          querySnapshot.forEach(function(doc) {
+            projects.push(doc.data());
+
+          });
+          commit('setProjects', projects);
+        });
+    }
   },
 
   getters: {
@@ -798,6 +880,23 @@ export default {
         }
       });
       return activeStory;
+    },
+    getPublishedProjectsById: (state) => (id) => {
+      console.log('id=', id);
+      if (!id) {
+        return null;
+      }
+      let activePublished;
+      state.projects.forEach(project => {
+        console.log('project=', project);
+        if (project.id === id) {
+          activePublished = project;
+        }
+      });
+      return activePublished;
+    },
+    getPublishedProjects (state) {
+      return state.projects;
     },
     getStoryPlan(state) {
       return state.story ? state.story.plan : null;

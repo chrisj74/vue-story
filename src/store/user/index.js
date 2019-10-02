@@ -333,7 +333,7 @@ export default {
       return state.authSet;
     },
     isAdmin (state) {
-      return state.account.admin;
+      return state.account.admin && state.activeProfile && state.activeProfile.default;
     },
     getProfileSettings (state) {
       return state.profileSettings;

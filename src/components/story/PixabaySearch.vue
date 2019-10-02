@@ -1,5 +1,5 @@
 <template>
-  <q-modal-layout>
+  <q-modal-layout v-if="settings.showImageModal || profileSettings.showAvatarModal">
     <!-- HEADER -->
     <q-toolbar slot="header" class="search-container">
         <div class="search-header">
@@ -10,7 +10,6 @@
                   icon: 'mdi-image-search',
                   error: false,
                   handler () {
-                    // do something...
                     searchImages()
                   }
                 }
@@ -71,7 +70,7 @@
         <h5>Previously uploaded</h5>
         <div class="results-grid">
           <div v-for="(image, index) of allImages" :key="'lib-'+index" class="results-thumb">
-            <img :src="image" @click="selectExistingImage(image)" />
+            <img :src="image.thumbnail" @click="selectExistingImage(image.path)" />
           </div>
         </div>
       </div>
@@ -150,6 +149,12 @@ export default {
       } else {
         return 10;
       }
+    },
+    settings() {
+      return this.$store.getters.getSettings;
+    },
+    profileSettings () {
+      return this.$store.getters.getProfileSettings;
     }
   },
   mounted () {
@@ -193,13 +198,12 @@ export default {
     },
 
     getSize(ratio) {
-      console.log('getsize');
       this.sliderStep = 0;
-      if (parseInt(ratio) === 1) {
+      if (ratio === 1) {
         this.selectedIndex = 2;
-      } else if (parseInt(ratio) < 1) {
+      } else if (ratio < 1) {
         this.selectedIndex = 1;
-      } else if (parseInt(ratio) > 1) {
+      } else if (ratio > 1) {
         this.selectedIndex = 0;
       }
       this.setSlider();
@@ -213,7 +217,8 @@ export default {
       this.$store.commit("clearInsertImage");
       this.searchString = '';
       this.$store.commit('setSettings', payload);
-
+      this.croppa.remove();
+      this.selectedImage = null;
       payload = {
         avatarModal: false
       }
@@ -244,15 +249,6 @@ export default {
       const _this = this;
       this.selectedImage = imageObj.webformatURL;
       this.croppa.refresh();
-      /* this.getDataUri(imageObj.webformatURL, function(dataUri) {
-        // Do whatever you'd like with the Data URI!
-        const imgObj = {
-          dataUrl: dataUri,
-          name: 'myimage',
-          type: 'image/png'
-        }
-        _this.setImage(imgObj);
-      }); */
     },
 
     selectExistingImage(url) {
@@ -268,27 +264,6 @@ export default {
 
     },
 
-    getDataUri(url, callback) {
-      const image = new Image();
-      image.crossOrigin = 'Anonymous';
-
-      image.onload = function () {
-          const canvas2 = document.createElement('canvas');
-          canvas2.width = this.naturalWidth; // or 'width' if you want a special/scaled size
-          canvas2.height = this.naturalHeight; // or 'height' if you want a special/scaled size
-
-          canvas2.getContext('2d').drawImage(this, 0, 0);
-
-          // Get raw image data
-          //callback(canvas2.toDataURL('image/png').replace(/^data:image\/(png|jpg);base64,/, ''));
-
-          // ... or get as Data URI
-          callback(canvas2.toDataURL('image/png'));
-      };
-
-      image.src = url;
-    },
-
     getImageDimensions(file) {
       return new Promise (function (resolved, rejected) {
         const i = new Image();
@@ -299,11 +274,9 @@ export default {
       })
     },
 
-    setImage(newImage) {
+    setImage() {
       this.$store.commit('setLoading', true);
       const _user = this.user;
-      /* const blob = b64toBlob(newImage.dataUrl.split(',')[1], newImage.type);
-      this.getImageDimensions(newImage.dataUrl) */
       this.croppa.promisedBlob('image/jpeg', 0.8)
       .then((blob) => {
         const imgObj = {
@@ -318,12 +291,21 @@ export default {
             name: '',
           }
         }
-
+        this.croppa.remove();
+        this.selectedImage = null;
         this.$store.dispatch('addImage', imgObj);
         this.searchString = '';
       });
     },
   },
+  watch: {
+    aspectRatio: {
+      handler: function(newRatio, oldRatio) {
+        this.getSize(aspectRatio);
+      },
+      deep: true
+    },
+  }
 }
 </script>
 <style lang="stylus">
