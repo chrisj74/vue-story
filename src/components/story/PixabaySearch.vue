@@ -1,5 +1,5 @@
 <template>
-  <q-modal-layout v-if="settings.showImageModal || profileSettings.showAvatarModal">
+  <q-modal-layout v-if="settings.showImageModal || profileSettings.avatarModal || settings.showUploadModal">
     <!-- HEADER -->
     <q-toolbar slot="header" class="search-container">
         <div class="search-header">
@@ -33,6 +33,7 @@
         <!-- Load More -->
         <q-btn class="load-more" @click="loadMore()" v-if="(results.page * 50) < results.totalHits > 0">Load More</q-btn>
       </div>
+      <!-- Croppa -->
       <div v-show="croppa && (croppa.originalImage || croppa.loading)">
         <div class="croppa-wrapper">
           <croppa
@@ -89,7 +90,7 @@
 import * as b64toBlob from 'b64-to-blob';
 export default {
   name: 'AddImage',
-  props: ['aspectRatio', 'maxWidth'],
+  props: ['aspectRatio', 'maxWidth', 'initialImage'],
   data() {
     return {
       searchString: null,
@@ -161,6 +162,11 @@ export default {
     if (this.aspectRatio) {
       this.getSize(this.aspectRatio);
     }
+    if (this.initialImage) {
+      console.log('has initialImage');
+      this.selectedImage = this.initialImage;
+      this.croppa.refresh();
+    }
   },
   methods: {
     onNewImage() {
@@ -210,15 +216,18 @@ export default {
     },
 
     close() {
-      let payload = {
-        showImageModal: false,
-      };
+
       this.$store.commit("clearImageSearchResults");
       this.$store.commit("clearInsertImage");
       this.searchString = '';
-      this.$store.commit('setSettings', payload);
+
       this.croppa.remove();
       this.selectedImage = null;
+      let payload = {
+        showImageModal: false,
+        showUploadModal: false
+      };
+      this.$store.commit('setSettings', payload);
       payload = {
         avatarModal: false
       }
@@ -295,6 +304,15 @@ export default {
         this.selectedImage = null;
         this.$store.dispatch('addImage', imgObj);
         this.searchString = '';
+        let payload = {
+          showImageModal: false,
+          showUploadModal: false
+        };
+        this.$store.commit('setSettings', payload);
+        payload = {
+          avatarModal: false
+        }
+        this.$store.commit('setProfileSettings', payload);
       });
     },
   },

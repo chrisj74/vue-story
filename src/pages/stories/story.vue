@@ -43,12 +43,11 @@
                                     </div>
                                 </div>
                             </router-link>
-                            <div class="thumb-actions" v-if="isEdit" :style="{
-                                height: (page.pageSize.height * 0.1) + 'px'
-                            }">
+                            <div class="thumb-actions" v-if="isEdit">
                                 <div @click="showEditActions(page.id)" class="thumb-actions-toggle"><q-icon name="mdi-dots-vertical" /></div>
                                 <div class="active-thumb-actions" v-if="activeEditActions === page.id">
                                     <div class="download-page" @click="downloadPage(index)"><q-icon name="mdi-cloud-download" /></div>
+                                    <div class="upload-page" @click="uploadPage(index)"><q-icon name="mdi-cloud-upload" /></div>
                                     <div class="delete-page" @click="deletePage(page.id, pages[index-1].id)"><q-icon v-if="index !== 0" color="negative" name="mdi-delete" /></div>
                                 </div>
                             </div>
@@ -143,6 +142,13 @@
 
 
         </q-page>
+
+        <!-- IMAGE MODAL -->
+        <q-modal
+            v-model="settings.showUploadModal"
+            :content-css="{minWidth: '350px', height: '90vh', maxWidth: '100%', width: '80vw'}">
+            <add-image v-if="settings.showUploadModal" :initialImage="previewImages[0]"></add-image>
+        </q-modal>
         <!-- ADD PAGE MODAL -->
         <q-modal
         v-if="pageDimensions"
@@ -184,12 +190,12 @@ import TextEditor from "../../components/story/TextEditor";
 import DrawingCanvas from '../../components/story/DrawingCanvas';
 import AddPage from '../../components/story/AddPage';
 import EditPlan from '../../components/story/EditPlan';
-
-
+import AddImage from '../../components/story/PixabaySearch';
 
 import pdfMake from "pdfmake/build/pdfmake";
 import pdfFonts from "pdfmake/build/vfs_fonts";
 pdfMake.vfs = pdfFonts.pdfMake.vfs;
+
 
 export default {
     name: 'Story',
@@ -198,7 +204,8 @@ export default {
         TextEditor,
         DrawingCanvas,
         AddPage,
-        EditPlan
+        EditPlan,
+        AddImage
     },
     data() {
         return {
@@ -400,10 +407,10 @@ export default {
             this.$store.commit('setLoading', true);
             this.previewIndex = 0;
             this.previewImages = [];
-            this.getPageImage(pdf, allPages);
+            this.getPageImage('pdf', allPages);
         },
 
-        getPageImage(pdf, allPages, pageIndex) {
+        getPageImage(type, allPages, pageIndex) {
             if (!allPages && pageIndex) {
                 this.$store.commit('setLoading', true);
                 this.previewIndex = pageIndex;
@@ -412,7 +419,7 @@ export default {
 
             const el = this.$refs.previewGenerator;
             const _this = this;
-            const _allPages = allPages, _pdf = pdf, _pageIndex = pageIndex;
+            const _allPages = allPages, _type = type, _pageIndex = pageIndex;
             const options = {
                 type: 'dataURL',
                 useCORS: true,
@@ -425,12 +432,15 @@ export default {
                         _this.previewImages.push(th);
                         if (_this.previewIndex < (_this.pages.length -1) && _allPages) {
                             _this.previewIndex++;
-                            _this.getPageImage(_pdf, _allPages);
-                        } else if (_pdf) {
+                            _this.getPageImage(_type, _allPages);
+                        } else if (_type === 'pdf') {
                             _this.createPdf();
-                        } else if (!_allPages && _pageIndex) {
+                        } else if (_type === 'download') {
                             _this.$store.commit('setLoading', false);
                             _this.doDownload();
+                        } else if (_type === 'upload') {
+                            _this.$store.commit('setLoading', false);
+                            _this.doUpload();
                         }
                     });
                 });
@@ -460,7 +470,7 @@ export default {
 
         downloadPage(pageIndex) {
             this.previewIndex = pageIndex;
-            this.getPageImage(false, false, pageIndex)
+            this.getPageImage('download', false, pageIndex)
         },
 
         doDownload() {
@@ -470,6 +480,20 @@ export default {
                     // DOM updated
                     _this.$refs.imageDownloadLink.click();
                 });
+        },
+
+        uploadPage(pageIndex) {
+            this.previewIndex = pageIndex;
+            this.getPageImage('upload', false, pageIndex)
+        },
+
+        doUpload() {
+            this.$store.commit('setMode', "upload");
+            this.$store.commit('setSubMode', "image");
+            const newSetting = {
+                showUploadModal: true,
+            };
+            this.$store.commit('setSettings', newSetting);
         },
 
         onEditorFocus(quill){
@@ -556,6 +580,15 @@ export default {
         },
     },
     watch: {
+        insertImage: {
+            handler: function(newImage, oldImage) {
+                this.$store.commit('setLoading', false);
+                if (newImage && this.modes.mode === "upload" && this.modes.subMode === "image") {
+                    console.log('image uploaded');
+                }
+            },
+            deep: true
+        },
         user: {
             handler: function(newUser) {
                 if (!this.story) {
@@ -781,8 +814,9 @@ export default {
 }
 .thumb-actions {
     position: absolute;
-    top: -3px;
-    right: -3px;
+    top: 0;
+    right: 0;
+    bottom: 0;
     z-index: 5;
     background: rgba(255,255,255,0.95);
     display: flex;
@@ -796,10 +830,11 @@ export default {
     }
     .active-thumb-actions{
         display: flex;
+        left: 0;
         flex-direction: column;
         justify-content: center;
         align-items: center;
-        .delete-page, .download-page {
+        .delete-page, .download-page, .upload-page {
             cursor: pointer;
             font-size: 26px;
         }

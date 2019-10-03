@@ -12,7 +12,7 @@
             v-for="(textLayer, layerIndex) in activePage.textLayer"
             :key="'toolbar'+layerIndex"
             class="text-toolbar-wrapper"
-            :style="{width: (pageDimensions.maxWidth) + 'px'}">
+            :style="{width: (pageDimensions.maxWidth) + 'px', left: leftDrawerOpen ? '315px' : '15px'}">
             <div :id="'toolbar'+layerIndex" :style="{width: (pageDimensions.width) + 'px'}" v-show="textLayerActive && settings.activeEditor === layerIndex">
               <span class="ql-format-group">
                 <button type="button" class="ql-bold"></button>

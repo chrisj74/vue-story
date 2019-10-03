@@ -221,7 +221,7 @@ export default {
     logout ({commit}) {
       AUTH.signOut();
       commit('setUser', null);
-      this.$router.push('/');
+      this.$router.push('/login');
     },
 
     setAccount ({commit, dispatch}, payload) {

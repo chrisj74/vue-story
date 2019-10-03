@@ -9,9 +9,10 @@
         round
         size="lg"
         @click="toggleLeftDawer()"
+        :color="leftDrawerOpen ? 'white' : 'standard'"
         :style="{left: leftDrawerOpen ? '300px' : 0}"
       >
-        <q-icon name="mdi-menu" />
+        <q-icon :name="leftDrawerOpen ? 'mdi-close' : 'mdi-menu'" :color="leftDrawerOpen ? 'black' : 'standard'" />
       </q-btn>
       <!-- plan -->
       <q-btn
@@ -118,7 +119,7 @@ export default {
   position: absolute;
   top: 0;
   left: 5px;
-  z-index: 999;
+  z-index: 4999;
 }
 .plan-btn {
   position: absolute;

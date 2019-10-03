@@ -10,9 +10,11 @@
         >
           <q-icon name="mdi-menu" />
         </q-btn>
-
+        <div>
+          <img src="statics/tuc-v4.png" height="50px" class="logo" />
+        </div>
         <q-toolbar-title>
-          Quasar + Firebase Auth
+          The Unlimited Club
         </q-toolbar-title>
       </q-toolbar>
     </q-layout-header>

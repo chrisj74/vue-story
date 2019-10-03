@@ -35,6 +35,7 @@ export default {
       color: '#000000',
       isSelected: false,
       showImageModal: false,
+      showUploadModal: false,
       activeEditor: 0,
       showProjectModal: false,
       showAddPage: false,
@@ -525,7 +526,13 @@ export default {
         .firestore()
         .collection('users/').doc(payload)
         .onSnapshot(function(querySnapshot) {
-          commit('setImages', querySnapshot.data().images ? querySnapshot.data().images : []);
+          let sortedArray = [];
+          if (querySnapshot.data().images) {
+            sortedArray = querySnapshot.data().images.sort((a,b) => {
+               return new Date(b.created.toDate()) - new Date(a.created.toDate());
+            })
+          }
+          commit('setImages', sortedArray);
       });
     },
 

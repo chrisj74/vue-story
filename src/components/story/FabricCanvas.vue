@@ -295,12 +295,13 @@ export default {
         function(myImg) {
           myImg.lockUniScaling = true;
           myImg.set({
-            left: canvas.width / 4,
+            left: (canvas.width / _this.pageDimensions.zoom) / 4,
             top: 100,
             width: imageObj.webformatWidth,
             height: imageObj.webformatHeight
           });
-          myImg.scaleToWidth(canvas.width / 2);
+          myImg.scaleToWidth((canvas.width / _this.pageDimensions.zoom) / 2);
+          console.log('myImg=', myImg);
           canvas.add(myImg);
           canvas.renderAll();
           _this.saveStory();
