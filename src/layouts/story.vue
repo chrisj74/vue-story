@@ -1,5 +1,5 @@
 <template>
-  <div>
+  <div :class="{'show-plan': showPlan}">
     <q-layout view="lHh Lpr lFf" :class="'app-dragging'">
       <!-- left drawer -->
       <q-btn

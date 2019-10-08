@@ -154,10 +154,12 @@ export default {
           const payload = {
               user: this.user,
               storyKey : this.storyId,
-              title: this.title,
-              description: this.description,
-              thumb: this.coverImage,
-              profile: this.profileId,
+              story: {
+                title: this.title,
+                description: this.description,
+                thumb: this.coverImage,
+                profile: this.profileId,
+              }
           };
           this.$store.dispatch('updateStory', _.cloneDeep(payload)).then( () => {
               this.submitting = false;

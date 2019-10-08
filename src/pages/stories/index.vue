@@ -33,13 +33,9 @@
     <div v-if="stories" class="story-wrapper">
       <template v-for="(story) in stories">
         <q-card v-if="!story.profile || !profileFilter || story.profile === profileFilter" class="story" :key="story.id">
-          <q-card-media
-            :style="story.thumb ? {backgroundImage: 'url(' + story.thumb + ')'}
-            : {backgroundImage: 'url(statics/image-area.svg)'}">
+          <q-card-media>
             <router-link :to="'/project/'+story.id">
-              <!-- <span v-if="!story.thumb">
-                <svg style="width:300px;height:300px" viewBox="0 0 24 24"><path fill="#000000" d="M20,5A2,2 0 0,1 22,7V17A2,2 0 0,1 20,19H4C2.89,19 2,18.1 2,17V7C2,5.89 2.89,5 4,5H20M5,16H19L14.5,10L11,14.5L8.5,11.5L5,16Z" /></svg>
-              </span> -->
+              <img :src="story.thumb ?  story.thumb : 'statics/image-area.png'" />
             </router-link>
           </q-card-media>
           <q-card-title>
@@ -284,12 +280,9 @@ export default {
         display: flex;
         justify-content: center;
         align-items: center;
-        width: 100%
-        &:after {
-          content: "";
-          display: block;
-          width: 100%;
-          padding-top: 66%;
+        width: 100%;
+        img {
+          max-width: 100%;
         }
       }
   }

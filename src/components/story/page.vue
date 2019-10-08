@@ -529,7 +529,11 @@ export default {
 
     showPlan: {
       handler: function(newPlan, oldPlan) {
-        this.setDefaultZoom();
+        const _this = this;
+        this.$nextTick()
+          .then(function () {
+            _this.setDefaultZoom();
+          });
       }
     },
     leftDrawerOpen: {
@@ -558,6 +562,11 @@ export default {
   width: calc(100vw - 200px);
   position: relative;
   z-index: 1;
+}
+.show-plan {
+  .main-content-wrapper {
+    width: calc(50vw - 200px);
+  }
 }
 .main-content {
   width: calc(100% - 50px);
@@ -658,7 +667,7 @@ export default {
   justify-content: center;
   align-items: center;
 }
-/* @media (orientation: portrait) { */
+
   .main-content-wrapper {
     margin-left: 5px;
     width: 100%;
@@ -673,7 +682,14 @@ export default {
   .text-toolbar-wrapper {
     left: 15px;
   }
-/* } */
+
+@media (orientation: portrait) {
+  .show-plan {
+    .page-ref {
+
+    }
+  }
+}
 @media(max-width: $breakpoint-md) and (orientation: portrait) {
   .main-content-wrapper {
     max-height: calc(100vh - 100px);

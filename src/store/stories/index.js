@@ -287,44 +287,23 @@ export default {
         });
     },
 
-    updateStory({ dispatch }, payload) {
+    updateStory({ dispatch, state, commit }, payload) {
       return new Promise((resolve, reject) => {
         dispatch('updateStoryModified', payload);
-        const payloadRef = payload;
+        const stateStory = _.cloneDeep(state.story);
+        let newStory;
+        if (!isNaN(payload.planIndex)) {
+          stateStory.plan[payload.planIndex] = payload.plan;
+          newStory = stateStory;
+        } else {
+          newStory = _.merge(stateStory, payload.story);
+        }
+        newStory.commit++;
+        commit('setStory', newStory);
         const userStory = firebase
         .firestore()
         .collection('users/' + payload.user.id + '/stories/').doc(payload.storyKey);
-        // console.log('payloadRef=', payloadRef);
-        if (payloadRef.thumb) {
-          userStory.update({
-            thumb: payloadRef.thumb
-          });
-        }
-        if (payloadRef.title) {
-          userStory.update({
-            title: payloadRef.title
-          });
-        }
-        if (payloadRef.description) {
-          userStory.update({
-            description: payloadRef.description
-          });
-        }
-        if (payloadRef.plan) {
-          userStory.update({
-            plan: payloadRef.plan
-          });
-        }
-        if (payloadRef.profile) {
-          userStory.update({
-            profile: payloadRef.profile
-          });
-        }
-        if (payload.publishId) {
-          userStory.update({
-            publishId: payloadRef.publishId
-          });
-        }
+        userStory.update(JSON.parse(JSON.stringify(newStory)));
         resolve();
       });
     },
@@ -355,6 +334,7 @@ export default {
       commit('setPage', {page: newState, restoreIndex: payload.restoreIndex});
       return new Promise((resolve, reject) => {
         dispatch('updateStoryModified', payload);
+
         const userPage = firebase
           .firestore()
           .collection('users/' + payload.user.id + '/stories/' + payload.storyKey + '/pages/').doc(payload.pageKey);
@@ -562,14 +542,20 @@ export default {
       });
     },
 
-    setStory({ commit }, payload) {
+    setStory({ commit, state }, payload) {
       // console.log('setstory');
       return new Promise((resolve, reject) => {
         firebase
           .firestore()
           .collection('users/' + payload.user.id + '/stories/').doc(payload.storyKey)
           .onSnapshot(function(querySnapshot) {
-            commit('setStory', querySnapshot.data());
+            if(!state.story.commit
+              || !querySnapshot.data().commit
+              || querySnapshot.data().commit === 0
+              || querySnapshot.data().commit > state.story.commit
+            ) {
+              commit('setStory', JSON.parse(JSON.stringify(querySnapshot.data())));
+            }
         });
         resolve();
       });
@@ -833,7 +819,9 @@ export default {
             // console.log('docRef.data()=', docRef.data());
             const newId = docRef.id;
             const storyPayload = {
-              publishId: newId,
+              story: {
+                publishId: newId,
+              },
               user: {
                 id: _payload.projectUserId,
               },

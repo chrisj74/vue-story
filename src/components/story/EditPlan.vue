@@ -1,8 +1,10 @@
 <template>
   <div class="plan-container">
     <div class="plan-form">
+      <!-- Title -->
+      <q-input :value="story.plan[0].title" float-label="Title" @input="val => {changeTitle(val)}" />
       <!-- Video -->
-      <q-input :value="story.plan.video" float-label="Video Embed URL" placeholder="e.g. https://www.youtube.com/embed/abcdefg_123" @input="val => {changeVideo(val)}" />
+      <q-input :value="story.plan[0].video" float-label="Video Embed URL" placeholder="e.g. https://www.youtube.com/embed/abcdefg_123" @input="val => {changeVideo(val)}" />
       <!-- Editor toolbar -->
       <div id="planToolbar">
         <span class="ql-format-group">
@@ -44,9 +46,9 @@
 
     </div>
     <div class="plan-preview" ref="planPreview">
-      <div v-if="story.plan.video" class="plan-video" ref="planPreviewVideo">
-        <iframe style="width: 100%" :src="story.plan.video" frameborder="0" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen v-if="videoSource === 'youtube'"></iframe>
-        <iframe :src="story.plan.video" frameborder="0" allow="autoplay; fullscreen" allowfullscreen v-if="videoSource === 'vimeo'"></iframe>
+      <div v-if="story.plan[0].video" class="plan-video" ref="planPreviewVideo">
+        <iframe style="width: 100%" :src="story.plan[0].video" frameborder="0" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen v-if="videoSource === 'youtube'"></iframe>
+        <iframe :src="story.plan[0].video" frameborder="0" allow="autoplay; fullscreen" allowfullscreen v-if="videoSource === 'vimeo'"></iframe>
       </div>
       <div v-html="previewContent" class="plan-text ql-editor" :style="{maxHeight: textHeight + 'px'}">
 
@@ -72,52 +74,57 @@ export default {
     }
   },
   mounted() {
-    if (this.story && this.story.plan.text !== this.editorContent) {
-      if(this.story.plan.text !== '') {
-        this.editorContent = _.cloneDeep(this.story.plan.text);
-      } else {
-        this.editorContent = ' ';
+    const _this = this;
+    this.$nextTick()
+      .then(function () {
+      if (_this.story && _this.story.plan[0].text !== _this.editorContent) {
+        if(_this.story.plan[0].text !== '') {
+          _this.editorContent = _.cloneDeep(_this.story.plan[0].text);
+        } else {
+          _this.editorContent = ' ';
+        }
+        _this.previewContent = _this.editorContent;
       }
-      this.previewContent = this.editorContent;
-    }
 
-    this.editorConfig = {
-        bounds: '.plan-preview',
-        modules: {
-          blotFormatter: {
-            overlay: {
-              style: {
-                zIndex: 105
-              }
-            }
-          },
-          cursors: true,
-          toolbar: '#planToolbar',
-          /* syntax: {
-            highlight: text => hljs.highlightAuto(text).value
-          }, */
-          table: false,  // disable table module
-          'better-table': {
-            operationMenu: {
-              items: {
-                unmergeCells: {
-                  text: 'Another unmerge cells name'
+      _this.editorConfig = {
+          bounds: '.plan-preview',
+          modules: {
+            blotFormatter: {
+              overlay: {
+                style: {
+                  zIndex: 105
                 }
               }
+            },
+            cursors: true,
+            toolbar: '#planToolbar',
+            /* syntax: {
+              highlight: text => hljs.highlightAuto(text).value
+            }, */
+            table: false,  // disable table module
+            'better-table': {
+              operationMenu: {
+                items: {
+                  unmergeCells: {
+                    text: 'Another unmerge cells name'
+                  }
+                }
+              }
+            },
+            keyboard: {
+              bindings: QuillBetterTable.keyboardBindings
             }
-          },
-          keyboard: {
-            bindings: QuillBetterTable.keyboardBindings
           }
+        };
+
+
+        document.body.querySelector('#planTable')
+        .onclick = () => {
+          console.log('add table');
+          let tableModule = _this.editor.getModule('better-table')
+          tableModule.insertTable(3, 3)
         }
-      };
-    const _this = this;
-    document.body.querySelector('#planTable')
-    .onclick = () => {
-      console.log('add table');
-      let tableModule = _this.editor.getModule('better-table')
-      tableModule.insertTable(3, 3)
-    }
+      });
 
     this.setTextHeight();
   },
@@ -141,9 +148,9 @@ export default {
       return this.$store.getters.getSettings;
     },
     videoSource() {
-        if (this.story.plan.video && this.story.plan.video.indexOf('youtube.') != -1) {
+        if (this.story.plan[0].video && this.story.plan[0].video.indexOf('youtube.') != -1) {
             return 'youtube';
-        }if (this.story.plan.video && this.story.plan.video.indexOf('vimeo.') != -1) {
+        }if (this.story.plan[0].video && this.story.plan[0].video.indexOf('vimeo.') != -1) {
             return 'vimeo';
         }
     },
@@ -165,15 +172,17 @@ export default {
       // console.log('event=', event.quill.editor.delta.ops);
       /* console.log('editor=', JSON.parse(JSON.stringify(this.storeTextLayer[this.layerIndex].delta))); */
       if (this.user
-        && (!this.story.plan.delta
-            || !_.isEqual(event.quill.editor.delta.ops, JSON.parse(JSON.stringify(this.story.plan.delta))))) {
+        && (!this.story.plan[0].delta
+            || !_.isEqual(event.quill.editor.delta.ops, JSON.parse(JSON.stringify(this.story.plan[0].delta))))) {
         this.previewContent = event.html === '' ? ' ' : event.html;
         const newRange = this.cursorSelection ? this.cursorSelection : {index: this.editorContent.length, length:0};
           const payload = {
               user: this.user,
               storyKey: this.$route.params.id,
+              planIndex: 0,
               plan: {
-                video: this.story.plan.video,
+                title: this.story.plan[0].title,
+                video: this.story.plan[0].video,
                 text: event.html === '' ? ' ' : event.html,
                 delta: _.cloneDeep(event.quill.editor.delta.ops),
                 range: newRange
@@ -201,11 +210,29 @@ export default {
       const payload = {
           user: this.user,
           storyKey: this.$route.params.id,
+          planIndex: 0,
           plan: {
+            title: this.story.plan[0].title,
             video: videoPath,
-            text: this.story.plan.text,
-            delta: this.story.plan.delta,
-            range: this.story.plan.range
+            text: this.story.plan[0].text,
+            delta: this.story.plan[0].delta,
+            range: this.story.plan[0].range
+          }
+      };
+      this.$store.dispatch('updateStory', payload);
+    },
+
+    changeTitle(title) {
+      const payload = {
+          user: this.user,
+          storyKey: this.$route.params.id,
+          planIndex: 0,
+          plan: {
+            title: title,
+            video: this.story.plan[0].video,
+            text: this.story.plan[0].text,
+            delta: this.story.plan[0].delta,
+            range: this.story.plan[0].range
           }
       };
       this.$store.dispatch('updateStory', payload);
@@ -214,13 +241,13 @@ export default {
   watch: {
     story: {
       handler: function(to, from) {
-        // console.log('store not same as editor', _.isEqual(JSON.parse(JSON.stringify(this.storeTextLayer[this.layerIndex].delta)), this.editor.getContents().ops));
-        if ((!this.story.plan.delta
-          || !_.isEqual(JSON.parse(JSON.stringify(this.story.plan.delta)), this.editor.getContents().ops))) {
+        // console.log('store same as editor', _.isEqual(JSON.parse(JSON.stringify(this.story.plan[0].delta)), this.editor.getContents().ops));
+        /* console.log('his.story.plan[0].delta=', JSON.parse(JSON.stringify(this.story.plan[0].delta)));
+        console.log('this.editor.getContents().ops)=', this.editor.getContents().ops); */
+        if ((!this.story.plan[0].delta
+          || !_.isEqual(JSON.parse(JSON.stringify(this.story.plan[0].delta)), this.editor.getContents().ops))) {
           /** Only update content from the store if needed  */
-          // console.log('update from store, editor=', _.cloneDeep(this.editor.getContents().ops));
-          // console.log('store=', JSON.parse(_.cloneDeep(JSON.stringify(this.storeTextLayer[this.layerIndex].delta))));
-          this.editorContent = _.cloneDeep(this.story.plan.text);
+          this.editorContent = this.story.plan[0].text ? _.cloneDeep(this.story.plan[0].text) : ' ';
         }
       },
       deep: true

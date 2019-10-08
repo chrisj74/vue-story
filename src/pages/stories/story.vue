@@ -1,147 +1,131 @@
 <template>
-    <div>
-        <q-page class="story-page row justify-center" v-if="activePage">
-            <!-- Thumbs -->
-            <div class="thumbs" :class="{'active': settings.showThumbs && !leftDrawerOpen, 'hidden-thumbs': leftDrawerOpen}">
-                <div class="action-buttons">
-                    <q-btn size="sm" :round="true" @click="toggleEdit()" :icon="isEdit? 'mdi-check-outline' : 'mdi-pencil'"></q-btn>
-                    <q-btn size="sm" :round="true" @click="getPageImages(true, true)" icon="mdi-cloud-download"></q-btn>
-                </div>
+    <div class="layout-padding story-page row justify-center" v-if="activePage">
+        <!-- Thumbs -->
+        <div class="thumbs" :class="{'active': settings.showThumbs && !leftDrawerOpen, 'hidden-thumbs': leftDrawerOpen}">
+            <div class="action-buttons">
+                <q-btn size="sm" :round="true" @click="toggleEdit()" :icon="isEdit? 'mdi-check-outline' : 'mdi-pencil'"></q-btn>
+                <q-btn size="sm" :round="true" @click="getPageImages(true, true)" icon="mdi-cloud-download"></q-btn>
+            </div>
 
-                <!-- List thumbs -->
-                <div id="thumb-wrapper" >
-                    <draggable class="thumb-draggable" v-model="pages" :disabled="!isEdit">
-                        <div
-                            class="thumb" v-for="(page, index) of pages" :key="page.id"
-                            :id="'thumb'+page.id"
-                            :style="{
-                                backgroundColor: thumbBgColor(page.page),
-                                backgroundImage: thumbBgImage(page.page),
-                                width: (page.pageSize.width * 0.1) + 'px',
-                                height: (page.pageSize.height * 0.1) + 'px'
-                            }"
-                            :class="{'active-thumb': activePage && page.id === activePage.id}">
-                            <router-link :to="'/project/'+$route.params.id+'/'+page.id">
-                                <img :src="getThumbDrawing(page.page)" style="max-width: 100%" class="thumb-drawing" />
-                                <img :src="getThumbPhoto(page.page)" style="max-width: 100%" class="thumb-photo" />
-                                <div class="thumb-text ql-editor"
+            <!-- List thumbs -->
+            <div id="thumb-wrapper" >
+                <draggable class="thumb-draggable" v-model="pages" :disabled="!isEdit">
+                    <div
+                        class="thumb" v-for="(page, index) of pages" :key="page.id"
+                        :id="'thumb'+page.id"
+                        :style="{
+                            backgroundColor: thumbBgColor(page.page),
+                            backgroundImage: thumbBgImage(page.page),
+                            width: (page.pageSize.width * 0.1) + 'px',
+                            height: (page.pageSize.height * 0.1) + 'px'
+                        }"
+                        :class="{'active-thumb': activePage && page.id === activePage.id}">
+                        <router-link :to="'/project/'+$route.params.id+'/'+page.id">
+                            <img :src="getThumbDrawing(page.page)" style="max-width: 100%" class="thumb-drawing" />
+                            <img :src="getThumbPhoto(page.page)" style="max-width: 100%" class="thumb-photo" />
+                            <div class="thumb-text ql-editor"
+                                :style="{
+                                    width: page.pageSize.width + 'px',
+                                    height: page.pageSize.height + 'px',
+                                }">
+                                <div v-for="(pageText, tIndex) of page.page.textLayer" :key="page.id+'text'+tIndex"
                                     :style="{
-                                        width: page.pageSize.width + 'px',
-                                        height: page.pageSize.height + 'px',
-                                    }">
-                                    <div v-for="(pageText, tIndex) of page.page.textLayer" :key="page.id+'text'+tIndex"
-                                        :style="{
-                                            top: pageText.y + 'px',
-                                            left: pageText.x + 'px',
-                                            width: pageText.width +'px',
-                                            height: pageText.height + 'px',
-                                            borderWidth: pageText.borderWidth + 'px',
-                                            borderColor: pageText.borderColor,
-                                            background: getTextBoxBg(pageText)
-                                        }"
-                                        class="thumb-text-block text-render" v-html="pageText.text">
-                                    </div>
-                                </div>
-                            </router-link>
-                            <div class="thumb-actions" v-if="isEdit">
-                                <div @click="showEditActions(page.id)" class="thumb-actions-toggle"><q-icon name="mdi-dots-vertical" /></div>
-                                <div class="active-thumb-actions" v-if="activeEditActions === page.id">
-                                    <div class="download-page" @click="downloadPage(index)"><q-icon name="mdi-cloud-download" /></div>
-                                    <div class="upload-page" @click="uploadPage(index)"><q-icon name="mdi-cloud-upload" /></div>
-                                    <div class="delete-page" @click="deletePage(page.id, pages[index-1].id)"><q-icon v-if="index !== 0" color="negative" name="mdi-delete" /></div>
+                                        top: pageText.y + 'px',
+                                        left: pageText.x + 'px',
+                                        width: pageText.width +'px',
+                                        height: pageText.height + 'px',
+                                        borderWidth: pageText.borderWidth + 'px',
+                                        borderColor: pageText.borderColor,
+                                        background: getTextBoxBg(pageText)
+                                    }"
+                                    class="thumb-text-block text-render" v-html="pageText.text">
                                 </div>
                             </div>
-                        </div>
-                    </draggable>
-                </div>
-                <!-- Add page -->
-                <div class="add-page">
-                    <q-btn color="primary" icon="mdi-plus-circle" :size="$q.screen.lt.sm ? 'md' : 'lg'" round @click="addPage()" />
-                </div>
-
-                <!-- Handle -->
-                <div class="handle" @click="toggleThumbs()">
-                    <i class="mdi" :class="{'mdi-chevron-double-right': !settings.showThumbs, 'mdi-chevron-double-left': settings.showThumbs}"></i>
-                </div>
-
-                <!-- Preview -->
-                <div class="preview-generator" ref="previewGenerator" v-if="pages && pages.length > 0 && photoImagesGenerated">
-                    <div
-                        :style="{
-                            backgroundColor: thumbBgColor(pages[previewIndex].page),
-                            backgroundImage: thumbBgImage(pages[previewIndex].page),
-                            width: (pages[previewIndex].pageSize.width) + 'px',
-                            height: (pages[previewIndex].pageSize.height) + 'px'
-                        }">
-                        <img :src="getThumbDrawing(pages[previewIndex].page)" style="max-width: 100%" class="preview-drawing" />
-                        <img :src="pageImages[pages[previewIndex].page.id]" style="max-width: 100%" class="preview-photo" />
-                        <div class="preview-text ql-editor"
-                            :style="{
-                                width: pages[previewIndex].pageSize.width + 'px',
-                                height: pages[previewIndex].pageSize.height + 'px',
-                                top: '40px'
-                            }">
-                            <div v-for="(pageText, tIndex) of pages[previewIndex].page.textLayer" :key="pages[previewIndex].page.id+'PreviewText'+tIndex"
-                                :style="{
-                                    top: pageText.y + 'px',
-                                    left: pageText.x + 'px',
-                                    width: pageText.width +'px',
-                                    height: pageText.height + 'px',
-                                    borderWidth: pageText.borderWidth + 'px',
-                                    borderColor: pageText.borderColor,
-                                    borderStyle: 'solid',
-                                    background: getTextBoxBg(pageText)
-                                }"
-                                class="preview-text-block text-render" v-html="pageText.text">
+                        </router-link>
+                        <div class="thumb-actions" v-if="isEdit">
+                            <div @click="showEditActions(page.id)" class="thumb-actions-toggle"><q-icon name="mdi-dots-vertical" /></div>
+                            <div class="active-thumb-actions" v-if="activeEditActions === page.id">
+                                <div class="download-page" @click="downloadPage(index)"><q-icon name="mdi-cloud-download" /></div>
+                                <div class="upload-page" @click="uploadPage(index)"><q-icon name="mdi-cloud-upload" /></div>
+                                <div class="delete-page" @click="deletePage(page.id, pages[index-1].id)"><q-icon v-if="index !== 0" color="negative" name="mdi-delete" /></div>
                             </div>
                         </div>
                     </div>
-                </div>
-                <!-- Download image link -->
-                <div class="image-download-link" v-if="previewImages.length === 1">
-                    <a :href="previewImages[0]" ref="imageDownloadLink" download="page">Download</a>
-                    <img :src="previewImages[0]" style="max-width: 100%" />
-                </div>
+                </draggable>
+            </div>
+            <!-- Add page -->
+            <div class="add-page">
+                <q-btn color="primary" icon="mdi-plus-circle" :size="$q.screen.lt.sm ? 'md' : 'lg'" round @click="addPage()" />
+            </div>
 
-                <!-- Photo image generator -->
-                <div class="photo-generator" v-if="pages && pages.length > 0">
-                    <canvas
-                        id="photoCanvas"
-                        ref="photoCanvas"
-                        key="photoCanvas"
-                        v-if="pageDimensions"
+            <!-- Handle -->
+            <div class="handle" @click="toggleThumbs()">
+                <i class="mdi" :class="{'mdi-chevron-double-right': !settings.showThumbs, 'mdi-chevron-double-left': settings.showThumbs}"></i>
+            </div>
+
+            <!-- Preview -->
+            <div class="preview-generator" ref="previewGenerator" v-if="pages && pages.length > 0 && photoImagesGenerated">
+                <div
+                    :style="{
+                        backgroundColor: thumbBgColor(pages[previewIndex].page),
+                        backgroundImage: thumbBgImage(pages[previewIndex].page),
+                        width: (pages[previewIndex].pageSize.width) + 'px',
+                        height: (pages[previewIndex].pageSize.height) + 'px'
+                    }">
+                    <img :src="getThumbDrawing(pages[previewIndex].page)" style="max-width: 100%" class="preview-drawing" />
+                    <img :src="pageImages[pages[previewIndex].page.id]" style="max-width: 100%" class="preview-photo" />
+                    <div class="preview-text ql-editor"
                         :style="{
-                        width: (pages[previewIndex].pageSize.width * pageDimensions.pixelRatio) + 'px',
-                        height: (pages[previewIndex].pageSize.height * pageDimensions.pixelRatio) + 'px',
-                        top: 0,
-                        left: 0,
+                            width: pages[previewIndex].pageSize.width + 'px',
+                            height: pages[previewIndex].pageSize.height + 'px',
+                            top: '40px'
                         }">
-                    </canvas>
+                        <div v-for="(pageText, tIndex) of pages[previewIndex].page.textLayer" :key="pages[previewIndex].page.id+'PreviewText'+tIndex"
+                            :style="{
+                                top: pageText.y + 'px',
+                                left: pageText.x + 'px',
+                                width: pageText.width +'px',
+                                height: pageText.height + 'px',
+                                borderWidth: pageText.borderWidth + 'px',
+                                borderColor: pageText.borderColor,
+                                borderStyle: 'solid',
+                                background: getTextBoxBg(pageText)
+                            }"
+                            class="preview-text-block text-render" v-html="pageText.text">
+                        </div>
+                    </div>
                 </div>
             </div>
-
-            <!-- Canvas -->
-            <transition appear>
-                <router-view />
-            </transition>
-            <!-- PLAN -->
-            <div class="plan" v-show="showPlan" ref="planContainer">
-                <div v-if="story.plan.video" class="plan-video" ref="planVideo">
-                    <iframe style="width: 100%" :src="story.plan.video" frameborder="0" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen v-if="videoSource === 'youtube'"></iframe>
-                    <iframe :src="story.plan.video" frameborder="0" allow="autoplay; fullscreen" allowfullscreen v-if="videoSource === 'vimeo'"></iframe>
-                </div>
-                <div v-html="story.plan.text" class="plan-text ql-editor" :style="{maxHeight: textHeight() + 'px'}">
-
-                </div>
-                <div class="edit-plan-btn">
-                    <q-btn color="primary" @click="showEditPlan()">
-                        edit
-                    </q-btn>
-                </div>
+            <!-- Download image link -->
+            <div class="image-download-link" v-if="previewImages.length === 1">
+                <a :href="previewImages[0]" ref="imageDownloadLink" download="page">Download</a>
+                <img :src="previewImages[0]" style="max-width: 100%" />
             </div>
 
+            <!-- Photo image generator -->
+            <div class="photo-generator" v-if="pages && pages.length > 0">
+                <canvas
+                    id="photoCanvas"
+                    ref="photoCanvas"
+                    key="photoCanvas"
+                    v-if="pageDimensions"
+                    :style="{
+                    width: (pages[previewIndex].pageSize.width * pageDimensions.pixelRatio) + 'px',
+                    height: (pages[previewIndex].pageSize.height * pageDimensions.pixelRatio) + 'px',
+                    top: 0,
+                    left: 0,
+                    }">
+                </canvas>
+            </div>
+        </div>
 
-        </q-page>
+        <!-- Canvas -->
+        <transition appear>
+            <router-view />
+        </transition>
+
+        <!-- PLAN -->
+        <plan></plan>
 
         <!-- IMAGE MODAL -->
         <q-modal
@@ -164,20 +148,7 @@
             </q-modal-layout>
         </q-modal>
 
-        <!-- EDIT PLAN MODAL -->
-        <q-modal
-        v-if="pageDimensions"
-        v-model="settings.showEditPlan"
-        :content-css="{minWidth: '350px', height: '90vh', maxWidth: '100%', width: '80%'}">
-            <q-modal-layout>
-                <edit-plan></edit-plan>
-                <q-toolbar slot="footer">
-                    <q-toolbar-title>
-                        <q-btn color="white" text-color="black" @click="closeModal('showEditPlan')">Cancel</q-btn>
-                    </q-toolbar-title>
-                </q-toolbar>
-            </q-modal-layout>
-        </q-modal>
+
     </div>
 </template>
 
@@ -189,13 +160,12 @@ import draggable from 'vuedraggable';
 import TextEditor from "../../components/story/TextEditor";
 import DrawingCanvas from '../../components/story/DrawingCanvas';
 import AddPage from '../../components/story/AddPage';
-import EditPlan from '../../components/story/EditPlan';
 import AddImage from '../../components/story/PixabaySearch';
+import Plan from '../../components/story/Plan';
 
 import pdfMake from "pdfmake/build/pdfmake";
 import pdfFonts from "pdfmake/build/vfs_fonts";
 pdfMake.vfs = pdfFonts.pdfMake.vfs;
-
 
 export default {
     name: 'Story',
@@ -204,8 +174,8 @@ export default {
         TextEditor,
         DrawingCanvas,
         AddPage,
-        EditPlan,
-        AddImage
+        AddImage,
+        Plan
     },
     data() {
         return {
@@ -222,16 +192,10 @@ export default {
             canvas: null,
             activeEditActions: null,
             photoImagesGenerated: false,
+            videoSet: false,
         }
     },
     computed: {
-        videoSource() {
-            if (this.story.plan.video && this.story.plan.video.indexOf('youtube.') != -1) {
-                return 'youtube';
-            }if (this.story.plan.video && this.story.plan.video.indexOf('vimeo.') != -1) {
-                return 'vimeo';
-            }
-        },
         editor() {
             return this.$refs.guideEditor.quill
         },
@@ -255,23 +219,6 @@ export default {
         },
         pageImages() {
             return this.$store.getters.getPageImages;
-        },
-        editorContent: {
-            get() {
-                return this.$store.getters.getStoryPlan;
-                this.editor.setSelection(this.cursorSelection);
-            },
-            set: _.debounce(function(content) {
-                this.cursorSelection = this.editor.getSelection();
-                if (this.user) {
-                    const payload = {
-                        user: this.user,
-                        storyKey : this.$route.params.id,
-                        plan: content
-                    };
-                    this.$store.dispatch('updateStory', payload);
-                }
-            }, 500)
         },
         pages: {
             get() {
@@ -338,10 +285,6 @@ export default {
             this.$store.commit('setSettings', newSetting);
         },
 
-        /* Plan  */
-        textHeight() {
-          return this.$refs.planVideo ? (this.$refs.planContainer.clientHeight - (this.$refs.planVideo.clientHeight + 10)) : 0;
-        },
         /** EDIT */
         toggleEdit(){
             if (this.isEdit) {
@@ -540,13 +483,6 @@ export default {
         addPage() {
             const payload = {
                 showAddPage: true,
-            };
-            this.$store.commit('setSettings', payload);
-        },
-
-        showEditPlan() {
-            const payload = {
-                showEditPlan: true,
             };
             this.$store.commit('setSettings', payload);
         },
@@ -886,6 +822,9 @@ export default {
     }
 }
 @media(orientation: portrait) {
+    .show-plan .story-page {
+        flex-direction: column;
+    }
     .thumbs {
         position: fixed;
         left: -79px;

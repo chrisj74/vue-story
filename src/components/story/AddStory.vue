@@ -206,10 +206,11 @@ export default {
             description: this.description,
             modified: new Date(),
             profile: this.activeProfile.id,
-            plan: {
-              video: null,
-              text: null
-            },
+            commit: 0,
+            plan: [{
+              video: '',
+              text: ''
+            }],
             thumb: this.coverImage ? this.coverImage : '',
           },
           page: page,

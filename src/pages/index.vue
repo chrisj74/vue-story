@@ -4,7 +4,7 @@
     <div>
       <h2>Popular</h2>
       <div class="row-wrapper">
-        <carousel :responsive="{0:{items:1,nav:false},600:{items:3,nav:false},1000:{items: 4, nav: false}}" v-if="projects && projects.length > 0">
+        <carousel :responsive="{0:{items:2,nav:false},600:{items:3,nav:false},1000:{items: 4, nav: false}}" v-if="projects && projects.length > 0">
           <template v-for="project in projects">
             <div :key="'popular'+project.projectId" class="project-wrapper" @click="showProject(project)">
               <q-card v-if="project.keywords.includes('popular')">
@@ -23,7 +23,7 @@
     <div v-if="stories && stories.length > 0">
       <h2>My Projects</h2>
       <div class="row-wrapper">
-        <carousel :responsive="{0:{items:1,nav:false},600:{items:3,nav:false},1000:{items: 4, nav: false}}" v-if="stories && stories.length > 0">
+        <carousel :responsive="{0:{items:2,nav:false},600:{items:3,nav:false},1000:{items: 4, nav: false}}" v-if="stories && stories.length > 0">
           <template v-for="(story) in stories">
             <div v-if="!story.profile || !profileFilter || story.profile === profileFilter" class="project-wrapper" :key="'myprojects'+story.id">
               <q-card>
@@ -47,7 +47,7 @@
     <div>
       <h2>Family</h2>
       <div class="row-wrapper">
-        <carousel :responsive="{0:{items:1,nav:false},600:{items:3,nav:false},1000:{items: 4, nav: false}}" v-if="projects && projects.length > 0">
+        <carousel :responsive="{0:{items:2,nav:false},600:{items:3,nav:false},1000:{items: 4, nav: false}}" v-if="projects && projects.length > 0">
           <template v-for="project in projects">
             <div :key="'faily'+project.projectId" class="project-wrapper" @click="showProject(project)">
               <q-card v-if="project.category === 'Family'">
