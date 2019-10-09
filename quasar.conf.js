@@ -12,7 +12,8 @@ module.exports = function (ctx) {
       'quill',
       'html2canvas',
       'vuelidate',
-      'croppa'
+      'croppa',
+      'bruit'
     ],
     css: [
       'app.styl'

@@ -35,7 +35,6 @@
           link
           inset-delimiter
         >
-          <q-list-header>Essential Links</q-list-header>
           <q-item :link="true" to="/">
             <q-item-side icon="mdi-home"/>
             <q-item-main label="HOME" />
@@ -43,6 +42,10 @@
           <q-item :link="true" to="/projects">
             <q-item-side icon="mdi-book"/>
             <q-item-main label="MY PROJECTS" />
+          </q-item>
+          <q-item>
+            <q-item-side icon="mdi-bullhorn"></q-item-side>
+            <q-item-main><bruit-io :config.prop="bruitConfig">FEEDBACK</bruit-io></q-item-main>
           </q-item>
           <q-item @click.native="onLogout" v-if="user">
             <q-item-side icon="mdi-power" />
@@ -68,11 +71,13 @@
 </template>
 
 <script>
+import bruitConfig from '../assets/bruit-config.json';
 export default {
   name: 'Story',
   data () {
     return {
-      storiesSet: false
+      storiesSet: false,
+      bruitConfig,
     }
   },
   computed: {

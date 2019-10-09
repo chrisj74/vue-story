@@ -4,14 +4,14 @@
     <div class="plan-video" ref="planVideo">
       <iframe
         style="width: 100%"
-        :src="story.plan && story.plan[0].video ? story.plan[0].video : ''"
+        :src="story.plan && story.plan.length > 0 && story.plan[0].video ? story.plan[0].video : ''"
         frameborder="0"
         allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture"
         allowfullscreen
         v-show="videoSource === 'youtube'"
       ></iframe>
       <iframe
-        :src="story.plan && story.plan[0].video ? story.plan[0].video : ''"
+        :src="story.plan && story.plan.length > 0 && story.plan[0].video ? story.plan[0].video : ''"
         id="planPlayer"
         frameborder="0"
         allow="autoplay; fullscreen"
@@ -20,7 +20,7 @@
       ></iframe>
     </div>
     <div
-      v-if="story.plan"
+      v-if="story.plan && story.plan.length > 0"
       v-html="story.plan[0].text"
       class="plan-text ql-editor"
       :style="{maxHeight: textHeight}"
@@ -60,24 +60,11 @@ export default {
       textHeight: "auto",
       playbackTimeout: null,
       playbackDuration: null,
-      player: null
+      player: null,
+      videoSource: null,
     };
   },
   computed: {
-    videoSource() {
-      if (
-        this.story.plan[0].video &&
-        this.story.plan[0].video.indexOf("youtube.") != -1
-      ) {
-        return "youtube";
-      }
-      if (
-        this.story.plan[0].video &&
-        this.story.plan[0].video.indexOf("vimeo.") != -1
-      ) {
-        return "vimeo";
-      }
-    },
     user() {
       return this.$store.getters.user;
     },
@@ -98,7 +85,8 @@ export default {
     }
   },
   mounted() {
-    if (this.story.plan && this.story.plan[0].video) {
+    if (this.story.plan && this.story.plan.length > 0 && this.story.plan[0].video) {
+      this.setVideoSource();
       this.videoSet = true;
       var iframe = document.querySelector("#planPlayer");
       this.player = new Player("planPlayer");
@@ -133,18 +121,18 @@ export default {
       this.$store.commit("setSettings", payload);
     },
 
-    videoSource() {
+    setVideoSource() {
       if (
         this.story.plan[0].video &&
         this.story.plan[0].video.indexOf("youtube.") != -1
       ) {
-        return "youtube";
+        this.videoSource =  "youtube";
       }
       if (
         this.story.plan[0].video &&
         this.story.plan[0].video.indexOf("vimeo.") != -1
       ) {
-        return "vimeo";
+        this.videoSource =  "vimeo";
       }
     },
 
@@ -221,15 +209,15 @@ export default {
     story: {
       handler(newStory, oldStory) {
         this.getTextHeight();
-        if (this.story.plan && this.story.plan[0].video && !this.videoSet) {
-          /* this.videoSet = true;
+        /* if (this.story.plan && this.story.plan[0].video && !this.videoSet) {
+          this.videoSet = true;
           var iframe = document.getElementById("planPlayer");
           this.player = new Player("planPlayer");
           var _this = this;
           this.player.on("play", function() {
             _this.setPlaybackPosition();
-          }); */
-        }
+          });
+        } */
       },
       deep: true
     },

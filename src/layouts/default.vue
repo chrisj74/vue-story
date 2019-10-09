@@ -53,6 +53,10 @@
           <q-item-side icon="mdi-account" />
           <q-item-main label="MY ACCOUNT" />
         </q-item> -->
+        <q-item>
+          <q-item-side icon="mdi-bullhorn"></q-item-side>
+          <q-item-main><bruit-io :config.prop="bruitConfig">FEEDBACK</bruit-io></q-item-main>
+        </q-item>
         <q-item @click.native="onLogout" v-if="user">
           <q-item-side icon="mdi-power" />
           <q-item-main label="EXIT" />
@@ -74,12 +78,14 @@
 </template>
 
 <script>
+import bruitConfig from '../assets/bruit-config.json';
 export default {
   name: 'LayoutDefault',
   data () {
     return {
       leftDrawerOpen: this.$q.platform.is.desktop,
-      storiesSet: false
+      storiesSet: false,
+      bruitConfig,
     }
   },
   computed: {
@@ -111,6 +117,7 @@ export default {
     }
   },
   mounted () {
+    console.log('buit=', this.bruitConfig);
     if (this.user) {
       this.$store.dispatch('setStories', this.user.id);
       this.$store.dispatch('setImages', this.user.id);
