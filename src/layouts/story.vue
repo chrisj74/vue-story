@@ -12,40 +12,46 @@
         :color="leftDrawerOpen ? 'white' : 'standard'"
         :style="{left: leftDrawerOpen ? '300px' : 0}"
       >
-        <q-icon :name="leftDrawerOpen ? 'mdi-close' : 'mdi-menu'" :color="leftDrawerOpen ? 'black' : 'standard'" />
+        <q-icon
+          :name="leftDrawerOpen ? 'mdi-close' : 'mdi-menu'"
+          :color="leftDrawerOpen ? 'black' : 'standard'"
+        />
       </q-btn>
       <!-- plan -->
-      <q-btn
-        class="plan-btn"
-        flat
-        dense
-        round
-        size="lg"
-        @click="togglePlan()"
-      >
+      <q-btn class="plan-btn" flat dense round size="lg" @click="togglePlan()">
         <q-icon :name="showPlan ? 'mdi-close' : 'mdi-file-document-box-outline'" />
       </q-btn>
 
-      <q-layout-drawer
-        v-model="leftDrawerOpen"
-        content-class="bg-grey-2"
-      >
-        <q-list
-          no-border
-          link
-          inset-delimiter
-        >
-          <q-item :link="true" to="/">
-            <q-item-side icon="mdi-home"/>
+      <q-layout-drawer v-model="leftDrawerOpen" content-class="bg-grey-2">
+        <div class="profile">
+          <div class="profile-avatar profile-active" v-if="profile">
+            <router-link :to="'/profiles'">
+              <div
+                :style="{backgroundImage: 'url(' + profile.profilePic + ')'}"
+                class="profile-img"
+                v-if="profile.profilePic"
+              ></div>
+              <div class="profile-initials" v-else>{{ getInitials(profile.nickName) }}</div>
+            </router-link>
+          </div>
+          <div class="profile-label" v-if="profile && profile.nickName">
+            <router-link :to="'/profiles'">{{profile.nickName}}</router-link>
+          </div>
+        </div>
+        <q-list no-border link inset-delimiter>
+          <q-item :link="true" to="/home">
+            <q-item-side icon="mdi-home" />
             <q-item-main label="HOME" />
           </q-item>
           <q-item :link="true" to="/projects">
-            <q-item-side icon="mdi-book"/>
+            <q-item-side icon="mdi-book" />
             <q-item-main label="MY PROJECTS" />
           </q-item>
           <q-item>
             <q-item-side icon="mdi-bullhorn"></q-item-side>
-            <q-item-main><bruit-io :config.prop="bruitConfig">FEEDBACK</bruit-io></q-item-main>
+            <q-item-main>
+              <bruit-io :config.prop="bruitConfig">FEEDBACK</bruit-io>
+            </q-item-main>
           </q-item>
           <q-item @click.native="onLogout" v-if="user">
             <q-item-side icon="mdi-power" />
@@ -67,25 +73,25 @@
     <div v-show="loading" class="loading-box">
       <q-spinner-bars color="primary" :size="100" />
     </div>
-</div>
+  </div>
 </template>
 
 <script>
-import bruitConfig from '../assets/bruit-config.json';
+import bruitConfig from "../assets/bruit-config.json";
 export default {
-  name: 'Story',
-  data () {
+  name: "Story",
+  data() {
     return {
       storiesSet: false,
-      bruitConfig,
-    }
+      bruitConfig
+    };
   },
   computed: {
-    user () {
-      return this.$store.getters.user
+    user() {
+      return this.$store.getters.user;
     },
-    loading () {
-      return this.$store.getters.loading
+    loading() {
+      return this.$store.getters.loading;
     },
     screen() {
       return this.$store.getters.screen;
@@ -93,27 +99,47 @@ export default {
     showPlan() {
       return this.$store.getters.showPlan;
     },
-    leftDrawerOpen() {
-      return this.$store.getters.getLeftDrawerOpen;
+    leftDrawerOpen: {
+      set() {
+        this.$store.dispatch("toggleLeftDrawerOpen");
+      },
+      get() {
+        return this.$store.getters.getLeftDrawerOpen;
+      }
+    },
+    profile() {
+      return this.$store.getters.profile;
     }
   },
-  mounted () {
+  mounted() {
+    this.$store.dispatch("setImages", this.user.id);
+    this.$store.dispatch('setStories', this.user.id);
     this.$store.dispatch('setImages', this.user.id);
   },
   methods: {
-   onLogout () {
-      this.$store.dispatch('logout');
-      this.$router.push('/');
+    getInitials(name) {
+      let initialsStr = "";
+      let initials = name.split(" ");
+      initials.forEach((initial, index) => {
+        if (index === 0 || index === initials.length - 1) {
+          initialsStr += initial.substr(0, 1);
+        }
+      });
+      return initialsStr;
+    },
+    onLogout() {
+      this.$store.dispatch("logout");
+      this.$router.push("/login");
     },
     togglePlan() {
-      this.$store.commit('setLeftDrawerOpen', false);
-      this.$store.dispatch('toggleShowPlan');
+      this.$store.commit("setLeftDrawerOpen", false);
+      this.$store.dispatch("toggleShowPlan");
     },
     toggleLeftDawer() {
-      this.$store.dispatch('toggleLeftDrawerOpen');
+      this.$store.dispatch("toggleLeftDrawerOpen");
     }
-  },
-}
+  }
+};
 </script>
 
 <style>
@@ -142,6 +168,6 @@ export default {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(255,255,255, .8);
+  background: rgba(255, 255, 255, 0.8);
 }
 </style>

@@ -1,7 +1,7 @@
 <template>
   <q-page class="home-page layout-padding">
 
-    <div>
+    <div v-if="popularProjects && popularProjects.length > 0">
       <h2>Popular</h2>
       <div class="row-wrapper">
         <carousel :responsive="{0:{items:2,nav:false},600:{items:3,nav:false},1000:{items: 4, nav: false}}" v-if="projects && projects.length > 0">
@@ -20,12 +20,12 @@
     </div>
 
     <!-- My Projects -->
-    <div v-if="stories && stories.length > 0">
+    <div v-if="profileStories && profileStories.length > 0">
       <h2>My Projects</h2>
       <div class="row-wrapper">
         <carousel :responsive="{0:{items:2,nav:false},600:{items:3,nav:false},1000:{items: 4, nav: false}}" v-if="stories && stories.length > 0">
           <template v-for="(story) in stories">
-            <div v-if="!story.profile || !profileFilter || story.profile === profileFilter" class="project-wrapper" :key="'myprojects'+story.id">
+            <div class="project-wrapper" :key="'myprojects'+story.id">
               <q-card>
                 <q-card-media>
                   <router-link :to="'/project/'+story.id">
@@ -44,7 +44,7 @@
       </div>
     </div>
     <!-- Family -->
-    <div>
+    <div v-if="familyProjects && familyProjects.length > 0">
       <h2>Family</h2>
       <div class="row-wrapper">
         <carousel :responsive="{0:{items:2,nav:false},600:{items:3,nav:false},1000:{items: 4, nav: false}}" v-if="projects && projects.length > 0">
@@ -95,6 +95,15 @@ export default {
     },
     stories () {
       return this.$store.getters.getStories
+    },
+    profileStories () {
+      return this.$store.getters.getStoriesByActiveProfile;
+    },
+    popularProjects () {
+      this.$store.getters.getPublishedProjectsByKeyword('popular');
+    },
+    familyProjects () {
+      this.$store.getters.getPublishedProjectsByCategory('Family');
     },
     projects () {
       return this.$store.getters.getPublishedProjects;

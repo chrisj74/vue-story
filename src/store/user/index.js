@@ -16,7 +16,8 @@ export default {
       addProfile: false,
       avatarModal: false,
       confirmDelete: false
-    }
+    },
+    userError: null,
   },
   mutations: {
     setUser (state, payload) {
@@ -42,8 +43,14 @@ export default {
       settings = _.merge(settings, payload);
       state.profileSettings = settings;
     },
+    setError(state, payload) {
+      state.userError = payload;
+    }
   },
   actions: {
+    setUserError ({ commit }, payload) {
+      commit('setError', payload);
+    },
     setAuth ({ commit }, payload) {
       commit('setAuth', payload);
     },
@@ -83,6 +90,7 @@ export default {
             .then(
               data => {
                 commit('setLoading', false);
+                commit('setError', null);
                 const newUser = {
                   id: data.user.uid,
                   name: data.user.displayName,
@@ -214,14 +222,27 @@ export default {
       if (payload.redirect.hasOwnProperty('redirect')) {
         this.$router.push(payload.redirect.redirect);
       } else {
-        this.$router.push('/');
+        this.$router.push('/home');
       }
       commit('setAuth', true);
     },
     logout ({commit}) {
       AUTH.signOut();
       commit('setUser', null);
+      commit('setAuth', true ); // Let the app know auth complete
       this.$router.push('/login');
+    },
+
+    forgottenPassword ({ commit}, payload) {
+      console.log('paylod=', payload);
+      return new Promise((resolve, reject) => {
+        AUTH.sendPasswordResetEmail(payload, {url: top.location.href}).then(resp => {
+          resolve(resp);
+        },
+        error => {
+          reject(error);
+        });
+      });
     },
 
     setAccount ({commit, dispatch}, payload) {
@@ -348,5 +369,8 @@ export default {
       });
       return profile;
     },
+    getUserError (state) {
+      return state.userError;
+    }
   }
 };

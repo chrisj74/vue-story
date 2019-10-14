@@ -153,10 +153,10 @@ export default {
     setPlaybackPosition() {
       if (
         this.story.playback &&
-        this.story.playback.hasOwnProperty("currentVideo")
+        this.story.playback.hasOwnProperty("currentVideoIndex")
       ) {
         const startTime = this.story.playback.videos[
-          this.story.playback.currentVideo
+          this.story.playback.currentVideoIndex
         ].playbackPosition;
         this.player
           .setCurrentTime(startTime)

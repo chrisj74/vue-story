@@ -275,7 +275,6 @@ export default {
         }
     },
     destroyed() {
-        console.log('story destroyed');
         this.$store.commit('resetPage');
     },
     methods: {
@@ -855,10 +854,12 @@ export default {
             background-color: #fff;
         }
     }
-}
-@media(orientation: portrait) {
     .side-bar {
         height: calc(100vh - (50px + 100px));
+    }
+    .plan {
+        position: fixed;
+        max-width: 80%;
     }
 }
 </style>

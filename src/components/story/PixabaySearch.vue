@@ -29,6 +29,9 @@
         <div v-for="(image, index) of results.hits" :key="'search-'+index" class="results-thumb">
           <img :src="image.previewURL" @click="selectImage(image)" />
         </div>
+        <p v-if="results.hits.length === 0">
+          No pictures found. Try searching for something else.
+        </p>
 
         <!-- Load More -->
         <q-btn class="load-more" @click="loadMore()" v-if="(results.page * 50) < results.totalHits > 0">Load More</q-btn>
@@ -40,7 +43,7 @@
             :height="sizes[selectedIndex].h"
             :width="sizes[selectedIndex].w"
             :show-loading="false"
-            :prevent-white-space="true"
+            :prevent-white-space="false"
             :initial-image="selectedImage"
             v-model="croppa"
             disable-click-to-choose
@@ -171,9 +174,6 @@ export default {
   methods: {
     onNewImage() {
       this.setSlider();
-      /* if (!this.aspectRatio) {
-        this.getSize(this.croppa.aspectRatio);
-      } */
     },
 
     onSliderChange(val) {
@@ -286,7 +286,13 @@ export default {
     setImage() {
       this.$store.commit('setLoading', true);
       const _user = this.user;
-      this.croppa.promisedBlob('image/jpeg', 0.8)
+      let type = 'image/jpeg';
+      if (this.selectedImage.indexOf('.png')) {
+        type = 'image/png';
+      } else if (this.selectedImage.indexOf('.gif')) {
+        type = 'image/gif';
+      }
+      this.croppa.promisedBlob(type, 0.8)
       .then((blob) => {
         const imgObj = {
           user: _user,
@@ -296,7 +302,7 @@ export default {
               w: this.croppa.outputWidth,
               h: this.croppa.outputHeight
             },
-            fileType: 'image/jpeg',
+            fileType: blob.type,
             name: '',
           }
         }

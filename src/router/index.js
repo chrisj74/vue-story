@@ -27,8 +27,7 @@ export default function({ store }) {
     } else if (to.matched.some(record => record.meta.requiresAdmin)) {
       // this route requires auth, check if logged in
       // if not, redirect to login page.
-      if (store.getters.user) {
-        console.log('store.getters.user=', store.getters.user);
+      if (store.getters.isAdmin) {
         next();
       } else {
         next({

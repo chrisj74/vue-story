@@ -238,25 +238,7 @@ export default {
     margin: 10px 0;
   }
 }
-.profiles-sm {
-  .profile {
-    &.profile-all {
-      .profile-avatar {
-        width: 80px;
-      }
-    }
-    .profile-avatar {
-      width: 75px;
-      .profile-initials {
-        width: 75px;
-        height: 65px;
-      }
-      .profile-img {
-        height: 65px;
-      }
-    }
-  }
-}
+
 .story-wrapper {
   .story {
     flex-basis: calc(24% - 20px);

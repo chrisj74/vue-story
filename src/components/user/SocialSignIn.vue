@@ -2,11 +2,12 @@
   <q-btn
     color="primary"
     class="red"
+    icon="mdi-google"
     dark
     :disabled="loading"
     @click.prevent="onSigninGoogle"
   >
-    <span v-if="!loading">Use your Google account</span>
+    <span v-if="!loading"> Use your Google account</span>
     <q-spinner-dots v-else/>
   </q-btn>
 </template>

@@ -28,6 +28,10 @@ const routes = [
         component: () => import("pages/index"),
         meta: { requiresAuth: true } },
       {
+        path: "home",
+        component: () => import("pages/index"),
+        meta: { requiresAuth: true } },
+      {
         path: "/projects",
         name: "Projects",
         component: () => import("pages/stories/index"),

@@ -87,7 +87,7 @@
     <!-- scrollers -->
     <div class="page-scrollers"
       v-if="pageDimensions && pageDimensions.height > pageHeight"
-      :style="{left: leftPos}">
+      :style="{left: leftPos()}">
       <div class="scroll-btn">
         <button
           class="q-btn inline relative-position q-btn-item non-selectable q-btn-round q-focusable q-hoverable bg-dark text-white"
@@ -217,9 +217,6 @@ export default {
     textLayerActive() {
       return this.modes.mode === 'text'; // && this.modes.subMode === 'text'
     },
-    leftPos() {
-      return (((this.pageDimensions.maxWidth - this.pageDimensions.width) / 2) + (this.pageDimensions.width + 20)) + 'px'
-    },
     leftDrawerOpen() {
       return this.$store.getters.getLeftDrawerOpen;
     }
@@ -255,6 +252,14 @@ export default {
   methods: {
 
     /** SETUP */
+
+    leftPos() {
+      if (this.leftDrawerOpen) {
+        return ((((this.pageDimensions.maxWidth - this.pageDimensions.width) / 2) + (this.pageDimensions.width + 20)) + 300) + 'px';
+      } else {
+        return (((this.pageDimensions.maxWidth - this.pageDimensions.width) / 2) + (this.pageDimensions.width + 20)) + 'px';
+      }
+    },
 
     shortKeys(e) {
       switch (e.srcKey) {
@@ -685,8 +690,8 @@ export default {
 
 @media (orientation: portrait) {
   .show-plan {
-    .page-ref {
-
+    .main-content-wrapper {
+      width: 100%;
     }
   }
 }

@@ -145,7 +145,6 @@ export default {
   watch: {
     story: {
       handler: function(newStory, oldStory) {
-        console.log('story watcher', this.story);
         this.publishSettings['title'] = this.story.title;
         this.publishSettings['description'] = this.story.description;
         this.publishSettings['cover'] = this.story.thumb;

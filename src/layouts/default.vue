@@ -41,7 +41,7 @@
         link
         inset-delimiter
       >
-        <q-item :link="true" to="/">
+        <q-item :link="true" to="/home">
           <q-item-side icon="mdi-home"/>
           <q-item-main label="HOME" />
         </q-item>
@@ -102,7 +102,7 @@ export default {
   methods: {
    onLogout () {
       this.$store.dispatch('logout');
-      this.$router.push('/');
+      this.$router.push('/login');
     },
 
     getInitials(name) {
@@ -117,7 +117,6 @@ export default {
     }
   },
   mounted () {
-    console.log('buit=', this.bruitConfig);
     if (this.user) {
       this.$store.dispatch('setStories', this.user.id);
       this.$store.dispatch('setImages', this.user.id);
@@ -137,52 +136,7 @@ export default {
 
 <style lang="stylus">
 @import '~variables';
-.profile {
-  margin-top: 5px;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  flex-direction: column;
-  a {
-    text-decoration: none;
-    color: #000;
-  }
-  .profile-avatar {
-    display: inline-block;
-    width: 150px;
-    max-width: 100%;
-    border-radius: 50%;
-    border: transparent 5px solid;
-    box-sizing: border-box;
-    &.profile-active {
-      box-shadow: 0 1px 5px rgba(0,0,0,0.2), 0 2px 2px rgba(0,0,0,0.14), 0 3px 1px -2px rgba(0,0,0,0.12);
-      border: solid 5px $primary;
-    }
-    .profile-img {
-      border-radius: 50%;
-      max-width: 100%;
-      height: 140px;
-      background-position: center center;
-      background-size: cover;
-    }
-    .profile-initials {
-      width: 150px;
-      max-width: 100%;
-      height: 140px;
-      display: flex;
-      border-radius: 50%;
-      align-items: center;
-      justify-content: center;
-      font-size: 4em;
-      border: none;
-      background-color: #ddd;
-    }
-  }
-  .profile-label {
-    text-align: center;
-    margin-top: 5px;
-  }
-}
+
 .loading-box {
   position: fixed;
   top: 0;

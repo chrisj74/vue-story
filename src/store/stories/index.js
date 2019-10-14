@@ -233,6 +233,7 @@ export default {
             sourceStory = querySnapshot.data();
             sourceStory.title = sourceStory.title + ' copy';
           }
+          sourceStory.modified = new Date();
           /* Get all the pages and push into an array */
           const sourcePages = [];
           firebase.firestore()
@@ -289,7 +290,6 @@ export default {
 
     updateStory({ dispatch, state, commit }, payload) {
       return new Promise((resolve, reject) => {
-        dispatch('updateStoryModified', payload);
         const stateStory = _.cloneDeep(state.story);
         let newStory;
         if (!isNaN(payload.planIndex)) {
@@ -297,20 +297,24 @@ export default {
           newStory = stateStory;
         } else {
           newStory = _.merge(stateStory, payload.story);
+          newStory = JSON.parse(JSON.stringify(newStory));
+          newStory.modified = new Date();
         }
         newStory.commit++;
         commit('setStory', newStory);
         const userStory = firebase
         .firestore()
         .collection('users/' + payload.user.id + '/stories/').doc(payload.storyKey);
-        userStory.update(JSON.parse(JSON.stringify(newStory)));
+        userStory.update(newStory)
+          .then(docRef => {
+            dispatch('updateStoryModified', payload);
+          });
         resolve();
       });
     },
 
     updatePageOrder({ commit, dispatch }, payload) {
       return new Promise((resolve, reject) => {
-        dispatch('updateStoryModified', payload);
         const userStory = firebase
           .firestore()
           .collection('users/' + payload.user.id + '/stories/' + payload.storyKey + '/pages/');
@@ -320,9 +324,9 @@ export default {
           .update({
             order: index
           });
-          // console.log('page.id=', page.id);
           index++;
         });
+        dispatch('updateStoryModified', payload);
         resolve();
       });
     },
@@ -333,7 +337,6 @@ export default {
       newState.commit++;
       commit('setPage', {page: newState, restoreIndex: payload.restoreIndex});
       return new Promise((resolve, reject) => {
-        dispatch('updateStoryModified', payload);
 
         const userPage = firebase
           .firestore()
@@ -362,6 +365,7 @@ export default {
               textLayer: payload.page.textLayer
             });
           }
+          dispatch('updateStoryModified', payload);
         resolve();
       });
     },
@@ -484,24 +488,6 @@ export default {
     },
 
     setImages({ commit }, payload) {
-      /* return new Promise((resolve, reject) => {
-        const images = [];
-        // const ref = firebase.storage().ref();
-        const listRef = firebase.storage().ref('images/' + payload);
-          listRef.listAll().then(function(res) {
-            const promiseArray = []
-            res.items.forEach(function(itemRef) {
-              // All the items under listRef.
-              console.log('itenRef=', itemRef);
-              promiseArray.push(itemRef.getDownloadURL());
-            });
-            Promise.all(promiseArray)
-              .then(result => {
-                commit('setImages', result);
-                resolve();
-              })
-          });
-      }); */
       firebase
         .firestore()
         .collection('users/').doc(payload)
@@ -532,7 +518,7 @@ export default {
                   profile: doc.data().profile,
                   description: doc.data().description,
                   plan: doc.data().plan,
-                  modified: doc.data().modified ? doc.data().modified.toDate() : new Date(),
+                  modified: doc.data().modified.toDate(),
                   publishId: doc.data().publishId,
                 });
               });
@@ -864,6 +850,15 @@ export default {
     getStories(state) {
       return state.stories;
     },
+    getStoriesByActiveProfile (state, getters, rootState) {
+      if (!rootState.user || !rootState.user.activeProfile) {
+        return null;
+      }
+      let profileStories = state.stories.filter(story => {
+        return story.profile === rootState.user.activeProfile.id;
+      });
+      return profileStories;
+    },
     getStory(state) {
       return state.story;
     },
@@ -877,18 +872,34 @@ export default {
       return activeStory;
     },
     getPublishedProjectsById: (state) => (id) => {
-      console.log('id=', id);
       if (!id) {
         return null;
       }
       let activePublished;
       state.projects.forEach(project => {
-        console.log('project=', project);
         if (project.id === id) {
           activePublished = project;
         }
       });
       return activePublished;
+    },
+    getPublishedProjectsByCategory: (state) => (cat) => {
+      if (!cat) {
+        return null;
+      }
+      let categoryProjects = state.projects.filter(project => {
+        return project.category === cat;
+      });
+      return categoryProjects;
+    },
+    getPublishedProjectsByKeyword: (state) => (keyword) => {
+      if (!keyword) {
+        return null;
+      }
+      let keywordProjects = state.projects.filter(project => {
+        return project.keywords.includes(keyword);
+      });
+      return keywordProjects;
     },
     getPublishedProjects (state) {
       return state.projects;

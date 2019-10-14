@@ -19,13 +19,21 @@
             />
           </div>
         </div>
+        <div v-if="userError" class="error-message">
+          <q-alert type="negative" class="q-mb-sm" icon="mdi-alert">{{ userError.message }} <br> Already have an account?
+            <a href="/login">Login now</a></q-alert>
+        </div>
         <div class="text-center" style="margin-top: 30px">
-          <q-btn color="primary" @click="onSignup">
-            <span v-if="!loading">SIGN UP</span>
-            <q-spinner-dots v-else/>
-          </q-btn>
+          <p>
+            <q-btn color="primary" @click="onSignup">
+              <span v-if="!loading">SIGN UP WITH EMAIL</span>
+              <q-spinner-dots v-else/>
+            </q-btn>
+          </p>
           <p>OR</p>
-          <social-sign-in></social-sign-in>
+          <p>
+            <social-sign-in></social-sign-in>
+          </p>
           <p>Already have an account? <a href="/login">Login</a>.</p>
         </div>
       </div>
@@ -47,6 +55,9 @@ export default {
         password: ''
       }
     },
+    mounted() {
+      this.$store.dispatch("setUserError", null);
+    },
     computed: {
       user () {
         return this.$store.getters.user
@@ -57,6 +68,9 @@ export default {
       error () {
         return this.$store.getters.error
       },
+      userError() {
+        return this.$store.getters.getUserError;
+      }
     },
     methods: {
       onSignup () {

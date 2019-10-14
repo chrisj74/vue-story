@@ -152,34 +152,6 @@ export default {
     margin: 0 0 50px 0;
   }
 }
-.profiles-wrapper {
-  margin-top: 10px;
-  .profile {
-    margin-right: 10px;
-    margin-bottom: 20px;
-    cursor: pointer;
-    position: relative;
-    .profile-avatar {
-      position: relative;
-      .avatar-img {
-        position: relative;
-        z-index: 1;
-      }
-      .profile-edit {
-        position: absolute;
-        top: 0;
-        bottom: 0;
-        width: 100%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 5em;
-        z-index: 2;
-        background-color: rgba(0,0,0,0.5);
-        color: #fff;
-      }
-    }
-  }
-}
+
 
 </style>

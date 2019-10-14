@@ -10,7 +10,7 @@
     :parent="'.text-layer'"
     :drag-handle="'.drag-handle'"
     :active="active"
-    :class="{print: print}"
+    :class="{print: print, 'text-mode' : modes.mode === 'text'}"
     class="text-box"
     >
     <div
@@ -262,6 +262,14 @@ export default {
       },
       deep: true
     },
+    modes: {
+      handler: function(newMode, oldMode) {
+        if(this.modes.mode !== 'text') {
+          this.active = false;
+        }
+      },
+      deep: true
+    }
   }
 }
 </script>
@@ -324,10 +332,17 @@ export default {
   .ql-font-schoolbell {
     font-family: "Schoolbell", cursive;
   }
+
+  .ql-container.ql-snow {
+    border: none;
+  }
 }
 
-.vdr {
+.vdr.text-mode {
   border: dashed 1px rgba(0,0,0,0.2);
+}
+.vdr {
+  border: dashed 1px rgba(0,0,0,0);
   display: flex;
   justify-content: stretch;
   &.print {

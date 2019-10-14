@@ -10,7 +10,7 @@
       <!-- CONTENT -->
       <div class="modal-inner-content">
         <!-- Profile -->
-        <p><strong>Profile</strong></p>
+        <p>Who's Profile to use?</p>
         <div class="row justify-start profiles-sm" v-if="profiles">
           <div class="profile"
             v-for="profile in profiles"
@@ -205,7 +205,7 @@ export default {
             title: this.title,
             description: this.description,
             modified: new Date(),
-            profile: this.activeProfile.id,
+            profile: this.profileId,
             commit: 0,
             plan: [{
               video: '',
