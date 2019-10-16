@@ -97,7 +97,6 @@ export default {
   },
   methods: {
     canvasInit() {
-      // console.log('canvasInit');
       /** Main canvas */
       this.canvas = new fabric.Canvas("storyCanvas");
       const _this = this;
@@ -301,7 +300,6 @@ export default {
             height: imageObj.webformatHeight
           });
           myImg.scaleToWidth((canvas.width / _this.pageDimensions.zoom) / 2);
-          console.log('myImg=', myImg);
           canvas.add(myImg);
           canvas.renderAll();
           _this.saveStory();
@@ -471,7 +469,6 @@ export default {
       handler: function(newDimensions, oldDimensions) {
         if (!this.canvas) {
           if (this.activePage && this.activePage.photoLayer.photoCanvasJson) {
-            // console.log('no canvas but json');
             this.canvasInit();
             this.canvas.forEachObject(function(object) {
               object.selectable = true;
@@ -482,12 +479,10 @@ export default {
             });
             this.setSize();
           } else {
-            // console.log('no json & no canvas');
             this.canvasInit();
             this.setSize();
           }
         } else if (newDimensions.zoom !== oldDimensions.zoom) {
-          // console.log('dimensions watcher has canvas');
           this.setSize();
         }
       },

@@ -11,7 +11,7 @@
       :size="$q.screen.lt.sm ? 'sm' : 'md'"
       @click="setText()"
     >
-      <q-tooltip>
+      <q-tooltip anchor="bottom middle" self="top middle" :offset="[10, 10]">
         Text Mode
       </q-tooltip>
     </q-btn>
@@ -23,7 +23,7 @@
       :size="$q.screen.lt.sm ? 'sm' : 'md'"
       @click="setPhoto()"
     >
-      <q-tooltip>
+      <q-tooltip anchor="bottom middle" self="top middle" :offset="[10, 10]">
         Image Mode
       </q-tooltip>
     </q-btn>
@@ -34,7 +34,11 @@
       round
       :size="$q.screen.lt.sm ? 'sm' : 'md'"
       @click="setDraw()"
-    />
+    >
+      <q-tooltip anchor="bottom middle" self="top middle" :offset="[10, 10]">
+        Drawing Mode
+      </q-tooltip>
+    </q-btn>
     <!-- PAGE -->
     <q-btn
       icon="mdi-file-image"
@@ -43,7 +47,7 @@
       :size="$q.screen.lt.sm ? 'sm' : 'md'"
       @click="setPage()"
     >
-      <q-tooltip>
+      <q-tooltip anchor="bottom middle" self="top middle" :offset="[10, 10]">
         Page Mode
       </q-tooltip>
     </q-btn>
@@ -56,7 +60,7 @@
       :disabled="!pageDimensions || pageDimensions.zoom >= pageDimensions.maxWidthRatio"
       @click="setZoomIn()"
     >
-      <q-tooltip>
+      <q-tooltip anchor="bottom middle" self="top middle" :offset="[10, 10]">
         Zoom In
       </q-tooltip>
     </q-btn>

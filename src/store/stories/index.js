@@ -528,8 +528,7 @@ export default {
       });
     },
 
-    setStory({ commit, state }, payload) {
-      // console.log('setstory');
+    setStory({ commit, state, dispatch}, payload) {
       return new Promise((resolve, reject) => {
         firebase
           .firestore()
@@ -541,6 +540,11 @@ export default {
               || querySnapshot.data().commit > state.story.commit
             ) {
               commit('setStory', JSON.parse(JSON.stringify(querySnapshot.data())));
+              if (querySnapshot.data().publishId) {
+               commit('setPlan', true);
+              } else {
+                commit('setPlan', false);
+              }
             }
         });
         resolve();
@@ -548,7 +552,6 @@ export default {
     },
 
     setPages({ commit}, payload) {
-      // console.log('setpages payload=', payload);
       firebase
         .firestore()
         .collection('users/' + payload.user.id + '/stories/' + payload.storyKey + '/pages').orderBy('order', 'asc')
@@ -670,7 +673,6 @@ export default {
     },
 
     setThumb({ commit, dispatch }, payload) {
-      // console.log('setThumb payload=', payload);
       return new Promise((resolve, reject) => {
         const ref = firebase.storage().ref();
         const path = 'images/' + payload.user.id + '/thumbs/' + payload.storyKey + '/' + payload.pageKey;
@@ -693,7 +695,6 @@ export default {
     },
 
     setPreview({ commit, dispatch }, payload) {
-      // console.log('setThumb payload=', payload);
       return new Promise((resolve, reject) => {
         const ref = firebase.storage().ref();
         const path = 'images/' + payload.user.id + '/preview/' + payload.storyKey + '/' + payload.pageKey;
@@ -775,7 +776,6 @@ export default {
       const fullPath = path + query + pageStr;
       axios.get(fullPath)
       .then((response) => {
-        console.log('search', response);
         const newPayload = {
           str: payload.str,
           response: response
@@ -801,8 +801,6 @@ export default {
           .firestore()
           .collection('projects/');
           publishStory.add(payload).then(function(docRef) {
-            console.log('docRef=', docRef.id);
-            // console.log('docRef.data()=', docRef.data());
             const newId = docRef.id;
             const storyPayload = {
               story: {
@@ -839,7 +837,6 @@ export default {
           const projects = [];
           querySnapshot.forEach(function(doc) {
             projects.push(doc.data());
-
           });
           commit('setProjects', projects);
         });

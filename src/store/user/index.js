@@ -234,7 +234,6 @@ export default {
     },
 
     forgottenPassword ({ commit}, payload) {
-      console.log('paylod=', payload);
       return new Promise((resolve, reject) => {
         AUTH.sendPasswordResetEmail(payload, {url: top.location.href}).then(resp => {
           resolve(resp);

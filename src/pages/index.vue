@@ -100,10 +100,10 @@ export default {
       return this.$store.getters.getStoriesByActiveProfile;
     },
     popularProjects () {
-      this.$store.getters.getPublishedProjectsByKeyword('popular');
+      return this.$store.getters.getPublishedProjectsByKeyword('popular');
     },
     familyProjects () {
-      this.$store.getters.getPublishedProjectsByCategory('Family');
+      return this.$store.getters.getPublishedProjectsByCategory('Family');
     },
     projects () {
       return this.$store.getters.getPublishedProjects;

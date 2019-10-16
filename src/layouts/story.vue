@@ -50,7 +50,9 @@
           <q-item>
             <q-item-side icon="mdi-bullhorn"></q-item-side>
             <q-item-main>
-              <bruit-io :config.prop="bruitConfig">FEEDBACK</bruit-io>
+              <span @click="openFeedback()">
+                <bruit-io :config.prop="bruitConfig">FEEDBACK</bruit-io>
+              </span>
             </q-item-main>
           </q-item>
           <q-item @click.native="onLogout" v-if="user">
@@ -117,6 +119,10 @@ export default {
     this.$store.dispatch('setImages', this.user.id);
   },
   methods: {
+    openFeedback() {
+      this.$store.commit('setLeftDrawerOpen', false);
+    },
+
     getInitials(name) {
       let initialsStr = "";
       let initials = name.split(" ");
@@ -127,6 +133,7 @@ export default {
       });
       return initialsStr;
     },
+
     onLogout() {
       this.$store.dispatch("logout");
       this.$router.push("/login");

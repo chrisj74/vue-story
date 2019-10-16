@@ -166,7 +166,6 @@ export default {
       this.getSize(this.aspectRatio);
     }
     if (this.initialImage) {
-      console.log('has initialImage');
       this.selectedImage = this.initialImage;
       this.croppa.refresh();
     }
@@ -216,7 +215,6 @@ export default {
     },
 
     close() {
-
       this.$store.commit("clearImageSearchResults");
       this.$store.commit("clearInsertImage");
       this.searchString = '';
@@ -287,9 +285,16 @@ export default {
       this.$store.commit('setLoading', true);
       const _user = this.user;
       let type = 'image/jpeg';
-      if (this.selectedImage.indexOf('.png')) {
+      let fileName;
+      if (this.croppa.getChosenFile()) {
+        const file = this.croppa.getChosenFile();
+        fileName = file.name;
+      } else if (this.selectedImage) {
+        fileName = this.selectedImage;
+      }
+      if (fileName.indexOf('.png')) {
         type = 'image/png';
-      } else if (this.selectedImage.indexOf('.gif')) {
+      } else if (fileName.indexOf('.gif')) {
         type = 'image/gif';
       }
       this.croppa.promisedBlob(type, 0.8)

@@ -53,9 +53,13 @@
           <q-item-side icon="mdi-account" />
           <q-item-main label="MY ACCOUNT" />
         </q-item> -->
-        <q-item>
+        <q-item @click="openFeedback()">
           <q-item-side icon="mdi-bullhorn"></q-item-side>
-          <q-item-main><bruit-io :config.prop="bruitConfig">FEEDBACK</bruit-io></q-item-main>
+          <q-item-main>
+            <span @click="openFeedback()">
+              <bruit-io :config.prop="bruitConfig">FEEDBACK</bruit-io>
+            </span>
+          </q-item-main>
         </q-item>
         <q-item @click.native="onLogout" v-if="user">
           <q-item-side icon="mdi-power" />
@@ -100,7 +104,11 @@ export default {
     }
   },
   methods: {
-   onLogout () {
+    openFeedback() {
+      this.$store.commit('setLeftDrawerOpen', false);
+    },
+
+    onLogout () {
       this.$store.dispatch('logout');
       this.$router.push('/login');
     },

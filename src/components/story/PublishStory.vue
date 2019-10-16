@@ -53,7 +53,6 @@ export default {
   },
   mounted() {
     /** Reset data */
-    console.log('mounted publish settings');
     this.publishSettings['title'] = this.story.title;
     this.publishSettings['description'] = this.story.description;
     this.publishSettings['cover'] = this.story.thumb;

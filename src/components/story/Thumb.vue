@@ -40,9 +40,6 @@ export default {
           return this.$store.getters.screen;
       }
   },
-  mounted() {
-    console.log('thumb mounted');
-  },
   methods: {
 
   },

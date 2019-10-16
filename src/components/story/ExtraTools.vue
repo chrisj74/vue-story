@@ -7,7 +7,7 @@
       @input="updateColor"
       colors="text-advanced"
       :popover-to="'left'"
-      :trigger-style="{ width: $q.screen.lt.sm ? '30px' : '42px', height: $q.screen.lt.sm ? '30px' : '42px', borderRadius: '50%' }"
+      :trigger-style="{ width: $q.screen.lt.sm ? '30px' : '42px', height: $q.screen.lt.sm ? '30px' : '42px', borderRadius: '50%', border: 'solid 1px #000' }"
       :disabled="modes.mode === 'text' && modes.subMode === 'text'"
     ></swatches>
     <!-- TEXT -->
@@ -18,16 +18,24 @@
           round
           :size="$q.screen.lt.sm ? 'sm' : 'md'"
           @click="setText()"
-        />
+        >
+          <q-tooltip anchor="center left" self="center right" :offset="[10, 10]">
+            type
+          </q-tooltip>
+        </q-btn>
         <!-- TEXT BOX OPTIONS -->
         <div class="tool-slider">
           <q-btn
             :size="$q.screen.lt.sm ? 'sm' : 'md'"
             :color="modes.subMode === 'options' ? 'primary' : 'dark'"
-            icon="mdi-checkbox-blank-outline"
+            :icon="modes.subMode === 'options' ? 'mdi-chevron-double-right' : 'mdi-checkbox-blank-outline'"
             round
             @click="toggleTextOptions()"
-            :disabled="isNaN(settings.activeEditor)"/>
+            :disabled="isNaN(settings.activeEditor)">
+            <q-tooltip anchor="center left" self="center right" :offset="[10, 10]">
+              Text box colour &amp; border
+            </q-tooltip>
+          </q-btn>
           <div class="q-slider-wrap" v-if="showTextOptions">
             <div>
               <p>Box border width</p>
@@ -40,7 +48,7 @@
                 @input="val => {updateTextBoxOptions(val, 'borderColor')}"
                 colors="text-advanced"
                 :popover-to="'left'"
-                :trigger-style="{ width: $q.screen.lt.sm ? '30px' : '42px', height: $q.screen.lt.sm ? '30px' : '42px', borderRadius: '50%' }"
+                :trigger-style="{ width: $q.screen.lt.sm ? '30px' : '42px', height: $q.screen.lt.sm ? '30px' : '42px', borderRadius: '50%', border: 'solid 1px #000' }"
               ></swatches>
             </div>
             <div>
@@ -54,7 +62,7 @@
                 @input="val => {updateTextBoxOptions(val, 'backgroundColor')}"
                 colors="text-advanced"
                 :popover-to="'left'"
-                :trigger-style="{ width: $q.screen.lt.sm ? '30px' : '42px', height: $q.screen.lt.sm ? '30px' : '42px', borderRadius: '50%' }"
+                :trigger-style="{ width: $q.screen.lt.sm ? '30px' : '42px', height: $q.screen.lt.sm ? '30px' : '42px', borderRadius: '50%', border: 'solid 1px #000' }"
               ></swatches>
             </div>
             <!-- <q-slider v-model="text.size" :min="5" :max="100" :step="1" label snap/> -->
@@ -65,11 +73,11 @@
           key="addTextBlock"
           icon="mdi-plus-circle"
           :size="$q.screen.lt.sm ? 'sm' : 'md'"
-          :color="'primary'"
+          :color="'dark'"
           round
           @click="addTextBlock()"
         >
-          <q-tooltip>
+          <q-tooltip anchor="center left" self="center right" :offset="[10, 10]">
             Add text block
           </q-tooltip>
         </q-btn>
@@ -81,7 +89,7 @@
           round
           @click="deleteTextBlock()"
         >
-          <q-tooltip>
+          <q-tooltip anchor="center left" self="center right" :offset="[10, 10]">
             Delete text block
           </q-tooltip>
         </q-btn>
@@ -96,7 +104,7 @@
           :size="$q.screen.lt.sm ? 'sm' : 'md'"
           @click="setBackgroundColor()"
         >
-          <q-tooltip>
+          <q-tooltip anchor="center left" self="center right" :offset="[10, 10]">
             Change background color
           </q-tooltip>
         </q-btn>
@@ -109,7 +117,7 @@
           round
           @click="addBgPhoto()"
         >
-          <q-tooltip>
+          <q-tooltip anchor="center left" self="center right" :offset="[10, 10]">
             Add a background image
           </q-tooltip>
         </q-btn>
@@ -122,7 +130,7 @@
           round
           @click="backgroundRemoveImage()"
         >
-          <q-tooltip>
+          <q-tooltip anchor="center left" self="center right" :offset="[10, 10]">
             Remove background image
           </q-tooltip>
         </q-btn>
@@ -205,7 +213,7 @@
         :size="$q.screen.lt.sm ? 'sm' : 'md'"
         @click="addPhoto()"
       >
-        <q-tooltip>
+        <q-tooltip anchor="center left" self="center right" :offset="[10, 10]">
           Add an image
         </q-tooltip>
       </q-btn>
@@ -220,7 +228,7 @@
           @click="toggleImageOpacity()"
           :disabled="!settings.isSelected"
         >
-          <q-tooltip>
+          <q-tooltip anchor="center left" self="center right" :offset="[10, 10]">
             Change image opacity (how see through it is)
           </q-tooltip>
         </q-btn>
@@ -239,7 +247,7 @@
         @click="deleteObj()"
         :disabled="!settings.isSelected"
       >
-        <q-tooltip>
+        <q-tooltip anchor="center left" self="center right" :offset="[10, 10]">
           Delete image
         </q-tooltip>
       </q-btn>
@@ -256,7 +264,7 @@
         round
         @click="setDraw()"
       >
-        <q-tooltip>
+        <q-tooltip anchor="center left" self="center right" :offset="[10, 10]">
           Use pen
         </q-tooltip>
       </q-btn>
@@ -269,7 +277,7 @@
         round
         @click="setEraser()"
       >
-        <q-tooltip>
+        <q-tooltip anchor="center left" self="center right" :offset="[10, 10]">
           Use eraser
         </q-tooltip>
       </q-btn>
@@ -282,7 +290,7 @@
           :color="settings.showBrushWidth ? 'primary' : 'dark'"
           @click="toggleBrushWidth()"
         >
-          <q-tooltip>
+          <q-tooltip anchor="center left" self="center right" :offset="[10, 10]">
             Change pen width
           </q-tooltip>
         </q-btn>
@@ -299,7 +307,7 @@
         round
         @click="clearDrawing()"
       >
-        <q-tooltip>
+        <q-tooltip anchor="center left" self="center right" :offset="[10, 10]">
           Clear drawing
         </q-tooltip>
       </q-btn>
@@ -455,7 +463,7 @@ export default {
 
     updateTextBoxOptions(newVal, type) {
       let payload = {};
-      let textLayer = {}
+      let textLayer = this.storeTextLayer[this.settings.activeEditor];
       if (type === 'borderWidth') {
         payload['textBoxBorderWidth'] = newVal;
         textLayer['borderWidth'] = newVal;
@@ -502,8 +510,13 @@ export default {
     },
 
     toggleTextOptions() {
-      this.showTextOptions = !this.showTextOptions;
-      this.$store.commit('setSubMode', "options");
+      if (this.showTextOptions) {
+        this.showTextOptions = false;
+        this.$store.commit('setSubMode', "text");
+      } else {
+        this.showTextOptions = true;
+        this.$store.commit('setSubMode', "options");
+      }
     },
 
     toggleBrushWidth() {

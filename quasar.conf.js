@@ -52,6 +52,7 @@ module.exports = function (ctx) {
     },
     // framework: 'all' --- includes everything; for dev only!
     framework: {
+      iconSet: 'mdi',
       brand: {
         primary: '#0273d4',
       },
@@ -87,7 +88,8 @@ module.exports = function (ctx) {
         'QSpinner',
         'QSpinnerBars',
         'QTooltip',
-        'QChipsInput'
+        'QChipsInput',
+        'QAlert'
       ],
       directives: [
         'Ripple',

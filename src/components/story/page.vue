@@ -17,15 +17,15 @@
               <span class="ql-format-group">
                 <button type="button" class="ql-bold"></button>
                 <button type="button" class="ql-italic"></button>
-                <button type="button" class="ql-underline" v-if="$q.screen.gt.sm"></button>
-                <button type="button" class="ql-blockquote" v-if="$q.screen.gt.sm"></button>
+                <button type="button" class="ql-underline" v-show="pageDimensions.width > 500"></button>
+                <button type="button" class="ql-blockquote" v-show="pageDimensions.width > 500"></button>
                 <select class="ql-align"></select>
 
                 <button type="button" class="ql-list" value="ordered"></button>
                 <button type="button" class="ql-list" value="bullet"></button>
 
                 <select class="ql-size"></select>
-                <select class="ql-font" v-if="$q.screen.gt.sm">
+                <select class="ql-font">
                   <option selected>Normal</option>
                   <option value="schoolbell">Handwriting</option>
                 </select>
@@ -33,9 +33,9 @@
                 <select class="ql-color"></select>
                 <select class="ql-background"></select>
 
-                <button class="ql-link"></button>
-                <button class="ql-video"></button>
-                <button :id="'table'+layerIndex"><i class="mdi mdi-table"></i></button>
+                <button class="ql-link" v-show="pageDimensions.width > 500"></button>
+                <button class="ql-video" v-show="pageDimensions.width > 500"></button>
+                <button :id="'table'+layerIndex" v-show="pageDimensions.width > 500"><i class="mdi mdi-table"></i></button>
               </span>
             </div>
           </div>
@@ -48,6 +48,7 @@
             :style="{
             transform: 'scale(' + pageDimensions.zoom + ')',
             transformOrigin: 'top left',
+            top: (40 * pageDimensions.zoom) + 'px',
             height: (activePage.pageSize.height - 50)+'px',
             width: activePage.pageSize.width+'px',
             pointerEvents: textLayerActive ? 'all' : 'none',
@@ -275,33 +276,35 @@ export default {
     },
 
     setDefaultZoom() {
-      this.pageHeight = this.$refs.page.clientHeight;
-      this.maxHeightRatio = this.$refs.page.clientHeight / this.activePage.pageSize.height;
-      this.maxWidthRatio = this.$refs.page.clientWidth / this.activePage.pageSize.width;
+      if (this.activePage && this.$refs.page) {
+        this.pageHeight = this.$refs.page.clientHeight;
+        this.maxHeightRatio = this.$refs.page.clientHeight / this.activePage.pageSize.height;
+        this.maxWidthRatio = this.$refs.page.clientWidth / this.activePage.pageSize.width;
 
-      let dimensions;
-      if (this.maxHeightRatio < this.maxWidthRatio) {
-        dimensions = {
-          maxWidth: this.$refs.page.clientWidth,
-          maxWidthRatio: this.maxWidthRatio,
-          maxHeightRatio: this.maxHeightRatio,
-          height: (this.activePage.pageSize.height * this.maxHeightRatio),
-          width: (this.activePage.pageSize.width * this.maxHeightRatio),
-          zoom: this.maxHeightRatio,
-          pixelRatio: window.devicePixelRatio
+        let dimensions;
+        if (this.maxHeightRatio < this.maxWidthRatio) {
+          dimensions = {
+            maxWidth: this.$refs.page.clientWidth,
+            maxWidthRatio: this.maxWidthRatio,
+            maxHeightRatio: this.maxHeightRatio,
+            height: (this.activePage.pageSize.height * this.maxHeightRatio),
+            width: (this.activePage.pageSize.width * this.maxHeightRatio),
+            zoom: this.maxHeightRatio,
+            pixelRatio: window.devicePixelRatio
+          }
+        } else {
+          dimensions = {
+            maxWidth: this.$refs.page.clientWidth,
+            maxWidthRatio: this.maxWidthRatio,
+            maxHeightRatio: this.maxHeightRatio,
+            height: (this.activePage.pageSize.height * this.maxWidthRatio),
+            width: (this.activePage.pageSize.width * this.maxWidthRatio),
+            zoom: this.maxWidthRatio,
+            pixelRatio: window.devicePixelRatio
+          }
         }
-      } else {
-        dimensions = {
-          maxWidth: this.$refs.page.clientWidth,
-          maxWidthRatio: this.maxWidthRatio,
-          maxHeightRatio: this.maxHeightRatio,
-          height: (this.activePage.pageSize.height * this.maxWidthRatio),
-          width: (this.activePage.pageSize.width * this.maxWidthRatio),
-          zoom: this.maxWidthRatio,
-          pixelRatio: window.devicePixelRatio
-        }
+        this.$store.commit('setPageDimensions', dimensions);
       }
-      this.$store.commit('setPageDimensions', dimensions);
     },
 
     setZoom(dir) {

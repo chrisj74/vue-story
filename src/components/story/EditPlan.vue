@@ -120,7 +120,6 @@ export default {
 
         document.body.querySelector('#planTable')
         .onclick = () => {
-          console.log('add table');
           let tableModule = _this.editor.getModule('better-table')
           tableModule.insertTable(3, 3)
         }
@@ -169,8 +168,6 @@ export default {
         event.quill.setSelection(range, 'api');
         this.cursorSelection = null;
       }
-      // console.log('event=', event.quill.editor.delta.ops);
-      /* console.log('editor=', JSON.parse(JSON.stringify(this.storeTextLayer[this.layerIndex].delta))); */
       if (this.user
         && (!this.story.plan[0].delta
             || !_.isEqual(event.quill.editor.delta.ops, JSON.parse(JSON.stringify(this.story.plan[0].delta))))) {
@@ -241,9 +238,6 @@ export default {
   watch: {
     story: {
       handler: function(to, from) {
-        // console.log('store same as editor', _.isEqual(JSON.parse(JSON.stringify(this.story.plan[0].delta)), this.editor.getContents().ops));
-        /* console.log('his.story.plan[0].delta=', JSON.parse(JSON.stringify(this.story.plan[0].delta)));
-        console.log('this.editor.getContents().ops)=', this.editor.getContents().ops); */
         if ((!this.story.plan[0].delta
           || !_.isEqual(JSON.parse(JSON.stringify(this.story.plan[0].delta)), this.editor.getContents().ops))) {
           /** Only update content from the store if needed  */

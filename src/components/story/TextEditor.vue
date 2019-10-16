@@ -107,23 +107,11 @@ export default {
     const _this = this;
     document.body.querySelector('#table'+this.layerIndex)
     .onclick = () => {
-      console.log('add table');
       let tableModule = _this.editor.getModule('better-table')
       tableModule.insertTable(3, 3)
     }
   },
   computed: {
-    backgroundColor() {
-      /* convert opcity to hex */
-      let hexOpacity = (this.storeTextLayer[this.layerIndex].opacity * 255).toString(16);
-      while (hexOpacity.length < 2) {
-        hexOpacity = "0" + hexOpacity;
-      }
-      let bgColor = this.storeTextLayer[this.layerIndex].backgroundColor;
-
-      /* manipulate color to include opacity */
-      return bgColor.substring(0, 7) + hexOpacity;
-    },
     editor() {
       return this.$refs.textLayerEditor ? this.$refs.textLayerEditor.quill : null;
     },
@@ -154,9 +142,22 @@ export default {
     settings() {
       return this.$store.getters.getSettings;
     },
+    backgroundColor() {
+      /* convert opcity to hex */
+      let hexOpacity = (Math.round(this.storeTextLayer[this.layerIndex].opacity * 255)).toString(16);
+      while (hexOpacity.length < 2) {
+        hexOpacity = "0" + hexOpacity;
+      }
+      let bgColor = this.storeTextLayer[this.layerIndex].backgroundColor;
+      /* manipulate color to include opacity */
+      return bgColor.substring(0, 7) + hexOpacity;
+    },
   },
   methods: {
+
+
     onEditorChange: _.debounce(function(event) {
+      console.log('editor change event=', event);
       if (!this.contentSet) {
         /** First time content loaded move cursor to the end */
         this.contentSet = true;
@@ -165,8 +166,6 @@ export default {
         event.quill.setSelection(range, 'api');
         this.cursorSelection = null;
       }
-      /* console.log('event=', event.quill.editor.delta.ops);
-      console.log('editor=', JSON.parse(JSON.stringify(this.storeTextLayer[this.layerIndex].delta))); */
       if (this.user && !_.isEqual(event.quill.editor.delta.ops, JSON.parse(JSON.stringify(this.storeTextLayer[this.layerIndex].delta)))) {
         const newRange = this.cursorSelection ? this.cursorSelection : {index: this.editorContent.length, length:0};
         const textLayer = _.cloneDeep(this.storeTextLayer);
@@ -185,6 +184,7 @@ export default {
                 range: newRange
               }
           };
+
           this.$store.dispatch('updatePageText', payload);
         }
     }, 100),
@@ -202,7 +202,7 @@ export default {
     },
 
     onEditorReady(quill) {
-      this.active = true;
+      this.active = this.modes.mode === 'text';
       this.contentSet = true;
       quill.setSelection(this.editorContent.length, 0, 'api');
     },
@@ -227,7 +227,6 @@ export default {
       }
     }, 500),
     onDrag: _.debounce(function (x, y) {
-      // console.log('onDrag x=', x, ' y=', y);
       if (this.user) {
           const payload = {
             user: this.user,
@@ -250,13 +249,10 @@ export default {
   watch: {
     storeTextLayer: {
       handler: function(to, from) {
-        // console.log('store not same as editor', _.isEqual(JSON.parse(JSON.stringify(this.storeTextLayer[this.layerIndex].delta)), this.editor.getContents().ops));
         if (this.storeTextLayer && !isNaN(this.layerIndex) &&
           (!this.storeTextLayer[this.layerIndex].delta
           || !_.isEqual(JSON.parse(JSON.stringify(this.storeTextLayer[this.layerIndex].delta)), this.editor.getContents().ops))) {
           /** Only update content from the store if needed  */
-          // console.log('update from store, editor=', _.cloneDeep(this.editor.getContents().ops));
-          // console.log('store=', JSON.parse(_.cloneDeep(JSON.stringify(this.storeTextLayer[this.layerIndex].delta))));
           this.editorContent = _.cloneDeep(this.storeTextLayer[this.layerIndex].text);
         }
       },

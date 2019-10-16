@@ -87,7 +87,6 @@ export default {
           color: "primary"
         })
         .then(forgottenEmail => {
-          console.log('forgottenEmail=', forgottenEmail, 'email=', this.email);
           this.$store.dispatch("forgottenPassword", forgottenEmail).then(() => {
             this.$q.notify({
               message: `Check your email for instructions on how to reset your password.`,
