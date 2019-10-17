@@ -173,7 +173,7 @@ export default {
         photoLayer: {},
         drawingLayer: {},
         textLayer: [
-          {
+          /* {
             backgroundColor: "#ffffff",
             borderColor: "#ffffff",
             borderWidth: 0,
@@ -185,7 +185,7 @@ export default {
             x: 50,
             y: 100,
             range: {"index":1,"length":0}
-          }
+          } */
         ],
         background: {
           color: '#ffffff',
@@ -209,7 +209,10 @@ export default {
             commit: 0,
             plan: [{
               video: '',
-              text: ''
+              text: '',
+              title: '',
+              delta: [],
+              range: {}
             }],
             thumb: this.coverImage ? this.coverImage : '',
           },
@@ -225,8 +228,8 @@ export default {
             showAddStory: false,
           };
           this.$store.commit('setSettings', payload);
-          this.$store.commit('setMode', "text");
-          this.$store.commit('setSubMode', "text");
+          this.$store.commit('setMode', "draw");
+          this.$store.commit('setSubMode', "brush");
           this.$router.push({ path: '/project/'+newStoryId });
         });
     },

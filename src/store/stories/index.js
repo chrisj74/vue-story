@@ -24,8 +24,8 @@ export default {
     insertImage: null,
     pdfImages: null,
     modes: {
-      mode: 'text',
-      subMode: 'text',
+      mode: 'draw',
+      subMode: 'brush',
     },
     settings: {
       brushWidth: 2,
@@ -293,8 +293,10 @@ export default {
         const stateStory = _.cloneDeep(state.story);
         let newStory;
         if (!isNaN(payload.planIndex)) {
-          stateStory.plan[payload.planIndex] = payload.plan;
           newStory = stateStory;
+          newStory = JSON.parse(JSON.stringify(newStory));
+          newStory.plan[payload.planIndex] = payload.plan;
+          newStory.modified = new Date();
         } else {
           newStory = _.merge(stateStory, payload.story);
           newStory = JSON.parse(JSON.stringify(newStory));
@@ -410,7 +412,7 @@ export default {
             commit: 0,
             photoLayer: {},
             drawingLayer: {},
-            textLayer: [{
+            textLayer: [/* {
               text: ' ',
               x: 50,
               y: 25,
@@ -421,7 +423,7 @@ export default {
               backgroundColor: '#ffffffff',
               opacity: 0,
               delta: []
-            }],
+            } */],
             background: {
               color: '#ffffff',
               image: false,

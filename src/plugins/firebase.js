@@ -17,6 +17,15 @@ export default ({ Vue, store, router }) => {
       };
       await store.dispatch('autoSignIn', payload );
       store.dispatch('setProjects');
+      /* Set user */
+      let userStories = firebase
+        .firestore()
+        .collection("users/").doc(user.uid);
+      userStories.set({
+        lastUpdated: new Date(),
+      });
+
+      /* Set account */
       let userAccount = firebase
       .firestore()
       .collection('accounts/').doc(user.uid);

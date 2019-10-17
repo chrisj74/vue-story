@@ -202,7 +202,12 @@ export default {
     },
 
     onEditorReady(quill) {
-      this.active = this.modes.mode === 'text';
+      if (this.modes.mode === 'text') {
+        this.active = true;
+      } else {
+        this.active = false;
+        this.editor.blur();
+      }
       this.contentSet = true;
       quill.setSelection(this.editorContent.length, 0, 'api');
     },

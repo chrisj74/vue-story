@@ -82,7 +82,7 @@ export default {
         commit: 0,
         photoLayer: {},
         drawingLayer: {},
-        textLayer: [{
+        textLayer: [/* {
           text: ' ',
           x: 50,
           y: 25,
@@ -93,7 +93,7 @@ export default {
           opacity: 0,
           backgroundColor: '#ffffff',
           delta: []
-        }],
+        } */],
         background: {
           color: '#ffffff',
           image: false,

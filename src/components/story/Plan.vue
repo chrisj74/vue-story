@@ -8,7 +8,7 @@
         frameborder="0"
         allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture"
         allowfullscreen
-        v-show="videoSource === 'youtube'"
+        v-if="videoSource === 'youtube'"
       ></iframe>
       <iframe
         :src="story.plan && story.plan.length > 0 && story.plan[0].video ? story.plan[0].video : ''"
@@ -16,7 +16,7 @@
         frameborder="0"
         allow="autoplay; fullscreen"
         allowfullscreen
-        v-show="videoSource === 'vimeo'"
+        v-if="videoSource === 'vimeo'"
       ></iframe>
     </div>
     <div
@@ -38,8 +38,9 @@
         <edit-plan v-if="settings.showEditPlan"></edit-plan>
         <q-toolbar slot="footer">
           <q-toolbar-title>
-            <q-btn color="white" text-color="black" @click="closeModal('showEditPlan')">Close</q-btn>
+
           </q-toolbar-title>
+          <q-btn color="white" text-color="black" @click="closeModal('showEditPlan')">Done</q-btn>
         </q-toolbar>
       </q-modal-layout>
     </q-modal>
@@ -88,22 +89,24 @@ export default {
     if (this.story.plan && this.story.plan.length > 0 && this.story.plan[0].video) {
       this.setVideoSource();
       this.videoSet = true;
-      var iframe = document.querySelector("#planPlayer");
-      this.player = new Player("planPlayer");
-      const _this = this;
-      this.player.on("play", function() {
-        _this.getPlaybackPosition();
-      });
+      if (this.videoSource === 'vimeo') {
+        var iframe = document.querySelector("#planPlayer");
+        this.player = new Player("planPlayer");
+        const _this = this;
+        this.player.on("play", function() {
+          _this.getPlaybackPosition();
+        });
 
-      this.player.on("pause", function() {
-        clearTimeout(_this.playbackTimeout);
-      });
+        this.player.on("pause", function() {
+          clearTimeout(_this.playbackTimeout);
+        });
 
-      this.player.getDuration().then(function(duration) {
-        _this.playbackDuration = duration;
-      });
+        this.player.getDuration().then(function(duration) {
+          _this.playbackDuration = duration;
+        });
 
-      this.setPlaybackPosition();
+        this.setPlaybackPosition();
+      }
     }
     this.getTextHeight();
   },
@@ -223,9 +226,9 @@ export default {
     },
     showPlan: {
       handler() {
-        if (this.showPlan) {
+        if (this.showPlan && this.player) {
           this.player.play();
-        } else {
+        } else if (this.player) {
           this.player.pause();
         }
       }
