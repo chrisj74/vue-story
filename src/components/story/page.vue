@@ -247,8 +247,9 @@ export default {
               // DOM updated
               _this.setDefaultZoom();
           })
-    });
+    }, {passive: true});
     this.windowWidth = window.innerWidth;
+    this.$store.commit("setLeftDrawerOpen", false);
   },
   methods: {
 

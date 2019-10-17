@@ -12,6 +12,11 @@
                   <img :src="project.cover" class="project-cover" />
                 </q-card-media>
                 <q-card-title>{{ project.title }}</q-card-title>
+                <q-card-actions>
+                  <q-btn color="primary" @click="showProject(project)">
+                    More
+                  </q-btn>
+                </q-card-actions>
               </q-card>
             </div>
           </template>
@@ -21,10 +26,10 @@
 
     <!-- My Projects -->
     <div v-if="profileStories && profileStories.length > 0">
-      <h2>My Projects</h2>
+      <h2><router-link :to="'/projects'">My Projects</router-link></h2>
       <div class="row-wrapper">
-        <carousel :responsive="{0:{items:2,nav:false},600:{items:3,nav:false},1000:{items: 4, nav: false}}" v-if="stories && stories.length > 0">
-          <template v-for="(story) in stories">
+        <carousel :responsive="{0:{items:2,nav:false},600:{items:3,nav:false},1000:{items: 4, nav: false}}" v-if="profileStories && profileStories.length > 0">
+          <template v-for="(story) in profileStories">
             <div class="project-wrapper" :key="'myprojects'+story.id">
               <q-card>
                 <q-card-media>
@@ -37,10 +42,32 @@
                     <a>{{ story.title }}</a>
                   </router-link>
                 </q-card-title>
+                <q-card-actions>
+                <q-btn color="primary" :to="'/project/'+story.id">
+                    Open
+                  </q-btn>
+                </q-card-actions>
               </q-card>
             </div>
           </template>
         </carousel>
+      </div>
+    </div>
+    <div v-else>
+      <h2><router-link :to="'/projects'">My Projects</router-link></h2>
+      <div class="row-wrapper">
+        <div class="project-wrapper static-wrapper">
+          <q-card>
+            <q-card-title>
+              Choose a project or create your own to get started.
+            </q-card-title>
+            <q-card-actions>
+              <q-btn color="primary" to="/projects">
+                Get Started
+              </q-btn>
+            </q-card-actions>
+          </q-card>
+        </div>
       </div>
     </div>
     <!-- Family -->
@@ -155,16 +182,37 @@ export default {
   h2 {
     margin: 0;
     font-size: 20px;
+    a {
+      text-decoration: none;
+    }
   }
 }
 .project-wrapper {
   padding: 10px;
+  &.static-wrapper {
+    max-width: 50%;
+  }
   h4 {
     font-size: 23px;
     margin: 10px 0 5px 0;
   }
   .project-cover {
     max-width: 100%
+  }
+}
+@media (min-width: 600px) {
+  .project-wrapper {
+    &.static-wrapper {
+      max-width: 33%;
+    }
+  }
+}
+
+@media (min-width: 1000px) {
+  .project-wrapper {
+    &.static-wrapper {
+      max-width: 25%;
+    }
   }
 }
 </style>

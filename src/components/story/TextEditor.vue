@@ -73,37 +73,38 @@ export default {
     }
 
     this.editorConfig = {
-        bounds: '.draggable',
-        modules: {
-          blotFormatter: {
-            overlay: {
-              style: {
-                transform: 'scale(' + (1 / this.zoom) + ')',
-                transformOrigin: 'top left',
-                zIndex: 105
-              }
+      placeholder: '',
+      bounds: '.draggable',
+      modules: {
+        blotFormatter: {
+          overlay: {
+            style: {
+              transform: 'scale(' + (1 / this.zoom) + ')',
+              transformOrigin: 'top left',
+              zIndex: 105
             }
-          },
-          cursors: true,
-          toolbar: '#toolbar'+this.layerIndex,
-          /* syntax: {
-            highlight: text => hljs.highlightAuto(text).value
-          }, */
-          table: false,  // disable table module
-          'better-table': {
-            operationMenu: {
-              items: {
-                unmergeCells: {
-                  text: 'Another unmerge cells name'
-                }
-              }
-            }
-          },
-          keyboard: {
-            bindings: QuillBetterTable.keyboardBindings
           }
+        },
+        cursors: true,
+        toolbar: '#toolbar'+this.layerIndex,
+        /* syntax: {
+          highlight: text => hljs.highlightAuto(text).value
+        }, */
+        table: false,  // disable table module
+        'better-table': {
+          operationMenu: {
+            items: {
+              unmergeCells: {
+                text: 'Another unmerge cells name'
+              }
+            }
+          }
+        },
+        keyboard: {
+          bindings: QuillBetterTable.keyboardBindings
         }
-      };
+      }
+    };
     const _this = this;
     document.body.querySelector('#table'+this.layerIndex)
     .onclick = () => {
@@ -157,7 +158,6 @@ export default {
 
 
     onEditorChange: _.debounce(function(event) {
-      console.log('editor change event=', event);
       if (!this.contentSet) {
         /** First time content loaded move cursor to the end */
         this.contentSet = true;
@@ -202,14 +202,16 @@ export default {
     },
 
     onEditorReady(quill) {
+      console.log('text mode=', this.modes.mode);
       if (this.modes.mode === 'text') {
         this.active = true;
+        quill.setSelection(this.editorContent.length, 0, 'api');
       } else {
         this.active = false;
-        this.editor.blur();
+        quill.blur();
       }
       this.contentSet = true;
-      quill.setSelection(this.editorContent.length, 0, 'api');
+
     },
 
     onResize: _.debounce(function (x, y, width, height) {

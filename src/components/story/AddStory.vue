@@ -209,6 +209,7 @@ export default {
             commit: 0,
             plan: [{
               video: '',
+              videoObj: {},
               text: '',
               title: '',
               delta: [],

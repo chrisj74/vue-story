@@ -2,22 +2,21 @@
   <div class="plan" v-show="showPlan" ref="planContainer">
     <!-- PLAN -->
     <div class="plan-video" ref="planVideo">
-      <iframe
-        style="width: 100%"
-        :src="story.plan && story.plan.length > 0 && story.plan[0].video ? story.plan[0].video : ''"
-        frameborder="0"
-        allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture"
-        allowfullscreen
-        v-if="videoSource === 'youtube'"
-      ></iframe>
-      <iframe
-        :src="story.plan && story.plan.length > 0 && story.plan[0].video ? story.plan[0].video : ''"
-        id="planPlayer"
-        frameborder="0"
-        allow="autoplay; fullscreen"
-        allowfullscreen
-        v-if="videoSource === 'vimeo'"
-      ></iframe>
+      <div v-if="story.plan[0].videoObj && story.plan[0].videoObj.id" class="plan-video" ref="planPreviewVideo">
+        <iframe
+          style="width: 100%"
+          :src="'https://www.youtube.com/embed/' + story.plan[0].videoObj.id"
+          frameborder="0"
+          allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture"
+          allowfullscreen
+          v-if="story.plan[0].videoObj.service === 'youtube'"></iframe>
+        <iframe
+          :src="'https://player.vimeo.com/video/' + story.plan[0].videoObj.id + '?color=80a998&title=0&byline=0&portrait=0'"
+          frameborder="0" allow="autoplay; fullscreen"
+          allowfullscreen
+          id="planPlayer"
+          v-if="story.plan[0].videoObj.service === 'vimeo'"></iframe>
+      </div>
     </div>
     <div
       v-if="story.plan && story.plan.length > 0"
@@ -86,10 +85,9 @@ export default {
     }
   },
   mounted() {
-    if (this.story.plan && this.story.plan.length > 0 && this.story.plan[0].video) {
-      this.setVideoSource();
+    if (this.story.plan && this.story.plan.length > 0 && this.story.plan[0].videoObj && this.story.plan[0].videoObj.service) {
       this.videoSet = true;
-      if (this.videoSource === 'vimeo') {
+      if (this.story.plan[0].videoObj.service === 'vimeo') {
         var iframe = document.querySelector("#planPlayer");
         this.player = new Player("planPlayer");
         const _this = this;
@@ -122,21 +120,6 @@ export default {
         showEditPlan: true
       };
       this.$store.commit("setSettings", payload);
-    },
-
-    setVideoSource() {
-      if (
-        this.story.plan[0].video &&
-        this.story.plan[0].video.indexOf("youtube.") != -1
-      ) {
-        this.videoSource =  "youtube";
-      }
-      if (
-        this.story.plan[0].video &&
-        this.story.plan[0].video.indexOf("vimeo.") != -1
-      ) {
-        this.videoSource =  "vimeo";
-      }
     },
 
     /* Plan  */

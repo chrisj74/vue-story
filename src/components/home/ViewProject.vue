@@ -10,7 +10,7 @@
       <!-- CONTENT -->
       <div class="modal-inner-content">
         <!-- Profile -->
-        <p><strong>Profile</strong></p>
+        <p><strong>Which Profile?</strong></p>
         <div class="row justify-start profiles-sm" v-if="profiles">
           <div class="profile"
             v-for="profile in profiles"

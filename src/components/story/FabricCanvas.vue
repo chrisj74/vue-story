@@ -93,7 +93,7 @@ export default {
               _this.canvas.setWidth(_this.activePage.pageSize.width);
               _this.setSize();
           })
-    });
+    }, {passive: true});
   },
   methods: {
     canvasInit() {

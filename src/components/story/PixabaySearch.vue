@@ -393,7 +393,7 @@ export default {
 }
 .results-thumb {
   padding: 5px;
-  max-width: 200px;
+  max-width: 150px;
 }
 .results-thumb img {
   max-width: 100%;

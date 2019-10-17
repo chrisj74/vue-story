@@ -21,8 +21,9 @@ export default ({ Vue, store, router }) => {
       let userStories = firebase
         .firestore()
         .collection("users/").doc(user.uid);
-      userStories.set({
+      userStories.update({
         lastUpdated: new Date(),
+        lastLoggedIn: new Date()
       });
 
       /* Set account */

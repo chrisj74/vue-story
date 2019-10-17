@@ -46,9 +46,19 @@
 
     </div>
     <div class="plan-preview" ref="planPreview">
-      <div v-if="story.plan[0].video" class="plan-video" ref="planPreviewVideo">
-        <iframe style="width: 100%" :src="story.plan[0].video" frameborder="0" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen v-if="videoSource === 'youtube'"></iframe>
-        <iframe :src="story.plan[0].video" frameborder="0" allow="autoplay; fullscreen" allowfullscreen v-if="videoSource === 'vimeo'"></iframe>
+      <div v-if="story.plan[0].videoObj && story.plan[0].videoObj.id" class="plan-video" ref="planPreviewVideo">
+        <iframe
+          style="width: 100%"
+          :src="'https://www.youtube.com/embed/' + story.plan[0].videoObj.id"
+          frameborder="0"
+          allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture"
+          allowfullscreen
+          v-if="story.plan[0].videoObj.service === 'youtube'"></iframe>
+        <iframe
+          :src="'https://player.vimeo.com/video/' + story.plan[0].videoObj.id + '?color=80a998&title=0&byline=0&portrait=0'"
+          frameborder="0" allow="autoplay; fullscreen"
+          allowfullscreen
+          v-if="story.plan[0].videoObj.service === 'vimeo'"></iframe>
       </div>
       <div v-html="previewContent" class="plan-text ql-editor" :style="{maxHeight: textHeight + 'px'}">
 
@@ -60,6 +70,7 @@
 <script>
 import * as _ from 'lodash';
 import QuillBetterTable from 'quill-better-table';
+import * as getVideoId from 'get-video-id';
 
 export default {
   name: 'PlanEditor',
@@ -145,14 +156,7 @@ export default {
     },
     settings() {
       return this.$store.getters.getSettings;
-    },
-    videoSource() {
-        if (this.story.plan[0].video && this.story.plan[0].video.indexOf('youtube.') != -1) {
-            return 'youtube';
-        }if (this.story.plan[0].video && this.story.plan[0].video.indexOf('vimeo.') != -1) {
-            return 'vimeo';
-        }
-    },
+    }
   },
   methods: {
     setTextHeight() {
@@ -180,6 +184,7 @@ export default {
               plan: {
                 title: this.story.plan[0].title,
                 video: this.story.plan[0].video,
+                videoObj: this.story.plan[0].videoObj,
                 text: event.html === '' ? ' ' : event.html,
                 delta: _.cloneDeep(event.quill.editor.delta.ops),
                 range: newRange
@@ -211,6 +216,7 @@ export default {
           plan: {
             title: this.story.plan[0].title,
             video: videoPath,
+            videoObj: getVideoId(videoPath),
             text: this.story.plan[0].text,
             delta: this.story.plan[0].delta,
             range: this.story.plan[0].range
@@ -227,6 +233,7 @@ export default {
           plan: {
             title: title,
             video: this.story.plan[0].video,
+            videoObj: this.story.plan[0].videoObj,
             text: this.story.plan[0].text,
             delta: this.story.plan[0].delta,
             range: this.story.plan[0].range

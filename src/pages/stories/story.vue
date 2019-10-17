@@ -193,14 +193,7 @@
       v-model="settings.showAddPage"
       :content-css="{minWidth: '350px', height: '90vh', maxWidth: '100%', width: pageDimensions.width+'px'}"
     >
-      <q-modal-layout>
-        <add-page></add-page>
-        <q-toolbar slot="footer">
-          <q-toolbar-title>
-            <q-btn color="white" text-color="black" @click="closeModal('showAddPage')">Cancel</q-btn>
-          </q-toolbar-title>
-        </q-toolbar>
-      </q-modal-layout>
+      <add-page></add-page>
     </q-modal>
   </div>
 </template>
@@ -335,11 +328,6 @@ export default {
     this.$store.commit("resetPage");
   },
   methods: {
-    closeModal(type) {
-      const newSetting = {};
-      newSetting[type] = false;
-      this.$store.commit("setSettings", newSetting);
-    },
 
     /** EDIT */
     toggleEdit() {
@@ -542,6 +530,10 @@ export default {
     },
 
     toggleThumbs() {
+      if (this.settings.showThumbs) {
+        this.activeEditActions = null;
+        this.isEdit = false;
+      }
       const payload = {
         showThumbs: !this.settings.showThumbs
       };

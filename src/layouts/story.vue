@@ -116,7 +116,6 @@ export default {
   mounted() {
     this.$store.dispatch("setImages", this.user.id);
     this.$store.dispatch('setStories', this.user.id);
-    this.$store.dispatch('setImages', this.user.id);
   },
   methods: {
     openFeedback() {
