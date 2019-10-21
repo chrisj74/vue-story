@@ -3,7 +3,10 @@
     <div class="layout-padding">
       <div class="mid-bg"></div>
       <div class="login-card shadow-4 bg-white">
-        <h5 class="login-title">LOGIN</h5>
+        <div class="login-title">
+        <h5>LOGIN</h5>
+        <p style="text-align: center;">(or <a href="/register">register now</a>)</p>
+        </div>
         <div class="row gutter-md">
           <div class="col-xs-12">
             <q-input float-label="Email" type="email" v-model="email" />

@@ -5,7 +5,7 @@
       <div v-if="story.plan[0].videoObj && story.plan[0].videoObj.id" class="plan-video" ref="planPreviewVideo">
         <iframe
           style="width: 100%"
-          :src="'https://www.youtube.com/embed/' + story.plan[0].videoObj.id"
+          :src="'https://www.youtube.com/embed/' + story.plan[0].videoObj.id + '?playsinline=1'"
           frameborder="0"
           allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture"
           allowfullscreen

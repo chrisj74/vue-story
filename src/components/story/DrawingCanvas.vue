@@ -1,5 +1,7 @@
 <template>
-<div :class="{inactive: modes.mode !== 'draw'}">>
+<div
+  :class="{inactive: modes.mode !== 'draw'}"
+  :style="{cursor: modes.mode === 'draw' ? 'url(&quot;data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAgAAAAICAYAAADED76LAAAAxElEQVQoU1WPMWqEUBCGv0EL3z1S7AmWNF5AJJU2KQTfBazSBcF2t0mTVhBLYSG4J1gsFoTXLjlFWkkUw8AW63Q/3zf/MAKwrusbYJdl2Xme9wdcgaOI9KLQOXcoioJhGDDGkKYpTdPo7l6FWxiGO4WPU1UVZVl+yDzPq+/7G6ghjmP6vj9rw2yM8aZp2khJktB13UmFS5ZlYdu2G6Gua/I8f1fhBfjSm+M4EgQBURRhrf0GnuX+5h54BZ6AX8ABnyLy8w9lUFCmj9QjewAAAABJRU5ErkJggg==&quot;) 3 3, auto' : 'default'}">
   <canvas
     id="drawing-canvas"
     v-if="pageDimensions"

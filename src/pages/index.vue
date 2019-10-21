@@ -189,6 +189,12 @@ export default {
 }
 .project-wrapper {
   padding: 10px;
+  .q-card-title {
+    font-size: 15px;
+  }
+  .q-card-container {
+    padding: 6px;
+  }
   &.static-wrapper {
     max-width: 50%;
   }

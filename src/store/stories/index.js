@@ -195,7 +195,7 @@ export default {
         const userStories = firebase
           .firestore()
           .collection("users/").doc(payload.user.id);
-        userStories.set({
+        userStories.update({
           lastUpdated: new Date(),
         });
 
@@ -771,19 +771,21 @@ export default {
       if (state.imageSearchResults.str !== payload.str) {
         commit('clearImageSearchResults');
       }
-      const pageStr = '&page=' + (state.imageSearchResults.page +1);
-      let path = 'https://pixabay.com/api/?key=11945260-36d09543fa5ee7da289366856&image_type=all&per_page=';
-      path += state.searchSize + '&safesearch=true&q=';
-      const query = encodeURIComponent(payload.str);
-      const fullPath = path + query + pageStr;
-      axios.get(fullPath)
-      .then((response) => {
-        const newPayload = {
-          str: payload.str,
-          response: response
-        };
-        commit('setImageSearchResults', newPayload);
-      })
+      if (payload.str && payload.str.length > 0) {
+        const pageStr = '&page=' + (state.imageSearchResults.page +1);
+        let path = 'https://pixabay.com/api/?key=11945260-36d09543fa5ee7da289366856&image_type=all&per_page=';
+        path += state.searchSize + '&safesearch=true&q=';
+        const query = encodeURIComponent(payload.str);
+        const fullPath = path + query + pageStr;
+        axios.get(fullPath)
+        .then((response) => {
+          const newPayload = {
+            str: payload.str,
+            response: response
+          };
+          commit('setImageSearchResults', newPayload);
+        })
+      }
     },
 
     historyAdd({ commit, state }, payload) {

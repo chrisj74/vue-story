@@ -202,7 +202,6 @@ export default {
     },
 
     onEditorReady(quill) {
-      console.log('text mode=', this.modes.mode);
       if (this.modes.mode === 'text') {
         this.active = true;
         quill.setSelection(this.editorContent.length, 0, 'api');

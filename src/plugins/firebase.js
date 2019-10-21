@@ -11,26 +11,37 @@ export default ({ Vue, store, router }) => {
 
   AUTH.onAuthStateChanged(async user => {
     if (user) {
+      /* Set user */
+      const userObj = {
+        lastUpdated: new Date(),
+        lastLoggedIn: new Date()
+      };
+      let userDoc = firebase
+        .firestore()
+        .collection("users/").doc(user.uid);
+      await userDoc.get()
+        .then((docSnapshot) => {
+          if (docSnapshot.exists) {
+            userDoc.update(userObj)
+          } else {
+            userObj.images = [];
+            userDoc.set(userObj);
+          }
+        });
+
       const payload = {
         user: user,
         redirect: router.currentRoute.query
       };
       await store.dispatch('autoSignIn', payload );
       store.dispatch('setProjects');
-      /* Set user */
-      let userStories = firebase
-        .firestore()
-        .collection("users/").doc(user.uid);
-      userStories.update({
-        lastUpdated: new Date(),
-        lastLoggedIn: new Date()
-      });
+
 
       /* Set account */
       let userAccount = firebase
       .firestore()
       .collection('accounts/').doc(user.uid);
-      userAccount.get()
+      await userAccount.get()
         .then((docSnapshot) => {
           if (docSnapshot.exists) {
             userAccount.onSnapshot((doc) => {

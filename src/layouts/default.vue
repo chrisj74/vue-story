@@ -14,8 +14,20 @@
           <img src="statics/tuc-v4.png" height="50px" class="logo" />
         </div>
         <q-toolbar-title>
-          The Unlimited Club
+          BETA
         </q-toolbar-title>
+        <div class="profile-xs">
+        <div class="profile">
+          <div class="profile-avatar profile-active" v-if="profile">
+            <router-link :to="'/profiles'">
+              <div :style="{backgroundImage: 'url(' + profile.profilePic + ')'}" class="profile-img" v-if="profile.profilePic"></div>
+              <div class="profile-initials" v-else>
+                {{ getInitials(profile.nickName) }}
+              </div>
+            </router-link>
+          </div>
+        </div>
+      </div>
       </q-toolbar>
     </q-layout-header>
 
@@ -48,6 +60,10 @@
         <q-item :link="true" to="/projects">
           <q-item-side icon="mdi-book"/>
           <q-item-main label="MY PROJECTS" />
+        </q-item>
+        <q-item :link="true" to="/profiles">
+          <q-item-side icon="mdi-account"/>
+          <q-item-main label="PROFILES" />
         </q-item>
         <!-- <q-item :link="true" to="/profile" v-if="user">
           <q-item-side icon="mdi-account" />

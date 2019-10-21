@@ -1,6 +1,6 @@
 <template>
   <q-page class="story-index-container">
-    <h2>Projects <q-btn icon="mdi-plus-circle" dense flat size="xl" round label="New Story" @click="showAddStory()" /></h2>
+    <h2>Projects <q-btn icon="mdi-plus-circle" label="New Project" @click="showAddStory()" /></h2>
     <div class="row justify-center items-end profiles-sm" v-if="profiles && activeProfile">
       <div class="profile"
         v-for="profile in profiles"

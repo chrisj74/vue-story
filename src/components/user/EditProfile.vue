@@ -40,7 +40,7 @@
     <q-modal
       v-model="profileSettings.avatarModal"
       :content-css="{minWidth: '350px', height: '90vh', maxWidth: '90vw', width: '800px'}">
-      <add-image maxWidth="300" aspectRatio="1"></add-image>
+      <add-image :maxWidth="300" :aspectRatio="1"></add-image>
     </q-modal>
 
     <!-- Confirm Delete Modal -->

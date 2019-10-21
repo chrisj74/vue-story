@@ -43,10 +43,17 @@
             <q-item-side icon="mdi-home" />
             <q-item-main label="HOME" />
           </q-item>
+
           <q-item :link="true" to="/projects">
             <q-item-side icon="mdi-book" />
             <q-item-main label="MY PROJECTS" />
           </q-item>
+
+          <q-item :link="true" to="/profiles">
+            <q-item-side icon="mdi-account"/>
+            <q-item-main label="PROFILES" />
+          </q-item>
+
           <q-item>
             <q-item-side icon="mdi-bullhorn"></q-item-side>
             <q-item-main>
@@ -55,10 +62,12 @@
               </span>
             </q-item-main>
           </q-item>
+
           <q-item @click.native="onLogout" v-if="user">
             <q-item-side icon="mdi-power" />
             <q-item-main label="EXIT" />
           </q-item>
+
           <q-item :link="true" to="/login" v-else>
             <q-item-side icon="mdi-account" />
             <q-item-main label="Login" />

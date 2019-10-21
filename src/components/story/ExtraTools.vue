@@ -27,8 +27,8 @@
         <div class="tool-slider">
           <q-btn
             :size="$q.screen.lt.sm ? 'sm' : 'md'"
-            :color="modes.subMode === 'options' ? 'primary' : 'dark'"
-            :icon="modes.subMode === 'options' ? 'mdi-chevron-double-right' : 'mdi-checkbox-blank-outline'"
+            :color="showTextOptions ? 'primary' : 'dark'"
+            :icon="showTextOptions ? 'mdi-chevron-double-right' : 'mdi-checkbox-blank-outline'"
             round
             @click="toggleTextOptions()"
             :disabled="isNaN(settings.activeEditor)">
@@ -69,18 +69,21 @@
           </div>
         </div>
         <!-- ADD TEXT BLOCK -->
-        <q-btn
-          key="addTextBlock"
-          icon="mdi-plus-circle"
-          :size="$q.screen.lt.sm ? 'sm' : 'md'"
-          :color="'dark'"
-          round
-          @click="addTextBlock()"
-        >
-          <q-tooltip anchor="center left" self="center right" :offset="[10, 10]">
-            Add text block
-          </q-tooltip>
-        </q-btn>
+        <span class="attention-wrapper"
+          :class="{'btn-attention': storeTextLayer.length === 0}">
+          <q-btn
+            key="addTextBlock"
+            icon="mdi-plus-circle"
+            :size="$q.screen.lt.sm ? 'sm' : 'md'"
+            :color="'dark'"
+            round
+            @click="addTextBlock()"
+          >
+            <q-tooltip anchor="center left" self="center right" :offset="[10, 10]">
+              Add text block
+            </q-tooltip>
+          </q-btn>
+        </span>
         <!-- DELETE OBJ -->
         <q-btn
           :size="$q.screen.lt.sm ? 'sm' : 'md'"
@@ -172,7 +175,12 @@
       />
       <!-- TEXT SIZE -->
       <div class="tool-slider" v-if="modes.mode === 'shape' && (modes.subMode === 'text' || modes.subMode === 'selectText')">
-        <q-btn :size="$q.screen.lt.sm ? 'sm' : 'md'" color="primary" icon="mdi-format-size" round @click="toggleTextSize()"/>
+        <q-btn
+          :size="$q.screen.lt.sm ? 'sm' : 'md'"
+          color="primary"
+          :icon="modes.subMode === 'selectText' ? 'mdi-chevron-double-right' : 'mdi-format-size'"
+          round
+          @click="toggleTextSize()"/>
         <div class="q-slider-wrap" v-if="showTextSize">
           <q-slider :value="text.size" :min="5" :max="100" :step="1" label snap/>
         </div>
@@ -208,7 +216,7 @@
       <!-- Add photo -->
       <q-btn
         icon="mdi-plus-circle"
-        :color="modes.mode === 'photo' ? 'primary' : 'dark'"
+        :color="modes.mode === 'photo' && !settings.showImageOpacity ? 'primary' : 'dark'"
         round
         :size="$q.screen.lt.sm ? 'sm' : 'md'"
         @click="addPhoto()"
@@ -222,7 +230,7 @@
       <div class="tool-slider">
         <q-btn
           :size="$q.screen.lt.sm ? 'sm' : 'md'"
-          icon="mdi-signal"
+          :icon="settings.showImageOpacity ? 'mdi-chevron-double-right' : 'mdi-signal'"
           round
           :color="settings.showImageOpacity ? 'primary' : 'dark'"
           @click="toggleImageOpacity()"
@@ -285,7 +293,7 @@
       <div class="tool-slider" v-if="modes.subMode === 'brush' || modes.subMode === 'eraser'">
         <q-btn
           :size="$q.screen.lt.sm ? 'sm' : 'md'"
-          icon="mdi-signal"
+          :icon="settings.showBrushWidth ? 'mdi-chevron-double-right' :'mdi-signal'"
           round
           :color="settings.showBrushWidth ? 'primary' : 'dark'"
           @click="toggleBrushWidth()"
@@ -602,6 +610,12 @@ export default {
   justify-content: center;
   width: 45px;
   transition: left .2s ease-in-out;
+  .attention-wrapper {
+    border-radius: 50%;
+  }
+  .btn-attention {
+    animation: pulse 2s infinite;
+  }
 }
 
 .extra-tools > * {
@@ -635,6 +649,23 @@ export default {
 @media(max-width: $breakpoint-xs) {
   .extra-tools {
     width: 35px;
+  }
+}
+
+@keyframes pulse {
+  0% {
+    transform: scale(0.95);
+    box-shadow: 0 0 0 0 rgba(0, 0, 0, 0.7);
+  }
+
+  70% {
+    transform: scale(1);
+    box-shadow: 0 0 0 10px rgba(0, 0, 0, 0);
+  }
+
+  100% {
+    transform: scale(0.95);
+    box-shadow: 0 0 0 0 rgba(0, 0, 0, 0);
   }
 }
 

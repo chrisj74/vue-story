@@ -4,7 +4,7 @@
     <q-toolbar slot="header" class="search-container">
         <div class="search-header">
           <div class="flex row items-center" v-shortkey="['enter']" @shortkey="searchImages()">
-            <q-search autofocus dark color="secondary" v-model="searchString" placeholder="Search for images" class="col-10"
+            <q-search autofocus dark color="secondary" v-model="searchString"  placeholder="Search for images" class="col-10"
               :after="[
                 {
                   icon: 'mdi-image-search',
@@ -93,7 +93,11 @@
 import * as b64toBlob from 'b64-to-blob';
 export default {
   name: 'AddImage',
-  props: ['aspectRatio', 'maxWidth', 'initialImage'],
+  props: {
+    aspectRatio: Number,
+    maxWidth:  Number,
+    initialImage: String
+  },
   data() {
     return {
       searchString: null,
