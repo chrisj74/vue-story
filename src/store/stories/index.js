@@ -495,7 +495,7 @@ export default {
         .collection('users/').doc(payload)
         .onSnapshot(function(querySnapshot) {
           let sortedArray = [];
-          if (querySnapshot.data().images) {
+          if (querySnapshot.exists && querySnapshot.data().images) {
             sortedArray = querySnapshot.data().images.sort((a,b) => {
                return new Date(b.created.toDate()) - new Date(a.created.toDate());
             })

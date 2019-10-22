@@ -16,24 +16,24 @@ export default ({ Vue, store, router }) => {
         lastUpdated: new Date(),
         lastLoggedIn: new Date()
       };
-      let userDoc = firebase
-        .firestore()
-        .collection("users/").doc(user.uid);
-      await userDoc.get()
-        .then((docSnapshot) => {
-          if (docSnapshot.exists) {
-            userDoc.update(userObj)
-          } else {
-            userObj.images = [];
-            userDoc.set(userObj);
-          }
-        });
-
       const payload = {
         user: user,
         redirect: router.currentRoute.query
       };
-      await store.dispatch('autoSignIn', payload );
+      let userDoc = firebase
+        .firestore()
+        .collection("users/").doc(user.uid);
+      await userDoc.get()
+        .then(async (docSnapshot) => {
+          if (docSnapshot.exists) {
+            await userDoc.update(userObj);
+          } else {
+            userObj.images = [];
+            await userDoc.set(userObj);
+          }
+          await store.dispatch('autoSignIn', payload );
+        });
+
       store.dispatch('setProjects');
 
 
@@ -41,7 +41,7 @@ export default ({ Vue, store, router }) => {
       let userAccount = firebase
       .firestore()
       .collection('accounts/').doc(user.uid);
-      await userAccount.get()
+      userAccount.get()
         .then((docSnapshot) => {
           if (docSnapshot.exists) {
             userAccount.onSnapshot((doc) => {
