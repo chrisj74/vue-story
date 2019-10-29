@@ -2,25 +2,25 @@
   <q-modal-layout v-if="settings.showImageModal || profileSettings.avatarModal || settings.showUploadModal">
     <!-- HEADER -->
     <q-toolbar slot="header" class="search-container">
-        <div class="search-header">
-          <div class="flex row items-center" v-shortkey="['enter']" @shortkey="searchImages()">
-            <q-search autofocus dark color="secondary" v-model="searchString"  placeholder="Search for images" class="col-10"
-              :after="[
-                {
-                  icon: 'mdi-image-search',
-                  error: false,
-                  handler () {
-                    searchImages()
-                  }
+      <div class="search-header">
+        <div class="flex row items-center" v-shortkey="['enter']" @shortkey="searchImages()">
+          <q-search :debounce="0" autofocus dark color="secondary" v-model="searchString"  placeholder="Search for images" class="col-10"
+            :after="[
+              {
+                icon: 'mdi-image-search',
+                error: false,
+                handler () {
+                  searchImages()
                 }
-              ]"  />
-            <div class="col-2">
-              <q-btn dense flat @click="croppa.chooseFile()">
-                <q-icon size="3rem" color="secondary" name="mdi-cloud-upload" label="Upload" />
-              </q-btn>
-            </div>
+              }
+            ]"  />
+          <div class="col-2">
+            <q-btn dense flat @click="croppa.chooseFile()">
+              <q-icon size="3rem" color="secondary" name="mdi-cloud-upload" label="Upload" />
+            </q-btn>
           </div>
         </div>
+      </div>
     </q-toolbar>
 
     <!-- CONTENT -->

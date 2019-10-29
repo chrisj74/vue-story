@@ -8,7 +8,8 @@
       colors="text-advanced"
       :popover-to="'left'"
       :trigger-style="{ width: $q.screen.lt.sm ? '30px' : '42px', height: $q.screen.lt.sm ? '30px' : '42px', borderRadius: '50%', border: 'solid 1px #000' }"
-      :disabled="modes.mode === 'text' && modes.subMode === 'text'"
+      v-if="(modes.mode !== 'text' && modes.mode !== 'photo')"
+      @open="resetSliders()"
     ></swatches>
     <!-- TEXT -->
       <template v-if="modes.mode === 'text'">
@@ -513,6 +514,16 @@ export default {
       this.$store.commit('setToolAction', 'deleteObj');
     },
     /** Toggles  */
+    resetSliders() {
+      this.showTextOptions = false;
+
+      const payload = {
+        showImageOpacity: false,
+        showBrushWidth: false
+      };
+      this.$store.commit('setSettings', payload);
+    },
+
     toggleTextSize() {
       this.showTextSize = !this.showTextSize;
     },

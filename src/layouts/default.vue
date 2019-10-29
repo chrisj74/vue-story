@@ -6,7 +6,7 @@
           flat
           dense
           round
-          @click="leftDrawerOpen = !leftDrawerOpen"
+          @click="toggleLeftDawer()"
         >
           <q-icon name="mdi-menu" />
         </q-btn>
@@ -69,7 +69,7 @@
           <q-item-side icon="mdi-account" />
           <q-item-main label="MY ACCOUNT" />
         </q-item> -->
-        <q-item @click="openFeedback()">
+        <q-item>
           <q-item-side icon="mdi-bullhorn"></q-item-side>
           <q-item-main>
             <span @click="openFeedback()">
@@ -103,7 +103,6 @@ export default {
   name: 'LayoutDefault',
   data () {
     return {
-      leftDrawerOpen: this.$q.platform.is.desktop,
       storiesSet: false,
       bruitConfig,
     }
@@ -117,11 +116,24 @@ export default {
     },
     profile () {
       return this.$store.getters.profile
-    }
+    },
+    leftDrawerOpen: {
+      set() {
+        this.$store.dispatch("toggleLeftDrawerOpen");
+      },
+      get() {
+        return this.$store.getters.getLeftDrawerOpen;
+      }
+    },
   },
   methods: {
     openFeedback() {
+      console.log('openfeedback');
       this.$store.commit('setLeftDrawerOpen', false);
+    },
+
+    toggleLeftDawer() {
+      this.$store.dispatch("toggleLeftDrawerOpen");
     },
 
     onLogout () {

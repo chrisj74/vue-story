@@ -158,6 +158,13 @@ export default {
 
 
     onEditorChange: _.debounce(function(event) {
+      if (this.modes.mode === 'text') {
+        this.active = true;
+        event.quill.focus();
+      } else {
+        this.active = false;
+        event.quill.blur();
+      }
       if (!this.contentSet) {
         /** First time content loaded move cursor to the end */
         this.contentSet = true;
@@ -166,7 +173,8 @@ export default {
         event.quill.setSelection(range, 'api');
         this.cursorSelection = null;
       }
-      if (this.user && !_.isEqual(event.quill.editor.delta.ops, JSON.parse(JSON.stringify(this.storeTextLayer[this.layerIndex].delta)))) {
+      if (this.user && (!_.isEqual(event.quill.editor.delta.ops, JSON.parse(JSON.stringify(this.storeTextLayer[this.layerIndex].delta)))
+          || event.html != this.storeTextLayer[this.layerIndex].text)) {
         const newRange = this.cursorSelection ? this.cursorSelection : {index: this.editorContent.length, length:0};
         const textLayer = _.cloneDeep(this.storeTextLayer);
           const payload = {
@@ -179,7 +187,7 @@ export default {
                 y: (textLayer[this.layerIndex].y * 1),
                 width: (textLayer[this.layerIndex].width * 1),
                 height: (textLayer[this.layerIndex].height * 1),
-                text: event.html === '' ? ' ' : event.html,
+                text: event.html === '' ? ' ' : _.cloneDeep(event.html),
                 delta: _.cloneDeep(event.quill.editor.delta.ops),
                 range: newRange
               }
@@ -210,7 +218,6 @@ export default {
         quill.blur();
       }
       this.contentSet = true;
-
     },
 
     onResize: _.debounce(function (x, y, width, height) {
@@ -257,7 +264,8 @@ export default {
       handler: function(to, from) {
         if (this.storeTextLayer && !isNaN(this.layerIndex) &&
           (!this.storeTextLayer[this.layerIndex].delta
-          || !_.isEqual(JSON.parse(JSON.stringify(this.storeTextLayer[this.layerIndex].delta)), this.editor.getContents().ops))) {
+          || !_.isEqual(JSON.parse(JSON.stringify(this.storeTextLayer[this.layerIndex].delta)), this.editor.getContents().ops))
+        ) {
           /** Only update content from the store if needed  */
           this.editorContent = _.cloneDeep(this.storeTextLayer[this.layerIndex].text);
         }

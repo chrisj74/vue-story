@@ -530,7 +530,7 @@ export default {
       });
     },
 
-    setStory({ commit, state, dispatch}, payload) {
+    setStory({ commit, state}, payload) {
       return new Promise((resolve, reject) => {
         firebase
           .firestore()
@@ -542,10 +542,12 @@ export default {
               || querySnapshot.data().commit > state.story.commit
             ) {
               commit('setStory', JSON.parse(JSON.stringify(querySnapshot.data())));
-              if (querySnapshot.data().publishId) {
-               commit('setPlan', true);
-              } else {
-                commit('setPlan', false);
+              if (!state.story || state.story.id !== querySnapshot.id) {
+                if (querySnapshot.data().publishId) {
+                  commit('setPlan', true);
+                  } else {
+                    commit('setPlan', false);
+                  }
               }
             }
         });

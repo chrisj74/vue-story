@@ -89,7 +89,10 @@ module.exports = function (ctx) {
         'QSpinnerBars',
         'QTooltip',
         'QChipsInput',
-        'QAlert'
+        'QAlert',
+        'QTabs',
+        'QTab',
+        'QTabPane',
       ],
       directives: [
         'Ripple',

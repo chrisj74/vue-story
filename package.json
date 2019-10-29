@@ -1,10 +1,10 @@
 {
-  "name": "quasar-firebase",
+  "name": "the-unlimited-club",
   "version": "1.0.0",
-  "description": "Quasar Framework 0.15.6 + Firebase Auth",
-  "productName": "Quasar + Firebase Auth",
+  "description": "The Unlimited Club App",
+  "productName": "The Unlimited Club App",
   "cordovaId": "org.cordova.quasar.app",
-  "author": "Marcelo J Forclaz",
+  "author": "Chris John",
   "private": true,
   "scripts": {
     "test": "echo \"No test specified\" && exit 0"

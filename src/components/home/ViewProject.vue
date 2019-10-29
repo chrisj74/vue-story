@@ -155,6 +155,11 @@ export default {
       }
       this.$store.dispatch('cloneStory', payload)
         .then((newStoryId) => {
+          const newSetting = {
+            showProjectModal: false,
+          };
+          this.$store.commit('setSettings', newSetting);
+
           this.$router.push({ path: '/project/'+newStoryId });
         });
     },

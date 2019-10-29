@@ -134,9 +134,10 @@ export default {
           let tableModule = _this.editor.getModule('better-table')
           tableModule.insertTable(3, 3)
         }
+        _this.setTextHeight();
       });
 
-    this.setTextHeight();
+
   },
   computed: {
     editor() {
@@ -245,6 +246,8 @@ export default {
   watch: {
     story: {
       handler: function(to, from) {
+
+        this.setTextHeight();
         if ((!this.story.plan[0].delta
           || !_.isEqual(JSON.parse(JSON.stringify(this.story.plan[0].delta)), this.editor.getContents().ops))) {
           /** Only update content from the store if needed  */

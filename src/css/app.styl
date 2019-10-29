@@ -8,10 +8,25 @@
     }
   }
 } */
+
+.tuc-watermark {
+  position: absolute;
+  bottom: 5px;
+  right: 5px;
+  z-index: 99;
+  pointer-events: none;
+}
+
 a {
   color: $primary;
   &:visited {
     color: $primary;
+  }
+}
+
+.q-drawer-container {
+  a, a:visited {
+    color: #0c0c0c;
   }
 }
 #login

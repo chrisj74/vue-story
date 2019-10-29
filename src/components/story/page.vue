@@ -78,6 +78,9 @@
             <fabric-canvas type="photo"></fabric-canvas>
             <drawing-canvas></drawing-canvas>
           </div>
+          <div class="tuc-watermark">
+            <img src="statics/tuc-v4.png" height="50px" />
+          </div>
         </div>
       </div>
     </div>
@@ -561,6 +564,7 @@ export default {
 
 <style lang="stylus">
 @import '~variables';
+
 .main-content-wrapper {
   flex-grow: 1;
   display: flex;

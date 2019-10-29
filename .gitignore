@@ -4,14 +4,13 @@
 node_modules
 /src/plugins/env.json
 /dist
-/src-cordova/platforms
-/src-cordova/plugins
-/src-cordova/www
+/src-cordova
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 /src/statics/workalongo-test
 /src/assets/bruit-config.json
+/src/assets/youtubeApi.js
 
 # Editor directories and files
 .idea

@@ -4,7 +4,7 @@
     <div v-if="popularProjects && popularProjects.length > 0">
       <h2>Popular</h2>
       <div class="row-wrapper">
-        <carousel :responsive="{0:{items:2,nav:false},600:{items:3,nav:false},1000:{items: 4, nav: false}}" v-if="projects && projects.length > 0">
+        <carousel :responsive="{0:{items:2,nav:false},600:{items:3,nav:false},1000:{items: 4, nav: false}, 1200:{items: 5, nav: false}}" v-if="projects && projects.length > 0">
           <template v-for="project in projects">
             <div :key="'popular'+project.projectId" class="project-wrapper" @click="showProject(project)">
               <q-card v-if="project.keywords.includes('popular')">
@@ -28,7 +28,7 @@
     <div v-if="profileStories && profileStories.length > 0">
       <h2><router-link :to="'/projects'">My Projects</router-link></h2>
       <div class="row-wrapper">
-        <carousel :responsive="{0:{items:2,nav:false},600:{items:3,nav:false},1000:{items: 4, nav: false}}" v-if="profileStories && profileStories.length > 0">
+        <carousel :responsive="{0:{items:2,nav:false},600:{items:3,nav:false},1000:{items: 4, nav: false}, 1200:{items: 5, nav: false}}" v-if="profileStories && profileStories.length > 0">
           <template v-for="(story) in profileStories">
             <div class="project-wrapper" :key="'myprojects'+story.id">
               <q-card>
@@ -74,7 +74,7 @@
     <div v-if="familyProjects && familyProjects.length > 0">
       <h2>Family</h2>
       <div class="row-wrapper">
-        <carousel :responsive="{0:{items:2,nav:false},600:{items:3,nav:false},1000:{items: 4, nav: false}}" v-if="projects && projects.length > 0">
+        <carousel :responsive="{0:{items:2,nav:false},600:{items:3,nav:false},1000:{items: 4, nav: false}, 1200:{items: 5, nav: false}}" v-if="projects && projects.length > 0">
           <template v-for="project in projects">
             <div :key="'faily'+project.projectId" class="project-wrapper" @click="showProject(project)">
               <q-card v-if="project.category === 'Family'">
@@ -218,6 +218,13 @@ export default {
   .project-wrapper {
     &.static-wrapper {
       max-width: 25%;
+    }
+  }
+}
+@media (min-width: 1200px) {
+  .project-wrapper {
+    &.static-wrapper {
+      max-width: 20%;
     }
   }
 }

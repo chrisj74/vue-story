@@ -147,6 +147,9 @@
               v-html="pageText.text"
             ></div>
           </div>
+          <div class="tuc-watermark">
+            <img src="statics/tuc-v4.png" height="50px" />
+          </div>
         </div>
       </div>
       <!-- Download image link -->
@@ -691,7 +694,7 @@ export default {
   top: 30px;
   right: 0;
   height: calc(100vh - 50px);
-  background: rgba(255, 255, 255, 0.8);
+  background: rgba(255, 255, 255, 0.95);
   z-index: 3;
   box-shadow: 0 1px 5px rgba(0, 0, 0, 0.2), 0 2px 2px rgba(0, 0, 0, 0.14), 0 3px 1px -2px rgba(0, 0, 0, 0.12);
 
@@ -720,6 +723,7 @@ export default {
 .plan-text {
   max-height: calc(100% - 300px);
   overflow: scroll;
+  position: relative;
 }
 
 .action-buttons {
@@ -787,89 +791,89 @@ export default {
     justify-content: flex-end;
     align-items: center;
   }
-}
 
-.thumb {
-  height: 84px;
-  width: 61px;
-  display: flex;
-  justify-content: center;
-  align-items: stretch;
-  margin-bottom: 10px;
-  margin-right: 10px;
-  background-size: cover;
-  background-repeat: no-repeat;
-  background-color: #fff;
-  background-position: center center;
-  position: relative;
-  outline: solid 3px #aeaeae;
-  -webkit-transition: outline-color 1s; /* Safari */
-  transition: outline-color 1s;
-  position: relative;
+  .thumb {
+    height: 84px;
+    width: 61px;
+    display: flex;
+    justify-content: center;
+    align-items: stretch;
+    margin-bottom: 10px;
+    margin-right: 10px;
+    background-size: cover;
+    background-repeat: no-repeat;
+    background-color: #fff;
+    background-position: center center;
+    position: relative;
+    outline: solid 3px #aeaeae;
+    -webkit-transition: outline-color 1s; /* Safari */
+    transition: outline-color 1s;
+    position: relative;
 
-  a {
-    color: #000;
-  }
+    a {
+      color: #000;
+    }
 
-  .thumb-drawing {
-    position: absolute;
-    z-index: 3;
-  }
-
-  .thumb-photo {
-    position: absolute;
-    z-index: 2;
-  }
-
-  .thumb-text {
-    position: absolute;
-    z-index: 4;
-    transform: scale(0.1);
-    transform-origin: top left;
-    overflow: hidden;
-    top: calc(40px * 0.1);
-
-    .thumb-text-block {
+    .thumb-drawing {
       position: absolute;
-      border-style: solid;
+      z-index: 3;
+    }
+
+    .thumb-photo {
+      position: absolute;
+      z-index: 2;
+    }
+
+    .thumb-text {
+      position: absolute;
+      z-index: 4;
+      transform: scale(0.1);
+      transform-origin: top left;
+      overflow: hidden;
+      top: calc(40px * 0.1);
+
+      .thumb-text-block {
+        position: absolute;
+        border-style: solid;
+      }
     }
   }
-}
 
-.thumb-actions {
-  position: absolute;
-  top: 0;
-  right: 0;
-  bottom: 0;
-  z-index: 5;
-  background: rgba(255, 255, 255, 0.95);
-  display: flex;
-  flex-direction: row;
-  justify-content: flex-start;
-  align-items: center;
-  padding: 0 5px;
-  &.active {
-    z-index: 6;
-  }
-
-  .thumb-actions-toggle {
-    cursor: pointer;
-    font-size: 20px;
-  }
-
-  .active-thumb-actions {
+  .thumb-actions {
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 5;
+    background: rgba(255, 255, 255, 0.95);
     display: flex;
-    left: 0;
-    flex-direction: column;
-    justify-content: center;
+    flex-direction: row;
+    justify-content: flex-start;
     align-items: center;
-    background: #fff;
-    border: solid 1px #000;
-    padding: 2px;
+    padding: 0 5px;
+    &.active {
+      z-index: 6;
+    }
 
-    .delete-page, .download-page, .upload-page {
+    .thumb-actions-toggle {
       cursor: pointer;
-      font-size: 26px;
+      font-size: 20px;
+    }
+
+    .active-thumb-actions {
+      display: flex;
+      left: 0;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      background: #fff;
+      border: solid 1px #000;
+      padding: 2px;
+
+      .delete-page, .download-page, .upload-page {
+        cursor: pointer;
+        font-size: 26px;
+      }
     }
   }
 }
