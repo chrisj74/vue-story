@@ -709,8 +709,6 @@ export default {
   position: relative;
   padding-bottom: 56.25%; /* 16:9 */
   height: 0;
-  margin-bottom: 10px;
-
   iframe, object, embed {
     position: absolute;
     top: 0;

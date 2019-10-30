@@ -1,9 +1,8 @@
 <template>
   <div class="plan" v-show="showPlan" ref="planContainer">
     <!-- PLAN -->
-    <div class="plan-video" ref="planVideo">
+    <div class="plan-video" ref="planVideo" v-if="(story.plan[0].videoObj && story.plan[0].videoObj.id) || youtubeVideo">
       <div
-        v-if="(story.plan[0].videoObj && story.plan[0].videoObj.id) || youtubeVideo"
         class="plan-video"
         ref="planPreviewVideo"
       >
@@ -50,7 +49,7 @@
               slot="title"
               name="tab-2"
               :default="!story.plan || story.plan.length === 0"
-              icon="mdi-earth"
+              icon="mdi-wikipedia"
               label="Research"
             />
             <q-tab
@@ -62,11 +61,11 @@
             />
           </q-tabs>
         </div>
-        <div clss="q-modal-layout-content col scroll">
+        <div clss="tabs-content" style="overflow: auto;" ref="tabContent">
           <div v-if="tabsModel === 'tab-1'" v-html="story.plan[0].text" class="ql-editor wiki-tab"></div>
           <div v-if="tabsModel === 'tab-2'" class="wiki-tab">
             <q-toolbar color="white">
-              <div v-shortkey="['enter']" @shortkey="searchWiki()">
+              <div v-shortkey="['enter']" @shortkey="searchWiki()" class="tab-search">
                 <q-search
                   :debounce="0"
                   no-icon
@@ -74,7 +73,7 @@
                   inverted-light
                   color="secondary"
                   v-model="searchStr"
-                  placeholder="Search"
+                  placeholder="Search wikipedia"
                   :after="[
                     {
                       icon: 'mdi-magnify',
@@ -90,7 +89,7 @@
             <!-- Search content -->
             <div class="wiki-wrapper">
               <!-- Wiki results -->
-              <div v-if="showWikiResults" ref="wikiResults" class="wiki-content">
+              <div v-if="showWikiResults" class="wiki-content">
                 <div v-if="wikiObj && wikiObj.length > 0">
                   <div
                     v-for="(result, index) in wikiObj"
@@ -109,16 +108,19 @@
                 </div>
               </div>
               <!-- Wiki page -->
-              <div @click="handleWikiClick" class="wiki-content" :class="{'no-images' : noImages}" v-if="showWikiPage" ref="wikiPage">
-                <h5>{{ wikipediaResponse.title }}</h5>
+              <div @click="handleWikiClick" class="wiki-content" :class="{'no-images' : noImages}" v-if="showWikiPage">
+                <h1>{{ wikipediaResponse.title }}</h1>
                 <div v-html="wikipediaResponse.html"></div>
+                <div class="wiki-attribution">
+                  <p>This article uses material from the Wikipedia article (https://simple.wikipedia.org/wiki/{{ wikipediaResponse.pageId }}),<br />which is released under the Creative Commons Attribution-Share-Alike License 3.0.</p>
+                </div>
               </div>
             </div>
           </div>
           <!-- Youtube -->
           <div v-if="tabsModel === 'tab-3'" class="youtube-tab">
             <q-toolbar color="white">
-              <div v-shortkey="['enter']" @shortkey="searchYoutube()">
+              <div v-shortkey="['enter']" @shortkey="searchYoutube()" class="tab-search">
                 <q-search
                   :debounce="0"
                   no-icon
@@ -126,7 +128,7 @@
                   inverted-light
                   color="secondary"
                   v-model="youtubeSearchStr"
-                  placeholder="Search"
+                  placeholder="Search youtube"
                   :after="[
                     {
                       icon: 'mdi-magnify',
@@ -142,20 +144,27 @@
             <!-- Search content -->
             <div class="youtube-wrapper">
               <!-- Youtube results -->
-              <div v-if="showYoutubeResults" ref="youtubeResults" class="youtube-content">
+              <div v-if="showYoutubeResults" class="youtube-content">
                 <div v-if="youtubeObj && youtubeObj.length > 0">
-                  <div
-                    v-for="(result, index) in youtubeObj"
-                    :key="index"
-                    @click="viewYoutube(result.id.videoId)"
-                    class="result-card"
-                  >
-                    <q-card>
-                      <q-card-media>
-                        <img :src="result.snippet.thumbnails.medium.url" />
-                      </q-card-media>
-                      <q-card-title>{{ result.snippet.title }}</q-card-title>
-                    </q-card>
+                  <div class="row">
+                    <div
+                      v-for="(result, index) in youtubeObj"
+                      :key="index"
+                      @click="viewYoutube(result.id.videoId)"
+                      class="result-card col-6"
+                    >
+                      <q-card>
+                        <q-card-media>
+                          <img :src="result.snippet.thumbnails.medium.url" />
+                        </q-card-media>
+                        <q-card-title>{{ result.snippet.title }}</q-card-title>
+                      </q-card>
+                    </div>
+                  </div>
+                  <div class="row justify-between tabs-pagination">
+                    <q-btn icon="mdi-chevron-left" :disabled="!youtubePagination.prev" @click="searchYoutube('prev')">Previous</q-btn>
+
+                    <q-btn icon="mdi-chevron-right" :disabled="!youtubePagination.next" @click="searchYoutube('next')">Next</q-btn>
                   </div>
                 </div>
                 <div v-if="youtubeObj && youtubeObj.length === 0">
@@ -165,7 +174,7 @@
             </div>
           </div>
         </div>
-        <div v-show="wikiLoading" class="wiki-loading-box">
+        <div v-show="wikiLoading && tabsModel === 'tab-2'" class="wiki-loading-box">
           <q-spinner-bars color="primary" :size="50" />
         </div>
       </div>
@@ -221,7 +230,8 @@ export default {
       videoSource: null,
       wikipediaResponse: {
         html: '',
-        title: ''
+        title: '',
+        pageId: ''
       },
       wikiObj: null,
       searchStr: '',
@@ -235,6 +245,10 @@ export default {
       youtubeObj: null,
       youtubeVideo: null,
       showYoutubeResults: false,
+      youtubePagination: {
+        next: null,
+        prev: null
+      }
     };
   },
   computed: {
@@ -305,7 +319,7 @@ export default {
       if (this.$refs.planVideo && this.$refs.planContainer) {
         this.textHeight =
           this.$refs.planContainer.clientHeight -
-          (this.$refs.planVideo.clientHeight + 10) +
+          (this.$refs.planVideo.clientHeight) +
           "px";
       } else if (this.$refs.planContainer) {
         this.textHeight = this.$refs.planContainer.clientHeight + "px";
@@ -397,7 +411,7 @@ export default {
           const pageRef = e.target.getAttribute("href").replace("/wiki/", "");
           this.viewWiki(pageRef);
         } else if (e.target.getAttribute("href").startsWith("#")) {
-          this.$refs.wikiPage.scrollTo(e.target.getAttribute("href"));
+          this.$refs.tabContent.scrollTo(e.target.getAttribute("href"));
         } else {
           console.log("external link");
         }
@@ -429,7 +443,7 @@ export default {
           this.showWikiResults = true;
           this.wikiLoading = false;
           this.$nextTick(() => {
-            this.$refs.wikiResults.scrollTop = 0;
+            this.$refs.tabContent.scrollTop = 0;
           });
         });
       } else {
@@ -438,7 +452,7 @@ export default {
         this.showWikiPage = false;
         this.showWikiResults = true;
         this.$nextTick(() => {
-          this.$refs.wikiResults.scrollTop = 0;
+          this.$refs.tabContent.scrollTop = 0;
         });
       }
     },
@@ -458,25 +472,39 @@ export default {
           }
         });
 
-        this.wikipediaResponse.html = response.data.parse.text["*"];
-        this.wikipediaResponse.title = response.data.parse.title;
+        this.wikipediaResponse = {
+          html: response.data.parse.text["*"],
+          title: response.data.parse.title,
+          pageId:  response.data.parse.title.replace(' ', '_'),
+        };
+
         this.showWikiPage = true;
         this.showWikiResults = false;
         this.wikiLoading = false;
         this.$nextTick(() => {
-          this.$refs.wikiPage.scrollTop = 0;
+          this.$refs.tabContent.scrollTop = 0;
         });
+      })
+      .catch(error => {
+        this.wikiLoading = false;
       });
     },
 
     /* Youtube */
-    searchYoutube() {
-      const url = 'https://www.googleapis.com/youtube/v3/search?part=snippet%2Cid&maxResults=25&order=relevance&q=' +
+    searchYoutube(dir) {
+      let dirStr = '';
+      if (dir) {
+        if (dir === 'next') {
+          dirStr = '&pageToken=' + this.youtubePagination.next;
+        } else {
+          dirStr = '&pageToken=' + this.youtubePagination.prev;
+        }
+      }
+      const url = 'https://www.googleapis.com/youtube/v3/search?part=snippet%2Cid&maxResults=10&order=relevance&q=' +
         encodeURI(this.youtubeSearchStr) +
-        'test&safeSearch=moderate&type=video&videoEmbeddable=true&videoType=any&key=' +
-        youtubeApi.key;
+        '&safeSearch=strict&type=video&videoEmbeddable=true&videoType=any&key=' +
+        youtubeApi.key + dirStr;
       if (!blockList.blockList.includes(this.youtubeSearchStr.toLowerCase())) {
-        console.log('url=', url);
         axios.get(url).then(response => {
           this.youtubeObj = [];
 
@@ -492,10 +520,11 @@ export default {
               this.youtubeObj.push(response.data.items[key]);
             }
           });
-          console.log('this.youtubeObj', this.youtubeObj);
+          this.youtubePagination.next = response.data.nextPageToken ? response.data.nextPageToken : null;
+          this.youtubePagination.prev = response.data.prevPageToken ? response.data.prevPageToken : null;
           this.showYoutubeResults = true;
           this.$nextTick(() => {
-            this.$refs.youtubeResults.scrollTop = 0;
+            this.$refs.tabContent.scrollTop = 0;
           });
         });
       } else {
@@ -503,7 +532,7 @@ export default {
         console.log("naughty");
         this.showYoutubeResults = true;
         this.$nextTick(() => {
-          this.$refs.youtubeResults.scrollTop = 0;
+          this.$refs.tabContent.scrollTop = 0;
         });
       }
     },
@@ -537,7 +566,10 @@ export default {
     },
     showPlan: {
       handler() {
-        console.log("Plan handler showPlan");
+        this.$nextTick(() => {
+          this.getTextHeight();
+        });
+
         if (this.showPlan && this.player) {
           this.player.play();
         } else if (this.player) {
@@ -550,15 +582,30 @@ export default {
 </script>
 
 <style lang="stylus">
+.tabs-content {
+  overflow: auto;
+  -webkit-overflow-scrolling: touch;
+  will-change: scroll-position;
+}
+.tab-search {
+  width: 100%;
+}
+.tabs-pagination {
+  margin-bottom: 10px;
+  padding: 10px;
+}
 .youtube-close {
   position: absolute;
-  bottom: 5px;
-  right: 5px;
-  z-index: 999;
+  bottom: -17px;
+  left: 50%;
+  z-index: 2001;
+  margin-left: -50px;
 }
 .result-card{
   cursor: pointer;
   margin-bottom: 10px;
+  align-self: stretch;
+  padding-right: 5px;
 }
 .wiki-tab, .youtube-tab {
   padding: 10px;
@@ -566,18 +613,24 @@ export default {
 .wiki-wrapper {
   position: relative;
 }
-  .wiki-loading-box {
-    position: absolute;
-    top: 0;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    z-index: 9999;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: rgba(255,255,255, .8);
-  }
+.wiki-attribution {
+  padding: 10px;
+  margin-bottom: 10px;
+  background: #ccc;
+  font-size: .8em;
+}
+.wiki-loading-box {
+  position: absolute;
+  top: 70px;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255,255,255, .8);
+}
 
 .wiki-content, .youtube-content {
   &.no-images {
@@ -615,6 +668,12 @@ export default {
   }
 
   .sistersitebox {
+    display: none;
+  }
+  #Other_websites, .external {
+    display: none;
+  }
+  #References, .reflist {
     display: none;
   }
 }
