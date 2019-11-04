@@ -1,7 +1,7 @@
 import * as firebase from "firebase";
 import * as _ from "lodash";
 import * as axios from 'axios';
-import { stat } from "fs";
+import uuid from 'uuidv4';
 
 export default {
   state: {
@@ -36,6 +36,7 @@ export default {
       isSelected: false,
       showImageModal: false,
       showUploadModal: false,
+      showPlanModal: false,
       activeEditor: 0,
       showProjectModal: false,
       showAddPage: false,
@@ -541,13 +542,15 @@ export default {
               || querySnapshot.data().commit === 0
               || querySnapshot.data().commit > state.story.commit
             ) {
-              commit('setStory', JSON.parse(JSON.stringify(querySnapshot.data())));
+              const storyObj = JSON.parse(JSON.stringify(querySnapshot.data()));
+              storyObj['id'] = querySnapshot.id;
+              commit('setStory', storyObj);
               if (!state.story || state.story.id !== querySnapshot.id) {
                 if (querySnapshot.data().publishId) {
                   commit('setPlan', true);
-                  } else {
-                    commit('setPlan', false);
-                  }
+                } else {
+                  commit('setPlan', false);
+                }
               }
             }
         });
@@ -750,7 +753,7 @@ export default {
 
     addImage({ commit, state }, payload) {
       const ref = firebase.storage().ref();
-      const path = 'images/' + payload.user.id + '/' + (+new Date()) + '-' + payload.image.name;
+      const path = 'images/' + payload.user.id + '/' + uuid();
       const metadata = {
         contentType: payload.image.type
       };
@@ -764,7 +767,7 @@ export default {
             webformatHeight: payload.image.dimensions.h,
           };
           commit('setInsertImage', imgObj);
-          commit('addImage', url);
+          commit('addImage', url.substring(0, indexOf('?token=')));
         })
         .catch(console.error);
     },

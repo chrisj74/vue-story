@@ -1,5 +1,5 @@
 <template>
-  <q-modal-layout v-if="settings.showImageModal || profileSettings.avatarModal || settings.showUploadModal">
+  <q-modal-layout v-if="settings.showImageModal || profileSettings.avatarModal || settings.showUploadModal || settings.showPlanModal">
     <!-- HEADER -->
     <q-toolbar slot="header" class="search-container">
       <div class="search-header">
@@ -227,7 +227,8 @@ export default {
       this.selectedImage = null;
       let payload = {
         showImageModal: false,
-        showUploadModal: false
+        showUploadModal: false,
+        showPlanModal: false,
       };
       this.$store.commit('setSettings', payload);
       payload = {
@@ -321,7 +322,8 @@ export default {
         this.searchString = '';
         let payload = {
           showImageModal: false,
-          showUploadModal: false
+          showUploadModal: false,
+          showPlanModal: false,
         };
         this.$store.commit('setSettings', payload);
         payload = {

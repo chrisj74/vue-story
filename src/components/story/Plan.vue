@@ -199,11 +199,11 @@
 
     <!-- IMAGE MODAL -->
     <q-modal
-      v-if="pageDimensions"
-      v-model="settings.showImageModal"
+      v-if="pageDimensions && wikiImage"
+      v-model="settings.showPlanModal"
       :content-css="{minWidth: '350px', height: '90vh', maxWidth: '100%', width: pageDimensions.width+'px'}"
     >
-      <add-image v-if="settings.showImageModal && wikiImage" :initialImage="wikiImage"></add-image>
+      <add-image v-if="settings.showPlanModal && wikiImage" :initialImage="wikiImage"></add-image>
     </q-modal>
   </div>
 </template>
@@ -399,7 +399,7 @@ export default {
           this.wikiImage = imageStr;
           this.$store.commit("setMode", "photo");
           const newSetting = {
-            showImageModal: true
+            showPlanModal: true
           };
           this.$store.commit("setSettings", newSetting);
         } else {

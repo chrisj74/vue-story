@@ -437,6 +437,7 @@ export default {
         this.$store.commit('setLoading', false);
         const newSetting = {
           showImageModal: false,
+          showPlanModal: false,
         };
         this.$store.commit('setSettings', newSetting);
         if (newImage && this.modes.mode === "photo") {

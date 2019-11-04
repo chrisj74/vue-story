@@ -349,6 +349,7 @@ export default {
       this.$store.commit('setSubMode', "text");
       const newSetting = {
         showImageModal: false,
+        showPlanModal: false,
       };
       this.$store.commit('setSettings', newSetting);
     },

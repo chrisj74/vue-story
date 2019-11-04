@@ -119,7 +119,10 @@ export default {
     signUserInGoogle ({commit}) {
       commit('setLoading', true);
       commit('clearError');
-      AUTH.signInWithPopup(new firebase.auth.GoogleAuthProvider())
+      // AUTH.signInWithPopup(new firebase.auth.GoogleAuthProvider())
+      AUTH.signInWithRedirect(new firebase.auth.GoogleAuthProvider()).then(function() {
+        return AUTH.getRedirectResult();
+      })
         .then(
           user => {
             commit('setLoading', false);

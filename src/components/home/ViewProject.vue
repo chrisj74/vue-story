@@ -180,6 +180,7 @@ export default {
       this.$store.commit('setSubMode', "view");
       const newSetting = {
         showImageModal: false,
+        showPlanModal: false,
       };
       this.$store.commit('setSettings', newSetting);
     },
