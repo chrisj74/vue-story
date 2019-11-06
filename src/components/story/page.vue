@@ -13,31 +13,6 @@
             :key="'toolbar'+layerIndex"
             class="text-toolbar-wrapper"
             :style="{width: (pageDimensions.maxWidth) + 'px', left: leftDrawerOpen ? '315px' : '15px'}">
-            <div :id="'toolbar'+layerIndex" :style="{width: (pageDimensions.width) + 'px'}" v-show="textLayerActive && settings.activeEditor === layerIndex">
-              <span class="ql-format-group">
-                <button type="button" class="ql-bold"></button>
-                <button type="button" class="ql-italic"></button>
-                <button type="button" class="ql-underline" v-show="pageDimensions.width > 500"></button>
-                <button type="button" class="ql-blockquote" v-show="pageDimensions.width > 500"></button>
-                <select class="ql-align"></select>
-
-                <button type="button" class="ql-list" value="ordered"></button>
-                <button type="button" class="ql-list" value="bullet"></button>
-
-                <select class="ql-size"></select>
-                <select class="ql-font">
-                  <option selected>Normal</option>
-                  <option value="schoolbell">Handwriting</option>
-                </select>
-
-                <select class="ql-color"></select>
-                <select class="ql-background"></select>
-
-                <button class="ql-link" v-show="pageDimensions.width > 500"></button>
-                <button class="ql-video" v-show="pageDimensions.width > 500"></button>
-                <button :id="'table'+layerIndex" v-show="pageDimensions.width > 500"><i class="mdi mdi-table"></i></button>
-              </span>
-            </div>
           </div>
         </template>
 

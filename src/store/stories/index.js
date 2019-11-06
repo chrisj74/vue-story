@@ -379,7 +379,6 @@ export default {
       if (newState.textLayer[payload.index]) {
         if (payload.textLayer) {
           newState.textLayer[payload.index] = _.merge(newState.textLayer[payload.index], payload.textLayer);
-          newState.textLayer[payload.index].delta = payload.textLayer.delta;
         } else {
           newState.textLayer.splice(payload.index, 1);
         }

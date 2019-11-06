@@ -6,6 +6,7 @@
     :x="storeTextLayer[layerIndex].x"
     :y="storeTextLayer[layerIndex].y"
     @dragstop="onDrag"
+    @dragging="onDragging"
     @resizestop="onResize"
     :parent="'.text-layer'"
     :drag-handle="'.drag-handle'"
@@ -19,17 +20,18 @@
         borderWidth: storeTextLayer[layerIndex].borderWidth + 'px',
         borderColor: storeTextLayer[layerIndex].borderColor,
         backgroundColor: backgroundColor}">
-      <quill-editor
-        :content="editorContent"
-        ref="textLayerEditor"
-        @ready="onEditorReady($event)"
-        @change="onEditorChange($event)"
-        @focus="onEditorFocus($event)"
-        @blur="onEditorBlur($event)"
-        :options="editorConfig"
+      <tinymce-editor
+        :key="activePage.id + '_text_' + layerIndex"
+        v-model="editorContent"
         class="editor"
-        v-if="editorContent && editorConfig">
-      </quill-editor>
+        v-if="editorConfig"
+        api-key="p0igcqysw2jkny4v7wki9qyg6p05lplhpctohfurcbsjc7dp"
+        :init="editorConfig"
+        @onActivate="onEditorReady($event)"
+        @onFocus="onEditorFocus($event)"
+        @onBlur="onEditorBlur($event)">
+      </tinymce-editor>
+
       <div v-else v-html="storeTextLayer[layerIndex].text" class="text-render ql-editor ql-container"></div>
     </div>
     <div class="drag-handle" v-if="active && layerIndex === settings.activeEditor"><i class="mdi mdi-cursor-move"></i></div>
@@ -40,13 +42,14 @@
 
 import VueDraggableResizable from 'vue-draggable-resizable';
 import * as _ from 'lodash';
-import QuillBetterTable from 'quill-better-table';
+import Editor from '@tinymce/tinymce-vue';
 
 
 export default {
   name: 'TextEditor',
   components: {
     VueDraggableResizable,
+    'tinymce-editor': Editor
   },
   props: ['zoom','pageWidth','pageHeight','print','textLayerIndex'],
   data() {
@@ -54,6 +57,7 @@ export default {
       layerIndex: this.textLayerIndex,
       editorContent: 'Loading',
       editorConfig: null,
+      editorToolbar: null,
       cursorSelection: null,
       contentSet: false,
       active: false,
@@ -73,49 +77,24 @@ export default {
     }
 
     this.editorConfig = {
-      placeholder: '',
-      bounds: '.draggable',
-      modules: {
-        blotFormatter: {
-          overlay: {
-            style: {
-              transform: 'scale(' + (1 / this.zoom) + ')',
-              transformOrigin: 'top left',
-              zIndex: 105
-            }
-          }
-        },
-        cursors: true,
-        toolbar: '#toolbar'+this.layerIndex,
-        /* syntax: {
-          highlight: text => hljs.highlightAuto(text).value
-        }, */
-        table: false,  // disable table module
-        'better-table': {
-          operationMenu: {
-            items: {
-              unmergeCells: {
-                text: 'Another unmerge cells name'
-              }
-            }
-          }
-        },
-        keyboard: {
-          bindings: QuillBetterTable.keyboardBindings
-        }
+      plugins: 'wordcount, table, media, emoticons, lists',
+      inline: true,
+      fixed_toolbar_container: '.text-toolbar-wrapper',
+      menubar: false,
+      draggable_modal: true,
+      toolbar: ' alignleft aligncenter alignright | styleselect | bold italic emoticons | table media | bullist numlist | fontsizeselect fontselect | forecolor',
+      contextmenu: 'inserttable | cell row column deletetable',
+      mobile: {
+        theme: 'mobile',
+        plugins: 'lists, autolink',
+        toolbar: 'undo, bold, italic, styleselect'
       }
     };
+
     const _this = this;
-    document.body.querySelector('#table'+this.layerIndex)
-    .onclick = () => {
-      let tableModule = _this.editor.getModule('better-table')
-      tableModule.insertTable(3, 3)
-    }
+
   },
   computed: {
-    editor() {
-      return this.$refs.textLayerEditor ? this.$refs.textLayerEditor.quill : null;
-    },
     user() {
       return this.$store.getters.user;
     },
@@ -156,48 +135,7 @@ export default {
   },
   methods: {
 
-
-    onEditorChange: _.debounce(function(event) {
-      if (this.modes.mode === 'text') {
-        this.active = true;
-        event.quill.focus();
-      } else {
-        this.active = false;
-        event.quill.blur();
-      }
-      if (!this.contentSet) {
-        /** First time content loaded move cursor to the end */
-        this.contentSet = true;
-        event.quill.focus();
-        const range = this.cursorSelection ? this.cursorSelection : {index: this.editorContent.length, length:0};
-        event.quill.setSelection(range, 'api');
-        this.cursorSelection = null;
-      }
-      if (this.user && (!_.isEqual(event.quill.editor.delta.ops, JSON.parse(JSON.stringify(this.storeTextLayer[this.layerIndex].delta)))
-          || event.html != this.storeTextLayer[this.layerIndex].text)) {
-        const newRange = this.cursorSelection ? this.cursorSelection : {index: this.editorContent.length, length:0};
-        const textLayer = _.cloneDeep(this.storeTextLayer);
-          const payload = {
-              user: this.user,
-              storyKey: this.$route.params.id,
-              pageKey: this.activePage.id,
-              index: this.layerIndex,
-              textLayer: {
-                x: (textLayer[this.layerIndex].x * 1),
-                y: (textLayer[this.layerIndex].y * 1),
-                width: (textLayer[this.layerIndex].width * 1),
-                height: (textLayer[this.layerIndex].height * 1),
-                text: event.html === '' ? ' ' : _.cloneDeep(event.html),
-                delta: _.cloneDeep(event.quill.editor.delta.ops),
-                range: newRange
-              }
-          };
-
-          this.$store.dispatch('updatePageText', payload);
-        }
-    }, 100),
-
-    onEditorFocus(quill) {
+    onEditorFocus(event) {
       this.active = true;
       const payload = {
         activeEditor: this.layerIndex
@@ -205,17 +143,15 @@ export default {
       this.$store.commit('setSettings', payload);
     },
 
-    onEditorBlur(quill) {
+    onEditorBlur(event) {
       this.active = false;
     },
 
-    onEditorReady(quill) {
+    onEditorReady(event) {
       if (this.modes.mode === 'text') {
         this.active = true;
-        quill.setSelection(this.editorContent.length, 0, 'api');
       } else {
         this.active = false;
-        quill.blur();
       }
       this.contentSet = true;
     },
@@ -232,13 +168,17 @@ export default {
               y: (y * 1),
               width: (width * 1),
               height: (height * 1),
-              text: this.editorContent === '' ? ' ' : this.editorContent,
-              delta: this.storeTextLayer[this.layerIndex].delta
+              text: this.editorContent,
             }
         };
         this.$store.dispatch('updatePageText', payload);
       }
     }, 500),
+
+    onDragging() {
+      this.active = true;
+    },
+
     onDrag: _.debounce(function (x, y) {
       if (this.user) {
           const payload = {
@@ -251,8 +191,7 @@ export default {
               y: y,
               width: this.storeTextLayer[this.layerIndex].width,
               height: this.storeTextLayer[this.layerIndex].height,
-              text: this.editorContent === '' ? ' ' : this.editorContent,
-              delta: this.storeTextLayer[this.layerIndex].delta
+              text: this.editorContent,
             }
           };
           this.$store.dispatch('updatePageText', payload);
@@ -260,18 +199,51 @@ export default {
     }, 500),
   },
   watch: {
+    $route: {
+      handler: function(from, to) {
+        if (
+          (from.params.id === to.params.id &&
+            from.params.pageId != to.params.pageId) ||
+          !to.params.pageId
+        ) {
+          /* Update to new page */
+          this.editorContent = _.cloneDeep(this.storeTextLayer[this.layerIndex].text);
+        }
+      },
+      deep: true
+    },
+
+    editorContent: {
+      handler: _.debounce(function(oldText, newText) {
+        const textLayer = _.cloneDeep(this.storeTextLayer);
+        const payload = {
+            user: this.user,
+            storyKey: this.$route.params.id,
+            pageKey: this.activePage.id,
+            index: this.layerIndex,
+            textLayer: {
+              x: (textLayer[this.layerIndex].x * 1),
+              y: (textLayer[this.layerIndex].y * 1),
+              width: (textLayer[this.layerIndex].width * 1),
+              height: (textLayer[this.layerIndex].height * 1),
+              text: _.cloneDeep(this.editorContent),
+            }
+        };
+        this.$store.dispatch('updatePageText', payload);
+      }, 1000)
+    },
+
     storeTextLayer: {
       handler: function(to, from) {
-        if (this.storeTextLayer && !isNaN(this.layerIndex) &&
-          (!this.storeTextLayer[this.layerIndex].delta
-          || !_.isEqual(JSON.parse(JSON.stringify(this.storeTextLayer[this.layerIndex].delta)), this.editor.getContents().ops))
-        ) {
+        if (this.storeTextLayer && !isNaN(this.layerIndex))
+        {
           /** Only update content from the store if needed  */
           this.editorContent = _.cloneDeep(this.storeTextLayer[this.layerIndex].text);
         }
       },
       deep: true
     },
+
     modes: {
       handler: function(newMode, oldMode) {
         if(this.modes.mode !== 'text') {

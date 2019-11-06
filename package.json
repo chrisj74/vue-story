@@ -11,6 +11,7 @@
   },
   "dependencies": {
     "@bruit/component": "github:chrisj74/bruit.io",
+    "@tinymce/tinymce-vue": "^3.0.1",
     "@vimeo/player": "^2.10.0",
     "axios": "^0.18.0",
     "axois": "^1.0.0",

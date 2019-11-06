@@ -9,7 +9,6 @@ module.exports = function (ctx) {
       'axios',
       'uploader',
       'scrollto',
-      'quill',
       'html2canvas',
       'vuelidate',
       'croppa',

@@ -39,9 +39,6 @@ export default {
     };
   },
   computed: {
-    editor() {
-      return this.$refs.guideEditor.quill;
-    },
     user() {
       return this.$store.getters.user;
     },

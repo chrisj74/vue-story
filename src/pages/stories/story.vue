@@ -245,9 +245,6 @@ export default {
     };
   },
   computed: {
-    editor() {
-      return this.$refs.guideEditor.quill;
-    },
     user() {
       return this.$store.getters.user;
     },
@@ -496,10 +493,6 @@ export default {
         showUploadModal: true
       };
       this.$store.commit("setSettings", newSetting);
-    },
-
-    onEditorFocus(quill) {
-      this.cursorSelection = quill.getSelection();
     },
 
     getTextBoxBg(pageText) {
