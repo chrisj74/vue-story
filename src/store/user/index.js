@@ -15,7 +15,8 @@ export default {
       editProfile: false,
       addProfile: false,
       avatarModal: false,
-      confirmDelete: false
+      confirmDelete: false,
+      showWelcome: true
     },
     userError: null,
   },

@@ -96,6 +96,13 @@
       :content-css="{minWidth: '350px', height: '90vh', maxWidth: '100%', width: '80vw'}">
       <view-project v-if="activeProject" :project="activeProject"></view-project>
     </q-modal>
+
+    <!-- Welcome modal -->
+    <q-modal
+      v-model="profileSettings.showWelcome"
+      :content-css="{minWidth: '350px', height: '90vh', maxWidth: '100%', width: '90vw'}">
+      <welcome v-if="profileSettings.showWelcome"></welcome>
+    </q-modal>
   </q-page>
 </template>
 
@@ -103,14 +110,16 @@
 import carousel from 'vue-owl-carousel';
 
 import ViewProject from '../components/home/ViewProject';
+import Welcome from '../components/user/Welcome';
 
 export default {
   name: 'PageIndex',
-  components: { carousel, ViewProject },
+  components: { carousel, ViewProject, Welcome },
   data() {
     return {
       activeProject: null,
       profileFilter: null,
+      newUser: true,
     }
   },
   computed: {
@@ -125,6 +134,9 @@ export default {
     },
     profileStories () {
       return this.$store.getters.getStoriesByActiveProfile;
+    },
+    profileSettings () {
+      return this.$store.getters.getProfileSettings;
     },
     popularProjects () {
       return this.$store.getters.getPublishedProjectsByKeyword('popular');

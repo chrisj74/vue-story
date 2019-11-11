@@ -194,7 +194,7 @@ export default {
     insertImage: {
       handler: function(newImage, oldImage) {
         this.$store.commit('setLoading', false);
-        if (newImage && this.profileSettings.editProfile) {
+        if (newImage && (this.profileSettings.editProfile || this.profileSettings.showWelcome)) {
           this.updateAvatar(newImage);
         }
       },

@@ -106,7 +106,7 @@
 </template>
 
 <script>
-import { fabric } from "fabric";
+import { fabric } from "fabric-with-gestures";
 import Swatches from "vue-swatches";
 import "vue-swatches/dist/vue-swatches.min.css";
 import AddImage from "./PixabaySearch";
@@ -617,27 +617,8 @@ export default {
   z-index: 101;
   display: flex;
   justify-content: center;
-  > * {
-    &.ql-toolbar.ql-snow  {
-      background: #fff;
-      position: relative;
-      width: 100%;
-      display: flex;
-      flex-direction: row;
-      padding: 0;
-      .ql-formats {
-        display: flex;
-        flex-direction: row;
-      }
-      .ql-snow .ql-picker-options {
-        z-index: 102;
-      }
-      .ql-picker.ql-font {
-        span[data-label="Handwriting"]::before {
-          font-family: "Schoolbell", cursive;
-        }
-      }
-    }
+  .tox-collection__item-label * {
+    line-height: 1em;
   }
 }
 

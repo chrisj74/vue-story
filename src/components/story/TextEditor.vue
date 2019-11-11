@@ -75,21 +75,41 @@ export default {
       };
       this.$store.commit('setSettings', payload);
     }
+    if (this.$q.screen.lt.sm) {
+      this.editorConfig = {
+        plugins: 'wordcount, table, media, emoticons, lists',
+        inline: true,
+        fixed_toolbar_container: '.text-toolbar-wrapper',
+        menubar: false,
+        draggable_modal: true,
+        toolbar: ' styleselect | bold italic emoticons' ,
+        contextmenu: 'inserttable | cell row column deletetable',
+        mobile: {
+          theme: 'mobile',
+          plugins: 'lists, autolink',
+          toolbar: 'undo, bold, italic, styleselect'
+        }
+      };
+    } else {
+      this.editorConfig = {
+        plugins: 'wordcount, table, media, emoticons, lists',
+        inline: true,
+        fixed_toolbar_container: '.text-toolbar-wrapper',
+        menubar: false,
+        draggable_modal: true,
+        toolbar: ' alignleft aligncenter alignright | styleselect | bold italic emoticons | table media | bullist numlist | fontsizeselect fontselect | forecolor',
+        toolbar_drawer: 'floating',
+        font_formats: 'Handwriding=Schoolbell; Arial=arial,helvetica,sans-serif; Arial Black=arial black, sans-serif; Courier New=courier new,courier,monospace',
+        fontsize_formats: '9px 11px 12px 14px 16px 18px 20px 24px 36px 48px 56px',
+        contextmenu: 'inserttable | cell row column deletetable',
+        mobile: {
+          theme: 'mobile',
+          plugins: 'lists, autolink',
+          toolbar: 'undo, bold, italic, styleselect'
+        }
+      };
+    }
 
-    this.editorConfig = {
-      plugins: 'wordcount, table, media, emoticons, lists',
-      inline: true,
-      fixed_toolbar_container: '.text-toolbar-wrapper',
-      menubar: false,
-      draggable_modal: true,
-      toolbar: ' alignleft aligncenter alignright | styleselect | bold italic emoticons | table media | bullist numlist | fontsizeselect fontselect | forecolor',
-      contextmenu: 'inserttable | cell row column deletetable',
-      mobile: {
-        theme: 'mobile',
-        plugins: 'lists, autolink',
-        toolbar: 'undo, bold, italic, styleselect'
-      }
-    };
 
     const _this = this;
 
@@ -262,6 +282,7 @@ export default {
 
 .text-wrapper {
   position: relative;
+
 }
 
 .text-render {
@@ -296,27 +317,19 @@ export default {
   bottom: 0;
   position: absolute;
   width: 100%;
+  font-family: "Schoolbell";
+  padding: 3px;
 }
 .text-render, .editor {
-  .ql-size-small {
-    font-size: 0.75em;
+  h1, h2, h3, h4, h5, h6 {
+    margin: 5px 0 10px 0;
   }
-  .ql-size-large {
-    font-size: 2em;
+  p {
+    margin: 2px 0 5px 0;
   }
-  .ql-size-huge {
-    font-size: 4em;
-  }
-  .ql-size-massive {
-    font-size: 6em;
-  }
-
-  .ql-font-schoolbell {
-    font-family: "Schoolbell", cursive;
-  }
-
-  .ql-container.ql-snow {
-    border: none;
+  td {
+    vertical-align: top;
+    padding: 3px;
   }
 }
 

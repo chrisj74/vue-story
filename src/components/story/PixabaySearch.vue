@@ -264,6 +264,7 @@ export default {
     },
 
     selectExistingImage(url) {
+      console.log('selectExistingImage url=', url);
       const _this = this;
       this.getImageDimensions(url).then(dimensions => {
         const imgObj = {

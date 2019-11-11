@@ -26,9 +26,11 @@ export default ({ Vue, store, router }) => {
       await userDoc.get()
         .then(async (docSnapshot) => {
           if (docSnapshot.exists) {
+            userObj.sessions = docSnapshot.data().sessions ? docSnapshot.data().sessions + 1 : 1;
             await userDoc.update(userObj);
           } else {
             userObj.images = [];
+            userObj.sessions = 1;
             await userDoc.set(userObj);
           }
           await store.dispatch('autoSignIn', payload );
@@ -42,9 +44,13 @@ export default ({ Vue, store, router }) => {
       .firestore()
       .collection('accounts/').doc(user.uid);
       userAccount.get()
-        .then((docSnapshot) => {
+        .then(async (docSnapshot) => {
           if (docSnapshot.exists) {
+            await userAccount.update({
+              sessions: docSnapshot.data().sessions ? docSnapshot.data().sessions + 1 : 1
+            });
             userAccount.onSnapshot((doc) => {
+
               store.dispatch('setAccount', doc.data()).then(() => {
                 store.dispatch('setProfile', null);
               });
@@ -53,6 +59,7 @@ export default ({ Vue, store, router }) => {
             /** Create account and default profile */
             const newAcc = {
               admin: false,
+              sessions: 1
             };
             userAccount.set(newAcc)
               store.dispatch('setAccount', newAcc);

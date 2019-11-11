@@ -93,18 +93,7 @@ export default {
         photoLayer: {},
         drawingLayer: {},
         textLayer: [
-          /* {
-          text: ' ',
-          x: 50,
-          y: 25,
-          width: (this.selectedWidth - 100),
-          height: (150),
-          borderWidth: 0,
-          borderColor: '#ffffff',
-          opacity: 0,
-          backgroundColor: '#ffffff',
-          delta: []
-        } */
+
         ],
         background: {
           color: "#ffffff",

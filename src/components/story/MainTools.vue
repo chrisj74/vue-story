@@ -11,7 +11,7 @@
       :size="$q.screen.lt.sm ? 'sm' : 'md'"
       @click="setText()"
     >
-      <q-tooltip anchor="bottom middle" self="top middle" :offset="[10, 10]">
+      <q-tooltip :disabled="$q.screen.lt.sm" anchor="bottom middle" self="top middle" :offset="[10, 10]">
         Text Mode
       </q-tooltip>
     </q-btn>
@@ -23,7 +23,7 @@
       :size="$q.screen.lt.sm ? 'sm' : 'md'"
       @click="setPhoto()"
     >
-      <q-tooltip anchor="bottom middle" self="top middle" :offset="[10, 10]">
+      <q-tooltip :disabled="$q.screen.lt.sm" anchor="bottom middle" self="top middle" :offset="[10, 10]">
         Image Mode
       </q-tooltip>
     </q-btn>
@@ -35,7 +35,7 @@
       :size="$q.screen.lt.sm ? 'sm' : 'md'"
       @click="setDraw()"
     >
-      <q-tooltip anchor="bottom middle" self="top middle" :offset="[10, 10]">
+      <q-tooltip :disabled="$q.screen.lt.sm" anchor="bottom middle" self="top middle" :offset="[10, 10]">
         Drawing Mode
       </q-tooltip>
     </q-btn>
@@ -47,7 +47,7 @@
       :size="$q.screen.lt.sm ? 'sm' : 'md'"
       @click="setPage()"
     >
-      <q-tooltip anchor="bottom middle" self="top middle" :offset="[10, 10]">
+      <q-tooltip :disabled="$q.screen.lt.sm" anchor="bottom middle" self="top middle" :offset="[10, 10]">
         Page Mode
       </q-tooltip>
     </q-btn>
@@ -60,7 +60,7 @@
       :disabled="!pageDimensions || pageDimensions.zoom >= pageDimensions.maxWidthRatio"
       @click="setZoomIn()"
     >
-      <q-tooltip anchor="bottom middle" self="top middle" :offset="[10, 10]">
+      <q-tooltip :disabled="$q.screen.lt.sm" anchor="bottom middle" self="top middle" :offset="[10, 10]">
         Zoom In
       </q-tooltip>
     </q-btn>
@@ -74,7 +74,7 @@
       :disabled="!pageDimensions || pageDimensions.zoom <= pageDimensions.maxHeightRatio"
       @click="setZoomOut()"
     >
-      <q-tooltip>
+      <q-tooltip :disabled="$q.screen.lt.sm">
         Zoom Out
       </q-tooltip>
     </q-btn>

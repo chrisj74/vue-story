@@ -760,13 +760,17 @@ export default {
       task
         .then(snapshot => snapshot.ref.getDownloadURL())
         .then((url) => {
+          let imagePath = url;
+          if (url.indexOf('?token=') !== -1) {
+            imagePath = url.substring(0, indexOf('?token='));
+          }
           const imgObj = {
-            webformatURL: url,
+            webformatURL: imagePath,
             webformatWidth: payload.image.dimensions.w,
             webformatHeight: payload.image.dimensions.h,
           };
           commit('setInsertImage', imgObj);
-          commit('addImage', url.substring(0, indexOf('?token=')));
+          commit('addImage', imagePath);
         })
         .catch(console.error);
     },

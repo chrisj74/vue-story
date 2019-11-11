@@ -3,7 +3,7 @@
 </template>
 
 <script>
-import { fabric } from 'fabric';
+import { fabric } from 'fabric-with-gestures';
 import * as b64toBlob from 'b64-to-blob';
 import * as _ from 'lodash';
 import draggable from 'vuedraggable';

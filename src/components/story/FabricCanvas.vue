@@ -14,7 +14,7 @@
 </template>
 
 <script>
-import { fabric } from "fabric";
+import { fabric } from "fabric-with-gestures";
 
 export default {
   name: "FabricCanvas",
@@ -246,9 +246,9 @@ export default {
       this.canvas.setWidth(this.canvas.width * this.pageDimensions.zoom);
       this.canvas.setZoom(this.pageDimensions.zoom);
       const _this = this;
-      this.canvas.forEachObject(function(object) {
+      /* this.canvas.forEachObject(function(object) {
         object.cornerSize = 30 / _this.pageDimensions.zoom;
-      });
+      }); */
     },
 
     setSelect() {

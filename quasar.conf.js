@@ -7,7 +7,6 @@ module.exports = function (ctx) {
       'firebase',
       'shortkey',
       'axios',
-      'uploader',
       'scrollto',
       'html2canvas',
       'vuelidate',
@@ -52,6 +51,7 @@ module.exports = function (ctx) {
     // framework: 'all' --- includes everything; for dev only!
     framework: {
       iconSet: 'mdi',
+      cssAddon: true,
       brand: {
         primary: '#0273d4',
       },
