@@ -54,7 +54,8 @@
             <drawing-canvas></drawing-canvas>
           </div>
           <div class="tuc-watermark">
-            <img src="statics/tuc-v4.png" height="50px" />
+            <img src="statics/tuc-v4.png" height="35px" />
+            <div class="brand-link">www.theunlimited.club</div>
           </div>
         </div>
       </div>
@@ -215,6 +216,20 @@ export default {
       if (this.activePage) {
         _this.setDefaultZoom();
       }
+    }
+
+    if (!this.settings.showThumbs) {
+      const settingsPayload = {
+        showThumbs: true,
+      };
+      this.$store.commit('setSettings', settingsPayload);
+      const _this = this;
+      setTimeout(() => {
+        const settingsPayload = {
+        showThumbs: false,
+      };
+      _this.$store.commit('setSettings', settingsPayload);
+      }, 1000);
     }
     /** Trigger page resize on browser resize */
 
@@ -449,10 +464,19 @@ export default {
               : null
           };
           this.$store.dispatch("setPage", payload);
-          const settingsPayload = {
-            showThumbs: false,
-          };
-          this.$store.commit('setSettings', settingsPayload);
+          if (!this.settings.showThumbs) {
+            const settingsPayload = {
+              showThumbs: true,
+            };
+            this.$store.commit('setSettings', settingsPayload);
+            const _this = this;
+            setTimeout(() => {
+              const settingsPayload = {
+              showThumbs: false,
+            };
+            _this.$store.commit('setSettings', settingsPayload);
+            }, 1000);
+          }
         }
       },
       deep: true

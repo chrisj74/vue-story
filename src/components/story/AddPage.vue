@@ -20,6 +20,7 @@
       <q-toolbar-title></q-toolbar-title>
       <q-btn
         color="secondary"
+        text-color="black"
         icon="mdi-plus-circle"
         @click="addPage()"
         :disabled="!selectedHeight || !selectedWidth"

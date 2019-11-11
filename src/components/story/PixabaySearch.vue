@@ -14,10 +14,13 @@
                 }
               }
             ]"  />
-          <div class="col-2">
-            <q-btn dense flat @click="croppa.chooseFile()">
-              <q-icon size="3rem" color="secondary" name="mdi-cloud-upload" label="Upload" />
-            </q-btn>
+          <div class="col-2 upload-button">
+              <q-btn dense flat @click="croppa.chooseFile()">
+                <q-tooltip :disable="$q.screen.lt.sm" anchor="bottom middle" self="top middle" :offset="[10, 10]">
+                  Upload an image
+                </q-tooltip>
+                <q-icon size="3rem" color="secondary" name="mdi-cloud-upload" label="Upload" />
+              </q-btn>
           </div>
         </div>
       </div>
@@ -346,6 +349,9 @@ export default {
 </script>
 <style lang="stylus">
 @import '~variables';
+.upload-button {
+  text-align: right;
+}
 .croppa-wrapper {
   display: flex;
   justify-content: center;

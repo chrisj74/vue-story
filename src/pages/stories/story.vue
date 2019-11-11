@@ -148,7 +148,8 @@
             ></div>
           </div>
           <div class="tuc-watermark">
-            <img src="statics/tuc-v4.png" height="50px" />
+            <img src="statics/tuc-v4.png" height="35px" />
+            <div class="brand-link">www.theunlimited.club</div>
           </div>
         </div>
       </div>
@@ -303,8 +304,10 @@ export default {
         user: this.user,
         storyKey: this.$route.params.id
       };
-      this.$store.dispatch("setStory", payload);
-      this.storiesSet = true;
+      this.$store.dispatch("setStory", payload)
+        .then(story => {
+          this.storiesSet = true;
+        });
     }
     /** Set page from route */
     if (this.user) {
@@ -637,6 +640,7 @@ export default {
       },
       deep: true
     },
+
     $route: {
       handler: function(from, to) {
         if (
@@ -654,6 +658,17 @@ export default {
       },
       deep: true
     },
+
+    story: {
+      handler: function(oldStory, newStory) {
+          if (!this.showPlan && this.story.publishId && (this.story.plan[0].videoObj && this.story.plan[0].videoObj.id)) {
+            /* Show the plan if it's from a project */
+            this.$store.commit("setPlan", true);
+          }
+      },
+      deep: true
+    },
+
     pages: {
       handler: function(oldPages, newPages) {
         if (Object.keys(this.pageImages).length === 0) {
@@ -681,7 +696,7 @@ export default {
 }
 
 .plan {
-  max-width: 33%;
+  max-width: 40%;
   width: 500px;
   position: relative;
   top: 30px;
@@ -782,7 +797,9 @@ export default {
     justify-content: flex-end;
     align-items: center;
   }
-
+  .thumb.active-thumb {
+    outline: solid 3px $primary;
+  }
   .thumb {
     height: 84px;
     width: 61px;
@@ -867,10 +884,6 @@ export default {
       }
     }
   }
-}
-
-.thumb.active-thumb {
-  outline: solid 3px $primary;
 }
 
 .thumb a {

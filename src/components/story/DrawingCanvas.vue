@@ -101,7 +101,7 @@ export default {
         penColor: _this.settings.color,
         maxWidth: _this.settings.brushWidth * _this.pageDimensions.zoom,
         minDistance: 1,
-        dotSize: _this.settings.brushWidth * _this.pageDimensions.zoom,
+        dotSize: _this.getDotSize(),
         throttle: 16,
         onBegin: function() {
           const payload = {
@@ -115,6 +115,12 @@ export default {
         }
       });
       this.resizeCanvas()
+    },
+
+    getDotSize() {
+      const minDot = 1 * this.pageDimensions.zoom
+      let dotSize = (this.settings.brushWidth * this.pageDimensions.zoom) * 0.6;
+      return dotSize > minDot ? dotSize : minDot;
     },
 
     resizeCanvas() {
@@ -187,7 +193,7 @@ export default {
       handler: function(newSettings, oldSettings) {
         if (this.settings.brushWidth * this.pageDimensions.zoom !== this.drawingPad.maxWidth) {
           this.drawingPad.maxWidth = this.settings.brushWidth * this.pageDimensions.zoom;
-          this.drawingPad.dotSize = this.settings.brushWidth * this.pageDimensions.zoom;
+          this.drawingPad.dotSize = this.getDotSize();
         }
         if (this.settings.color !== this.drawingPad.penColor) {
           this.drawingPad.penColor = this.settings.color;
@@ -199,7 +205,7 @@ export default {
       handler: function(newDimensions, oldDimensions) {
         if (this.settings.brushWidth * this.pageDimensions.zoom !== this.drawingPad.maxWidth) {
           this.drawingPad.maxWidth = this.settings.brushWidth * this.pageDimensions.zoom;
-          this.drawingPad.dotSize = this.settings.brushWidth * this.pageDimensions.zoom;
+          this.drawingPad.dotSize = this.getDotSize();
         }
         if (newDimensions.zoom !== oldDimensions.zoom) {
           this.resizeCanvas();

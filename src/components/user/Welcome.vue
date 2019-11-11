@@ -12,9 +12,10 @@
               allowfullscreen
             ></iframe>
           </div>
-          <p>Start by updating your profile by adding or changing your name and updating your picture (don't forget to click the SAVE button).</p>
-          <p>Next, close this popup and on the homepage click on the <strong>Start here (Beta)</strong> project and then click the ADD TO MY PROJECTS button.</p>
+          <p>1. Start by updating your profile by adding or changing your name and updating your picture (don't forget to click the SAVE button).</p>
+          <p>2. Next, close this popup and on the homepage click on the <strong>Start here (Beta)</strong> project and then click the ADD TO MY PROJECTS button.</p>
           <p>This quick project introduces you to the app and gets you started.</p>
+          <p>3. Please send feedback :)</p>
           <p>Cheers<br />
           Chris
           </p>
