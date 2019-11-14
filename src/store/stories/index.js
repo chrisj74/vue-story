@@ -230,6 +230,8 @@ export default {
           if (payload.newStory) {
             /* Merge if passed new story from template */
             sourceStory = {...querySnapshot.data(),...payload.newStory};
+            sourceStory.sourceId = querySnapshot.data().id;
+            sourceStory.id = querySnapshot.id;
           } else {
             sourceStory = querySnapshot.data();
             sourceStory.title = sourceStory.title + ' copy';

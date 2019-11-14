@@ -94,13 +94,25 @@
     <div v-show="loading" class="loading-box">
       <q-spinner-bars color="primary" :size="100" />
     </div>
+
+    <!-- Welcome modal -->
+    <q-modal
+      v-model="profileSettings.showWelcome"
+      :no-route-dismiss="true"
+      :content-css="{minWidth: '350px', height: '90vh', maxWidth: '100%', width: '90vw'}">
+      <welcome v-if="profileSettings.showWelcome"></welcome>
+    </q-modal>
   </q-layout>
 </template>
 
 <script>
 import bruitConfig from '../assets/bruit-config.json';
+import Welcome from '../components/user/Welcome';
 export default {
   name: 'LayoutDefault',
+  components: {
+    Welcome
+  },
   data () {
     return {
       storiesSet: false,
@@ -125,6 +137,21 @@ export default {
         return this.$store.getters.getLeftDrawerOpen;
       }
     },
+    profileSettings () {
+      return this.$store.getters.getProfileSettings;
+    },
+
+  },
+  mounted () {
+    const newSetting = {
+      showWelcome: true
+    };
+    this.$store.commit("setProfileSettings", newSetting);
+    if (this.user && this.user.id) {
+      this.$store.dispatch('setStories', this.user.id);
+      this.$store.dispatch('setImages', this.user.id);
+      this.storiesSet = true;
+    }
   },
   methods: {
     openFeedback() {
@@ -150,13 +177,6 @@ export default {
         }
       });
       return initialsStr;
-    }
-  },
-  mounted () {
-    if (this.user && this.user.id) {
-      this.$store.dispatch('setStories', this.user.id);
-      this.$store.dispatch('setImages', this.user.id);
-      this.storiesSet = true;
     }
   },
   watch: {

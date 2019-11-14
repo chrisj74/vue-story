@@ -16,7 +16,7 @@ export default {
       addProfile: false,
       avatarModal: false,
       confirmDelete: false,
-      showWelcome: true
+      showWelcome: false
     },
     userError: null,
   },
@@ -40,6 +40,7 @@ export default {
       state.profiles = payload;
     },
     setProfileSettings(state, payload) {
+      console.log('setProfileSettings');
       let settings = _.cloneDeep(state.profileSettings);
       settings = _.merge(settings, payload);
       state.profileSettings = settings;

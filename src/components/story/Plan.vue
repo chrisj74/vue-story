@@ -179,7 +179,7 @@
         </div>
       </div>
     </div>
-    <div class="edit-plan-btn" v-if="!story.publishId && tabsModel === 'tab-1'">
+    <div class="edit-plan-btn" v-if="!story.sourceId && tabsModel === 'tab-1'">
       <q-btn color="primary" @click="showEditPlan()">edit</q-btn>
     </div>
     <!-- EDIT PLAN MODAL -->

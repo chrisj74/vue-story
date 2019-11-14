@@ -446,29 +446,48 @@ export default {
       });
     },
 
+    getImageDimensions(file) {
+      return new Promise (function (resolved, rejected) {
+        const i = new Image();
+        i.onload = function(){
+          resolved({w: i.width, h: i.height, file: file})
+        };
+        i.src = file;
+      })
+    },
+
     createPdf() {
       // const iframe = document.getElementById('pdf');
       const docDefinition = {
-        pageSize: "A4",
+        pageSize: 'A4',
 
         // by default we use portrait, you can change it to landscape if you wish
-        pageOrientation: "portrait",
+        pageOrientation: 'landscape',
 
         // [left, top, right, bottom] or [horizontal, vertical] or just a number for equal margins
-        pageMargins: [40, 60, 40, 60],
+        pageMargins: 40,
         content: []
       };
-      this.previewImages.forEach(image => {
-        docDefinition.content.push({
-          image: image,
-          fit: [595 - 80, 868 - 120]
-        });
+      const dimensions = [];
+      this.previewImages.forEach((image, index) => {
+        dimensions.push(this.getImageDimensions(image));
       });
-      const pdfDocGenerator = pdfMake
-        .createPdf(docDefinition)
-        .download("canvas");
-      this.downloadPdf = false;
-      this.$store.commit("setLoading", false);
+      Promise.all(dimensions)
+        .then((dimensionResults) => {
+          dimensionResults.forEach((image, index) => {
+            docDefinition.content.push({
+              image: image.file,
+              fit: image.w > image.h ? [868 - 80, 595 - 80] : [595 - 80, 868 - 80],
+              pageOrientation: image.w > image.h ? 'landscape' : 'portrait',
+              pageBreak: index === 0 ? '' : 'before'
+            });
+          });
+          const pdfDocGenerator = pdfMake
+            .createPdf(docDefinition)
+            .download("canvas");
+          this.downloadPdf = false;
+          this.$store.commit("setLoading", false);
+        })
     },
 
     downloadPage(pageIndex) {
