@@ -464,7 +464,7 @@ export default {
       const dimensions = [];
       this.previewImages.forEach((image, index) => {
         let pageBreak = '';
-        if (this.pages.length === 1) {
+        if (index === 0) {
           docDefinition.pageOrientation = this.pages[index].pageSize.width > this.pages[index].pageSize.height ? 'landscape' : 'portrait';
         }
         if (index > 0) {

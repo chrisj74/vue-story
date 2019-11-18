@@ -181,13 +181,22 @@ export default {
     },
 
     deleteStory(storyKey) {
-      const payload = {
-        storyKey: storyKey,
-        user: this.user
-      };
-      this.$store.dispatch('deleteStory', payload)
+      this.$q
+        .dialog({
+          title: "Confirm",
+          message: "Delete project. There is no undo!",
+          ok: "OK",
+          cancel: "Cancel"
+        })
         .then(() => {
-          this.submitting = false;
+          const payload = {
+            storyKey: storyKey,
+            user: this.user
+          };
+          this.$store.dispatch('deleteStory', payload)
+            .then(() => {
+              this.submitting = false;
+            });
         });
     },
 
