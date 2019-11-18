@@ -37,7 +37,7 @@
             <!-- Title -->
             <q-input type="text" v-model="title" float-label="Story Name" class="text-input" />
             <!-- Cover -->
-            <div class="cover-image-container">
+            <!-- <div class="cover-image-container">
               <div class="cover-image-thumb">
                 <img :src="coverImage" v-if="coverImage" />
               </div>
@@ -45,7 +45,7 @@
                 <q-btn color="negative" icon="mdi-delete" @click="removeCoverImage" v-if="coverImage">Remove Image</q-btn>
                 <q-btn color="primary" icon="mdi-image-plus" @click="showCoverImageModal()">{{ coverImage ? 'change Image' : 'Add Image'}}</q-btn>
               </div>
-            </div>
+            </div> -->
           </q-card-main>
         </q-card>
       </div>

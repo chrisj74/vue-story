@@ -63,6 +63,12 @@
             </q-item-main>
           </q-item>
 
+          <!-- Beta -->
+          <q-item @click.native="showBeta()">
+            <q-item-side icon="mdi-test-tube" />
+            <q-item-main label="BETA INFO" />
+          </q-item>
+
           <q-item @click.native="onLogout" v-if="user">
             <q-item-side icon="mdi-power" />
             <q-item-main label="EXIT" />
@@ -84,13 +90,24 @@
     <div v-show="loading" class="loading-box">
       <q-spinner-bars color="primary" :size="100" />
     </div>
+    <!-- Welcome modal -->
+    <q-modal
+      v-model="profileSettings.showWelcome"
+      :no-route-dismiss="true"
+      :content-css="{minWidth: '350px', maxHeight: '98vh', maxWidth: '800px', width: '98vw'}">
+      <welcome v-if="profileSettings.showWelcome"></welcome>
+    </q-modal>
   </div>
 </template>
 
 <script>
 import bruitConfig from "../assets/bruit-config.json";
+import Welcome from '../components/user/Welcome';
 export default {
   name: "Story",
+  components: {
+    Welcome
+  },
   data() {
     return {
       storiesSet: false,
@@ -120,7 +137,10 @@ export default {
     },
     profile() {
       return this.$store.getters.profile;
-    }
+    },
+    profileSettings () {
+      return this.$store.getters.getProfileSettings;
+    },
   },
   mounted() {
     this.$store.dispatch("setImages", this.user.id);
@@ -129,6 +149,13 @@ export default {
   methods: {
     openFeedback() {
       this.$store.commit('setLeftDrawerOpen', false);
+    },
+
+    showBeta() {
+      const newSetting = {
+        showWelcome: true
+      };
+      this.$store.commit("setProfileSettings", newSetting);
     },
 
     getInitials(name) {

@@ -6,7 +6,7 @@
         <div class="col-6">
           <div class="welcome-video">
             <iframe
-              :src="'https://player.vimeo.com/video/368143095?autoplay=true&color=80a998&title=0&byline=0&portrait=0'"
+              :src="'https://player.vimeo.com/video/373249278?autoplay=true&color=80a998&title=0&byline=0&portrait=0'"
               frameborder="0"
               allow="autoplay; fullscreen"
               allowfullscreen
@@ -55,7 +55,7 @@ export default {
     },
     activeProfile () {
       return this.$store.getters.profile;
-    },
+    }
   },
   methods: {
     closeModal(type) {

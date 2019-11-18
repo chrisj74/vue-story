@@ -114,7 +114,10 @@
         >
           <img
             :src="getThumbDrawing(pages[previewIndex].page)"
-            style="max-width: 100%"
+            :style="{
+              width: (pages[previewIndex].pageSize.width) + 'px',
+              height: (pages[previewIndex].pageSize.height) + 'px'
+            }"
             class="preview-drawing"
           />
           <img
@@ -446,16 +449,6 @@ export default {
       });
     },
 
-    getImageDimensions(file) {
-      return new Promise (function (resolved, rejected) {
-        const i = new Image();
-        i.onload = function(){
-          resolved({w: i.width, h: i.height, file: file})
-        };
-        i.src = file;
-      })
-    },
-
     createPdf() {
       // const iframe = document.getElementById('pdf');
       const docDefinition = {
@@ -470,24 +463,25 @@ export default {
       };
       const dimensions = [];
       this.previewImages.forEach((image, index) => {
-        dimensions.push(this.getImageDimensions(image));
+        let pageBreak = '';
+        if (this.pages.length === 1) {
+          docDefinition.pageOrientation = this.pages[index].pageSize.width > this.pages[index].pageSize.height ? 'landscape' : 'portrait';
+        }
+        if (index > 0) {
+          pageBreak = 'before';
+        }
+        docDefinition.content.push({
+          image: image,
+          fit: this.pages[index].pageSize.width > this.pages[index].pageSize.height ? [868 - 80, 595 - 80] : [595 - 80, 868 - 80],
+          pageOrientation: this.pages[index].pageSize.width > this.pages[index].pageSize.height ? 'landscape' : 'portrait',
+          pageBreak: pageBreak
+        });
       });
-      Promise.all(dimensions)
-        .then((dimensionResults) => {
-          dimensionResults.forEach((image, index) => {
-            docDefinition.content.push({
-              image: image.file,
-              fit: image.w > image.h ? [868 - 80, 595 - 80] : [595 - 80, 868 - 80],
-              pageOrientation: image.w > image.h ? 'landscape' : 'portrait',
-              pageBreak: index === 0 ? '' : 'before'
-            });
-          });
-          const pdfDocGenerator = pdfMake
-            .createPdf(docDefinition)
-            .download("canvas");
-          this.downloadPdf = false;
-          this.$store.commit("setLoading", false);
-        })
+      const pdfDocGenerator = pdfMake
+        .createPdf(docDefinition)
+        .download("canvas");
+      this.downloadPdf = false;
+      this.$store.commit("setLoading", false);
     },
 
     downloadPage(pageIndex) {

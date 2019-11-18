@@ -53,22 +53,22 @@
         link
         inset-delimiter
       >
+        <!-- Home -->
         <q-item :link="true" to="/home">
           <q-item-side icon="mdi-home"/>
           <q-item-main label="HOME" />
         </q-item>
+        <!-- My Projects -->
         <q-item :link="true" to="/projects">
           <q-item-side icon="mdi-book"/>
           <q-item-main label="MY PROJECTS" />
         </q-item>
+        <!-- Profiles -->
         <q-item :link="true" to="/profiles">
           <q-item-side icon="mdi-account"/>
           <q-item-main label="PROFILES" />
         </q-item>
-        <!-- <q-item :link="true" to="/profile" v-if="user">
-          <q-item-side icon="mdi-account" />
-          <q-item-main label="MY ACCOUNT" />
-        </q-item> -->
+        <!-- Feedback -->
         <q-item>
           <q-item-side icon="mdi-bullhorn"></q-item-side>
           <q-item-main>
@@ -77,10 +77,17 @@
             </span>
           </q-item-main>
         </q-item>
+        <!-- Beta -->
+        <q-item @click.native="showBeta()">
+          <q-item-side icon="mdi-test-tube" />
+          <q-item-main label="BETA INFO" />
+        </q-item>
+        <!-- Logout -->
         <q-item @click.native="onLogout" v-if="user">
           <q-item-side icon="mdi-power" />
           <q-item-main label="EXIT" />
         </q-item>
+        <!-- Login -->
         <q-item :link="true" to="/login" v-else>
           <q-item-side icon="mdi-account" />
           <q-item-main label="Login" />
@@ -99,7 +106,7 @@
     <q-modal
       v-model="profileSettings.showWelcome"
       :no-route-dismiss="true"
-      :content-css="{minWidth: '350px', height: '90vh', maxWidth: '100%', width: '90vw'}">
+      :content-css="{minWidth: '350px', maxHeight: '98vh', maxWidth: '800px', width: '98vw'}">
       <welcome v-if="profileSettings.showWelcome"></welcome>
     </q-modal>
   </q-layout>
@@ -140,13 +147,15 @@ export default {
     profileSettings () {
       return this.$store.getters.getProfileSettings;
     },
-
+    account () {
+      return this.$store.getters.getAccount;
+    }
   },
   mounted () {
-    const newSetting = {
-      showWelcome: true
-    };
-    this.$store.commit("setProfileSettings", newSetting);
+    if (this.account && this.account.sessions <= 1) {
+      this.showBeta();
+    }
+
     if (this.user && this.user.id) {
       this.$store.dispatch('setStories', this.user.id);
       this.$store.dispatch('setImages', this.user.id);
@@ -155,8 +164,14 @@ export default {
   },
   methods: {
     openFeedback() {
-      console.log('openfeedback');
       this.$store.commit('setLeftDrawerOpen', false);
+    },
+
+    showBeta() {
+      const newSetting = {
+        showWelcome: true
+      };
+      this.$store.commit("setProfileSettings", newSetting);
     },
 
     toggleLeftDawer() {
@@ -187,6 +202,12 @@ export default {
         this.storiesSet = true;
       }
     },
+
+    account (newAccount) {
+      if (this.account && this.account.sessions <= 1) {
+        this.showBeta();
+      }
+    }
   }
 }
 </script>

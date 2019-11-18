@@ -13,17 +13,19 @@
     ></swatches>
     <!-- TEXT -->
       <template v-if="modes.mode === 'text'">
-        <q-btn
-          icon="mdi-format-text"
-          :color="modes.subMode === 'text' ? 'primary' : 'dark'"
-          round
-          :size="$q.screen.lt.sm ? 'sm' : 'md'"
-          @click="setText()"
-        >
-          <q-tooltip :disable="$q.screen.lt.sm" anchor="center left" self="center right" :offset="[10, 10]">
-            type
-          </q-tooltip>
-        </q-btn>
+        <div style="margin-top: 40px;">
+          <q-btn
+            icon="mdi-format-text"
+            :color="modes.subMode === 'text' ? 'primary' : 'dark'"
+            round
+            :size="$q.screen.lt.sm ? 'sm' : 'md'"
+            @click="setText()"
+          >
+            <q-tooltip :disable="$q.screen.lt.sm" anchor="center left" self="center right" :offset="[10, 10]">
+              type
+            </q-tooltip>
+          </q-btn>
+        </div>
         <!-- TEXT BOX OPTIONS -->
         <div class="tool-slider">
           <q-btn

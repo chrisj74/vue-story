@@ -375,6 +375,9 @@ export default {
     },
     getUserError (state) {
       return state.userError;
+    },
+    getAccount (state) {
+      return state.account;
     }
   }
 };
