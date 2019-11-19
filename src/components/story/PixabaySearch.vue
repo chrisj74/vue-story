@@ -267,6 +267,7 @@ export default {
     },
 
     selectExistingImage(url) {
+      this.$store.commit('setLoading', true);
       console.log('selectExistingImage url=', url);
       const _this = this;
       this.getImageDimensions(url).then(dimensions => {

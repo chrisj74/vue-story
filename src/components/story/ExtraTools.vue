@@ -21,7 +21,7 @@
             :size="$q.screen.lt.sm ? 'sm' : 'md'"
             @click="setText()"
           >
-            <q-tooltip :disable="$q.screen.lt.sm" anchor="center left" self="center right" :offset="[10, 10]">
+            <q-tooltip :disable="$q.screen.lt.sm || $q.platform.has.touch" anchor="center left" self="center right" :offset="[10, 10]">
               type
             </q-tooltip>
           </q-btn>
@@ -35,7 +35,7 @@
             round
             @click="toggleTextOptions()"
             :disabled="isNaN(settings.activeEditor)">
-            <q-tooltip :disable="$q.screen.lt.sm" anchor="center left" self="center right" :offset="[10, 10]">
+            <q-tooltip :disable="$q.screen.lt.sm || $q.platform.has.touch" anchor="center left" self="center right" :offset="[10, 10]">
               Text box colour &amp; border
             </q-tooltip>
           </q-btn>
@@ -82,7 +82,7 @@
             round
             @click="addTextBlock()"
           >
-            <q-tooltip :disable="$q.screen.lt.sm" anchor="center left" self="center right" :offset="[10, 10]">
+            <q-tooltip :disable="$q.screen.lt.sm || $q.platform.has.touch" anchor="center left" self="center right" :offset="[10, 10]">
               Add text block
             </q-tooltip>
           </q-btn>
@@ -95,7 +95,7 @@
           round
           @click="deleteTextBlock()"
         >
-          <q-tooltip :disable="$q.screen.lt.sm" anchor="center left" self="center right" :offset="[10, 10]">
+          <q-tooltip :disable="$q.screen.lt.sm || $q.platform.has.touch" anchor="center left" self="center right" :offset="[10, 10]">
             Delete text block
           </q-tooltip>
         </q-btn>
@@ -110,7 +110,7 @@
           :size="$q.screen.lt.sm ? 'sm' : 'md'"
           @click="setBackgroundColor()"
         >
-          <q-tooltip :disable="$q.screen.lt.sm" anchor="center left" self="center right" :offset="[10, 10]">
+          <q-tooltip :disable="$q.screen.lt.sm || $q.platform.has.touch" anchor="center left" self="center right" :offset="[10, 10]">
             Change background color
           </q-tooltip>
         </q-btn>
@@ -123,7 +123,7 @@
           round
           @click="addBgPhoto()"
         >
-          <q-tooltip :disable="$q.screen.lt.sm" anchor="center left" self="center right" :offset="[10, 10]">
+          <q-tooltip :disable="$q.screen.lt.sm || $q.platform.has.touch" anchor="center left" self="center right" :offset="[10, 10]">
             Add a background image
           </q-tooltip>
         </q-btn>
@@ -136,7 +136,7 @@
           round
           @click="backgroundRemoveImage()"
         >
-          <q-tooltip :disable="$q.screen.lt.sm" anchor="center left" self="center right" :offset="[10, 10]">
+          <q-tooltip :disable="$q.screen.lt.sm || $q.platform.has.touch" anchor="center left" self="center right" :offset="[10, 10]">
             Remove background image
           </q-tooltip>
         </q-btn>
@@ -224,7 +224,7 @@
         :size="$q.screen.lt.sm ? 'sm' : 'md'"
         @click="addPhoto()"
       >
-        <q-tooltip :disable="$q.screen.lt.sm" anchor="center left" self="center right" :offset="[10, 10]">
+        <q-tooltip :disable="$q.screen.lt.sm || $q.platform.has.touch" anchor="center left" self="center right" :offset="[10, 10]">
           Add an image
         </q-tooltip>
       </q-btn>
@@ -239,7 +239,7 @@
           @click="toggleImageOpacity()"
           :disabled="!settings.isSelected"
         >
-          <q-tooltip :disable="$q.screen.lt.sm" anchor="center left" self="center right" :offset="[10, 10]">
+          <q-tooltip :disable="$q.screen.lt.sm || $q.platform.has.touch" anchor="center left" self="center right" :offset="[10, 10]">
             Change image opacity (how see through it is)
           </q-tooltip>
         </q-btn>
@@ -258,7 +258,7 @@
         @click="deleteObj()"
         :disabled="!settings.isSelected"
       >
-        <q-tooltip :disable="$q.screen.lt.sm" anchor="center left" self="center right" :offset="[10, 10]">
+        <q-tooltip :disable="$q.screen.lt.sm || $q.platform.has.touch" anchor="center left" self="center right" :offset="[10, 10]">
           Delete image
         </q-tooltip>
       </q-btn>
@@ -275,7 +275,7 @@
         round
         @click="setDraw()"
       >
-        <q-tooltip :disable="$q.screen.lt.sm" anchor="center left" self="center right" :offset="[10, 10]">
+        <q-tooltip :disable="$q.screen.lt.sm || $q.platform.has.touch" anchor="center left" self="center right" :offset="[10, 10]">
           Use pen
         </q-tooltip>
       </q-btn>
@@ -288,7 +288,7 @@
         round
         @click="setEraser()"
       >
-        <q-tooltip :disable="$q.screen.lt.sm" anchor="center left" self="center right" :offset="[10, 10]">
+        <q-tooltip :disable="$q.screen.lt.sm || $q.platform.has.touch" anchor="center left" self="center right" :offset="[10, 10]">
           Use eraser
         </q-tooltip>
       </q-btn>
@@ -301,7 +301,7 @@
           :color="settings.showBrushWidth ? 'primary' : 'dark'"
           @click="toggleBrushWidth()"
         >
-          <q-tooltip :disable="$q.screen.lt.sm" anchor="center left" self="center right" :offset="[10, 10]">
+          <q-tooltip :disable="$q.screen.lt.sm || $q.platform.has.touch" anchor="center left" self="center right" :offset="[10, 10]">
             Change pen width
           </q-tooltip>
         </q-btn>
@@ -318,7 +318,7 @@
         round
         @click="clearDrawing()"
       >
-        <q-tooltip :disable="$q.screen.lt.sm" anchor="center left" self="center right" :offset="[10, 10]">
+        <q-tooltip :disable="$q.screen.lt.sm || $q.platform.has.touch" anchor="center left" self="center right" :offset="[10, 10]">
           Clear drawing
         </q-tooltip>
       </q-btn>
@@ -628,6 +628,18 @@ export default {
   }
   .btn-attention {
     animation: pulse 2s infinite;
+  }
+  .q-slider-handle {
+    width: 20px;
+    height: 20px;
+  }
+}
+.touch {
+  .extra-tools {
+    .q-slider-handle {
+      width: 30px;
+      height: 30px;
+    }
   }
 }
 

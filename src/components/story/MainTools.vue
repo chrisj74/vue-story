@@ -11,7 +11,7 @@
       :size="$q.screen.lt.sm ? 'sm' : 'md'"
       @click="setText()"
     >
-      <q-tooltip :disable="$q.screen.lt.sm" anchor="bottom middle" self="top middle" :offset="[10, 10]">
+      <q-tooltip :disable="$q.screen.lt.sm || $q.platform.has.touch" anchor="bottom middle" self="top middle" :offset="[10, 10]">
         Text Mode
       </q-tooltip>
     </q-btn>
@@ -23,7 +23,7 @@
       :size="$q.screen.lt.sm ? 'sm' : 'md'"
       @click="setPhoto()"
     >
-      <q-tooltip :disable="$q.screen.lt.sm" anchor="bottom middle" self="top middle" :offset="[10, 10]">
+      <q-tooltip :disable="$q.screen.lt.sm || $q.platform.has.touch" anchor="bottom middle" self="top middle" :offset="[10, 10]">
         Image Mode
       </q-tooltip>
     </q-btn>
@@ -35,7 +35,7 @@
       :size="$q.screen.lt.sm ? 'sm' : 'md'"
       @click="setDraw()"
     >
-      <q-tooltip :disable="$q.screen.lt.sm" anchor="bottom middle" self="top middle" :offset="[10, 10]">
+      <q-tooltip :disable="$q.screen.lt.sm || $q.platform.has.touch" anchor="bottom middle" self="top middle" :offset="[10, 10]">
         Drawing Mode
       </q-tooltip>
     </q-btn>
@@ -47,7 +47,7 @@
       :size="$q.screen.lt.sm ? 'sm' : 'md'"
       @click="setPage()"
     >
-      <q-tooltip :disable="$q.screen.lt.sm" anchor="bottom middle" self="top middle" :offset="[10, 10]">
+      <q-tooltip :disable="$q.screen.lt.sm || $q.platform.has.touch" anchor="bottom middle" self="top middle" :offset="[10, 10]">
         Page Mode
       </q-tooltip>
     </q-btn>
@@ -74,7 +74,7 @@
       :disabled="!pageDimensions || pageDimensions.zoom <= pageDimensions.maxHeightRatio"
       @click="setZoomOut()"
     >
-      <q-tooltip :disable="$q.screen.lt.sm">
+      <q-tooltip :disable="$q.screen.lt.sm || $q.platform.has.touch">
         Zoom Out
       </q-tooltip>
     </q-btn>

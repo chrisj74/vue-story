@@ -145,6 +145,13 @@ export default {
   mounted() {
     this.$store.dispatch("setImages", this.user.id);
     this.$store.dispatch('setStories', this.user.id);
+    /* overwrite the vh property for mobile */
+    let vh = window.innerHeight * 0.01;
+    document.documentElement.style.setProperty('--vh', `${vh}px`);
+    window.addEventListener('resize', () => {
+      vh = window.innerHeight * 0.01;
+      document.documentElement.style.setProperty('--vh', `${vh}px`);
+    });
   },
   methods: {
     openFeedback() {

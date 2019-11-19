@@ -715,6 +715,7 @@ export default {
   top: 30px;
   right: 0;
   height: calc(100vh - 50px);
+  height: calc((var(--vh, 1vh) * 100) - 50px);
   background: rgba(255, 255, 255, 0.95);
   z-index: 3;
   box-shadow: 0 1px 5px rgba(0, 0, 0, 0.2), 0 2px 2px rgba(0, 0, 0, 0.14), 0 3px 1px -2px rgba(0, 0, 0, 0.12);
@@ -802,6 +803,7 @@ export default {
   margin-top: 5px;
   padding-top: 3px;
   max-height: calc(100vh - 190px);
+  max-height: calc((var(--vh, 1vh) * 100) - 190px);
   overflow: auto;
 
   .thumb-draggable {
@@ -983,7 +985,7 @@ export default {
   }
 
   .side-bar {
-    height: calc(100vh - (50px + 100px));
+    /* height: calc(100vh - (50px + 100px)); */
   }
 
   .plan {
@@ -995,7 +997,8 @@ export default {
 @media (max-width: $breakpoint-xs) and (orientation: portrait) {
   body.mobile {
     .plan {
-      height: calc(100vh - 100px);
+      /* height: calc(100vh - 100px);
+      height: calc((var(--vh, 1vh) * 100) - 100px); */
     }
   }
 }

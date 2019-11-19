@@ -571,7 +571,7 @@ export default {
   flex-direction: column;
   align-items: stretch;
   justify-content: stretch;
-  margin: 60px 0 0 0;
+  margin: 40px 0 0 0;
   width: calc(100vw - 200px);
   position: relative;
   z-index: 1;
@@ -589,7 +589,8 @@ export default {
   align-items: flex-start;
   flex-grow: 1;
   position: relative;
-  height: calc(100vh - 80px);
+  height: calc(100vh - 60px);
+  height: calc((var(--vh, 1vh) * 100) - 60px);
   overflow: auto;
 }
 
@@ -599,6 +600,7 @@ export default {
   flex-grow: 2;
   align-self: stretch;
   height: calc(100vh - 100px);
+  height: calc((var(--vh, 1vh) * 100) - 100px);
   justify-content: center;
 }
 
@@ -686,7 +688,8 @@ export default {
 }
 @media(max-width: $breakpoint-md) and (orientation: portrait) {
   .main-content-wrapper {
-    max-height: calc(100vh - 100px);
+    /* max-height: calc(100vh - 100px);
+    max-height: calc((var(--vh, 1vh) * 100) - 100px); */
   }
   .page-ref {
     max-width: calc(100vw - 40px);
@@ -696,7 +699,8 @@ export default {
 @media(max-width: $breakpoint-xs) and (orientation: portrait) {
   body.mobile {
     .page-ref {
-      height: calc(100vh - 150px);
+      /* height: calc(100vh - 150px);
+      height: calc((var(--vh, 1vh) * 100) - 150px); */
     }
   }
 }

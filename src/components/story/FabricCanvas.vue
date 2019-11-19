@@ -118,6 +118,7 @@ export default {
       });
       this.canvas.on("object:modified", () => {
         canvas.renderAll.bind(canvas);
+        _this.closeSlider();
         _this.saveStory();
       });
       this.canvas.on("selection:created", function(o) {
@@ -127,14 +128,16 @@ export default {
         _this.$store.commit('setSettings', newSetting);
         if(o.selected[0].opacity) {
           const newOpacity = {
-          imageOpacity: o.selected[0].opacity
+          imageOpacity: o.selected[0].opacity,
+          showImageOpacity: false
         };
         _this.$store.commit('setSettings', newOpacity);
         }
       });
       this.canvas.on("selection:cleared", function(o) {
         const newSetting = {
-          isSelected: false
+          isSelected: false,
+          showImageOpacity: false
         };
         _this.$store.commit('setSettings', newSetting);
       });
@@ -153,7 +156,8 @@ export default {
             _this.$store.commit('setSettings', newSetting);
           } else {
             const newSetting = {
-              isSelected: false
+              isSelected: false,
+              showImageOpacity: false
             };
             _this.$store.commit('setSettings', newSetting);
           }
@@ -357,6 +361,13 @@ export default {
       this.saveStory();
       this.$store.commit('setToolAction', null);
     },
+
+    closeSlider() {
+      const payload = {
+        showImageOpacity: false,
+      };
+      this.$store.commit('setSettings', payload);
+    }
   },
   /** WATCHERS */
   watch: {
@@ -400,7 +411,6 @@ export default {
             this.canvas.renderAll();
             this.saveStory();
           }
-
         }
       },
       deep: true
@@ -413,6 +423,9 @@ export default {
             && this.canvas.getActiveObject()) {
           this.canvas.discardActiveObject();
           this.canvas.renderAll();
+        }
+        if (this.modes.mode !== 'photo' && this.settings.showImageOpacity) {
+          this.closeSlider();
         }
       },
       deep: true
