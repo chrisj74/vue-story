@@ -14,7 +14,7 @@
     "@egjs/hammerjs": "^2.0.16",
     "@tinymce/tinymce-vue": "^3.0.1",
     "@vimeo/player": "^2.10.0",
-    "axios": "^0.18.0",
+    "axios": "^0.18.1",
     "axois": "^1.0.0",
     "b64-to-blob": "^1.2.19",
     "fabric-with-gestures": "^3.5.0",
