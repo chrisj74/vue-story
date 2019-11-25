@@ -23,8 +23,8 @@
             :style="{
             transform: 'scale(' + pageDimensions.zoom + ')',
             transformOrigin: 'top left',
-            top: (40 * pageDimensions.zoom) + 'px',
-            height: (activePage.pageSize.height - 50)+'px',
+            top: '35px',
+            height: (activePage.pageSize.height - 35)+'px',
             width: activePage.pageSize.width+'px',
             pointerEvents: textLayerActive ? 'all' : 'none',
             userSelect: textLayerActive ? 'all' : 'none'}"
@@ -372,13 +372,13 @@ export default {
         index: this.activePage.textLayer.length,
         textLayer:  {
           text: '',
-          x: 50,
-          y: 25,
+          x: ((this.activePage.pageSize.width - 200) / 2),
+          y: ((this.activePage.pageSize.height - 200) / 2),
           width: (200),
           height: (200),
-          borderWidth: 0,
-          borderColor: '#ffffff',
-          opacity: 0,
+          borderWidth: 1,
+          borderColor: '#000000',
+          opacity: 1,
           backgroundColor: '#ffffff',
           delta: []
         }

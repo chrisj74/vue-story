@@ -383,9 +383,14 @@ export default {
           newState.textLayer[payload.index] = _.merge(newState.textLayer[payload.index], payload.textLayer);
         } else {
           newState.textLayer.splice(payload.index, 1);
+          const newSetting = {
+            activeEditor: newState.textLayer.length - 1
+          };
+          commit('setSettings', newSetting);
         }
       } else {
-        newState.textLayer.push(payload.textLayer)
+        newState.textLayer.push(payload.textLayer);
+
       }
 
       newState.commit++;
@@ -623,6 +628,7 @@ export default {
 
     setPage({ commit, state }, payload) {
       const _payload = payload;
+      let newSetting;
       commit('setNextPage', _payload.pageKey)
       firebase
         .firestore()
@@ -651,6 +657,11 @@ export default {
                   commit: doc.data().commit,
                 };
                 page = _.cloneDeep(page);
+                newSetting = {
+                  activeEditor: page.textLayer.length -1
+                }
+                commit('setSettings', newSetting);
+
                 commit('setPage', {page: page, restoreIndex: true});
               }
             });
@@ -674,6 +685,10 @@ export default {
               commit: querySnapshot.docs[0].data().commit,
             };
             page = _.cloneDeep(page);
+            newSetting = {
+              activeEditor: page.textLayer.length -1
+            }
+            commit('setSettings', newSetting);
             commit('setPage', {page: page, restoreIndex: true});
           }
 

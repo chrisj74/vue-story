@@ -10,7 +10,7 @@
     @resizestop="onResize"
     :parent="'.text-layer'"
     :drag-handle="'.drag-handle'"
-    :active="active"
+    :active="active && settings.activeEditor === layerIndex"
     :class="{print: print, 'text-mode' : modes.mode === 'text'}"
     class="text-box"
     >
@@ -19,7 +19,9 @@
       :style="{
         borderWidth: storeTextLayer[layerIndex].borderWidth + 'px',
         borderColor: storeTextLayer[layerIndex].borderColor,
-        backgroundColor: backgroundColor}">
+        backgroundColor: backgroundColor}"
+      :class="{'inactive-editor' : layerIndex !== settings.activeEditor}"
+      @click="selectLayer()">
       <tinymce-editor
         :key="activePage.id + '_text_' + layerIndex"
         v-model="editorContent"
@@ -27,9 +29,10 @@
         v-if="editorConfig"
         api-key="p0igcqysw2jkny4v7wki9qyg6p05lplhpctohfurcbsjc7dp"
         :init="editorConfig"
-        @onActivate="onEditorReady($event)"
-        @onFocus="onEditorFocus($event)"
-        @onBlur="onEditorBlur($event)">
+        :disabled="layerIndex !== settings.activeEditor"
+        @onFocus="onEditorFocus"
+        @onInit="onEditorReady"
+        @onBlur="onEditorBlur">
       </tinymce-editor>
 
       <div v-else v-html="storeTextLayer[layerIndex].text" class="text-render ql-editor ql-container"></div>
@@ -61,6 +64,7 @@ export default {
       cursorSelection: null,
       contentSet: false,
       active: false,
+      editor: null
     }
   },
   mounted() {
@@ -74,6 +78,9 @@ export default {
         activeEditor: this.layerIndex
       };
       this.$store.commit('setSettings', payload);
+    }
+    if (this.modes && this.modes.mode === 'text') {
+      this.active = true;
     }
     if (this.$q.screen.lt.sm) {
       this.editorConfig = {
@@ -155,25 +162,34 @@ export default {
   },
   methods: {
 
-    onEditorFocus(event) {
-      this.active = true;
-      const payload = {
-        activeEditor: this.layerIndex
-      };
-      this.$store.commit('setSettings', payload);
+    selectLayer() {
+      if (this.settings.activeEditor !== this.layerIndex)   {
+        const payload = {
+          activeEditor: this.layerIndex
+        };
+        this.$store.commit('setSettings', payload);
+      }
+    },
+
+    onEditorFocus(event, editor) {
+      console.log('focus');
     },
 
     onEditorBlur(event) {
-      this.active = false;
+      console.log('blur');
     },
 
-    onEditorReady(event) {
-      if (this.modes.mode === 'text') {
+    onEditorReady(event, editor) {
+      /* if (this.modes.mode === 'text') {
         this.active = true;
       } else {
         this.active = false;
-      }
+      } */
+      this.editor = editor;
       this.contentSet = true;
+      if (this.layerIndex === this.settings.activeEditor && !event.target.hasFocus() && this.modes.mode === 'text') {
+        editor.focus();
+      }
     },
 
     onResize: _.debounce(function (x, y, width, height) {
@@ -264,10 +280,28 @@ export default {
       deep: true
     },
 
+    settings: {
+      handler: function(newSettings, oldSettings) {
+        if (newSettings.activeEditor !== oldSettings.activeEditor && this.settings.activeEditor === this.layerIndex && this.editor) {
+          const _this = this;
+            this.$nextTick()
+              .then(function () {
+                _this.editor.focus();
+              });
+        }
+      },
+      deep: true
+    },
+
     modes: {
       handler: function(newMode, oldMode) {
         if(this.modes.mode !== 'text') {
           this.active = false;
+        } else {
+          this.active = true;
+          if (this.settings.activeEditor === this.layerIndex) {
+            this.editor.focus();
+          }
         }
       },
       deep: true
@@ -312,6 +346,15 @@ export default {
 .active {
 
 }
+.inactive-editor {
+  user-select: none;
+  .editor {
+    user-select: none;
+    * {
+      user-select: none;
+    }
+  }
+}
 .editor {
   top: 0;
   bottom: 0;
@@ -319,6 +362,7 @@ export default {
   width: 100%;
   font-family: "Schoolbell";
   padding: 3px;
+  overflow: hidden;
 }
 .text-render, .editor {
   h1, h2, h3, h4, h5, h6 {
