@@ -158,6 +158,13 @@
         round @click="line()"
         :size="$q.screen.lt.sm ? 'sm' : 'md'"
       />
+      <!-- RECT -->
+      <q-btn
+        icon="mdi-shape-rectangle-plus"
+        :color="modes.subMode === 'rect' ? 'primary' : 'dark'"
+        round @click="rect()"
+        :size="$q.screen.lt.sm ? 'sm' : 'md'"
+      />
       <!-- FILL OBJ -->
       <q-btn
         icon="mdi-format-color-fill"
@@ -165,19 +172,19 @@
         round
         :size="$q.screen.lt.sm ? 'sm' : 'md'"
         @click="fillColor()"
-        :disabled="!isSelected"
+        :disabled="!settings.isSelected"
       />
 
       <!-- TEXT -->
-      <q-btn
+      <!-- <q-btn
         icon="mdi-format-text"
         :color="modes.subMode === 'text' ? 'primary' : 'dark'"
         round
         :size="$q.screen.lt.sm ? 'sm' : 'md'"
         @click="canvasText()"
-      />
+      /> -->
       <!-- TEXT SIZE -->
-      <div class="tool-slider" v-if="modes.mode === 'shape' && (modes.subMode === 'text' || modes.subMode === 'selectText')">
+      <!-- <div class="tool-slider" v-if="modes.mode === 'shape' && (modes.subMode === 'text' || modes.subMode === 'selectText')">
         <q-btn
           :size="$q.screen.lt.sm ? 'sm' : 'md'"
           color="primary"
@@ -187,9 +194,9 @@
         <div class="q-slider-wrap" v-if="showTextSize">
           <q-slider :value="text.size" :min="5" :max="100" :step="1" label snap/>
         </div>
-      </div>
+      </div> -->
       <!-- LINE WIDTH -->
-      <div class="tool-slider" v-if="modes.mode === 'shape' && modes.subMode === 'line'">
+      <div class="tool-slider" v-if="modes.subMode === 'line' || modes.subMode === 'rect'">
         <q-btn
           :size="$q.screen.lt.sm ? 'sm' : 'md'"
           icon="mdi-signal"
@@ -198,7 +205,7 @@
           @click="toggleLineWidth()"
         />
         <div class="q-slider-wrap" v-if="showLineWidth">
-          <q-slider v-model="lineObj.width" :min="1" :max="20" :step="1" label snap/>
+          <q-slider :value="settings.lineWidth" :min="1" :max="20" :step="1" label snap  @input="val => {updateLineWidth(val)}" />
         </div>
       </div>
       <!-- DELETE OBJ -->
@@ -307,7 +314,7 @@
         </q-btn>
         <div class="q-slider-wrap" v-if="settings.showBrushWidth">
           <div>Pen width</div>
-          <q-slider v-model="settings.brushWidth" :min="1" :max="50" :step="1" label snap @change="updateBrushWidth(newVal)"/>
+          <q-slider :value="settings.brushWidth" :min="1" :max="50" :step="1" label snap @change="val => {updateBrushWidth(val)}"/>
         </div>
       </div>
       <!-- CLEAR -->
@@ -400,6 +407,10 @@ export default {
       this.$store.commit('setSubMode', "line");
     },
 
+    rect() {
+      this.$store.commit('setSubMode', "rect");
+    },
+
     addPhoto() {
       this.$store.commit('setMode', "photo");
       const newSetting = {
@@ -427,6 +438,10 @@ export default {
 
     setDraw() {
       this.$store.commit('setSubMode', "brush");
+    },
+
+    setSelect() {
+      this.$store.commit('setSubMode', "select");
     },
 
     setText() {
@@ -468,6 +483,12 @@ export default {
     updateImageOpacity(newVal) {
       const payload = {
         imageOpacity: newVal
+      };
+      this.$store.commit('setSettings', payload);
+    },
+    updateLineWidth(newVal) {
+      const payload = {
+        lineWidth: newVal
       };
       this.$store.commit('setSettings', payload);
     },

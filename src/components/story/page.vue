@@ -23,7 +23,7 @@
             :style="{
             transform: 'scale(' + pageDimensions.zoom + ')',
             transformOrigin: 'top left',
-            top: '35px',
+            top: (35 * pageDimensions.zoom) + 'px',
             height: (activePage.pageSize.height - 35)+'px',
             width: activePage.pageSize.width+'px',
             pointerEvents: textLayerActive ? 'all' : 'none',
@@ -51,6 +51,7 @@
               left: 0}">
             </div>
             <fabric-canvas type="photo"></fabric-canvas>
+
             <drawing-canvas></drawing-canvas>
           </div>
           <div class="tuc-watermark">

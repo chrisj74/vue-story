@@ -31,6 +31,7 @@ export default {
       brushWidth: 2,
       showBrushWidth: false,
       imageOpacity: 1,
+      lineWidth: 1,
       showImageOpacity: false,
       color: '#000000',
       isSelected: false,
@@ -300,6 +301,11 @@ export default {
           newStory = JSON.parse(JSON.stringify(newStory));
           newStory.plan[payload.planIndex] = payload.plan;
           newStory.modified = new Date();
+        } else if (payload.plan) {
+          newStory = stateStory;
+          newStory = JSON.parse(JSON.stringify(newStory));
+          newStory.plan = payload.plan;
+          newStory.modified = new Date();
         } else {
           newStory = _.merge(stateStory, payload.story);
           newStory = JSON.parse(JSON.stringify(newStory));
@@ -550,6 +556,11 @@ export default {
             ) {
               const storyObj = JSON.parse(JSON.stringify(querySnapshot.data()));
               storyObj['id'] = querySnapshot.id;
+              if (!storyObj['playback']) {
+                storyObj.playback = {
+                  currentVideoIndex: 0
+                }
+              }
               commit('setStory', storyObj);
               if (!state.story || state.story.id !== querySnapshot.id) {
                 if (querySnapshot.data().publishId) {
@@ -887,6 +898,9 @@ export default {
     },
     getStory(state) {
       return state.story;
+    },
+    getPlan(state) {
+      return state.story.plan
     },
     getStoryById: (state) => (id) => {
       let activeStory;

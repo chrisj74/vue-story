@@ -1,26 +1,38 @@
 <template>
   <div class="plan" v-show="showPlan" ref="planContainer">
     <!-- PLAN -->
-    <div class="plan-video" ref="planVideo" v-if="(story.plan[0].videoObj && story.plan[0].videoObj.id) || youtubeVideo">
+    <div class="plan-video" ref="planVideo" v-if="(story.plan[story.playback.currentVideoIndex].videoObj && story.plan[story.playback.currentVideoIndex].videoObj.id) || youtubeVideo">
       <div
         class="plan-video"
         ref="planPreviewVideo"
       >
+        <div v-if="showCompleted" class="completed row justify-center items-center">
+          <!-- AUTO PLAY -->
+          <div class="column items-center" v-if="story.plan[story.playback.currentVideoIndex]['autoNext']">
+            <span>Next Video starting</span>
+            <span class="count-down">{{ completeCountDown }}</span>
+            <q-btn color="white" text-color="black" @click="cancelCompletedTimer()">Cancel</q-btn>
+          </div>
+          <!-- CLICK TO PLAY -->
+          <div class="column items-center" v-else>
+            <q-btn color="white" text-color="black" @click="nextPlaylist()">Next</q-btn>
+          </div>
+        </div>
         <iframe
           style="width: 100%"
-          :src="'https://www.youtube.com/embed/' + story.plan[0].videoObj.id + '?playsinline=1'"
+          :src="'https://www.youtube.com/embed/' + story.plan[story.playback.currentVideoIndex].videoObj.id + '?playsinline=1'"
           frameborder="0"
           allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture"
           allowfullscreen
-          v-if="story.plan[0].videoObj.service === 'youtube' && !youtubeVideo"
+          v-if="story.plan[story.playback.currentVideoIndex].videoObj.service === 'youtube' && !youtubeVideo"
         ></iframe>
         <iframe
-          :src="'https://player.vimeo.com/video/' + story.plan[0].videoObj.id + '?color=80a998&title=0&byline=0&portrait=0'"
+          :src="'https://player.vimeo.com/video/' + story.plan[story.playback.currentVideoIndex].videoObj.id + '?color=80a998&title=0&byline=0&portrait=0'"
           frameborder="0"
           allow="autoplay; fullscreen"
           allowfullscreen
           id="planPlayer"
-          v-if="story.plan[0].videoObj.service === 'vimeo' && !youtubeVideo"
+          v-if="story.plan[story.playback.currentVideoIndex].videoObj.service === 'vimeo' && !youtubeVideo"
         ></iframe>
 
         <iframe
@@ -34,7 +46,25 @@
         <div class="youtube-close" v-if="youtubeVideo"><q-btn icon="mdi-close-circle" color="negative" @click="closeYoutube()">Close</q-btn></div>
       </div>
     </div>
-    <div>
+    <div :style="{height: textHeight, position: 'relative'}">
+      <div v-if="showPlaylist" class="playlists">
+        <div class="row justify-between">
+          <h3>Playlist</h3>
+          <q-btn icon="mdi-close" dense @click="togglePlaylist()"></q-btn>
+        </div>
+        <q-list>
+          <!-- <q-list-header>General</q-list-header> -->
+          <q-item tag="div" v-for="(playlist, index) of this.story.plan" :key="playlist.uuid">
+            <q-item-side>
+              <q-checkbox v-model="story.playback.videos[index].complete" color="primary" @input="(val) => {updatePlaylistCompleteness(index, val)}" />
+            </q-item-side>
+            <q-item-main>
+              <q-item-tile link><span @click="changePlaylist(index)">{{ playlist.title }}</span></q-item-tile>
+              <!-- <q-item-tile sublabel>Notify me about updates to apps or games that I downloaded</q-item-tile> -->
+            </q-item-main>
+          </q-item>
+        </q-list>
+      </div>
       <div class="q-modal-layout col column no-wrap plan-text" :style="{maxHeight: textHeight}">
         <div class="q-layout-header">
           <q-tabs v-model="tabsModel">
@@ -43,14 +73,14 @@
               name="tab-1"
               :default="story.plan && story.plan.length > 0"
               icon="mdi-file-document-box-outline"
-              label="Notes"
+              label="Playlist"
             />
             <q-tab
               slot="title"
               name="tab-2"
               :default="!story.plan || story.plan.length === 0"
               icon="mdi-wikipedia"
-              label="Research"
+              label="Wikipedia"
             />
             <q-tab
               slot="title"
@@ -62,7 +92,28 @@
           </q-tabs>
         </div>
         <div clss="tabs-content" style="overflow: auto;" ref="tabContent">
-          <div v-if="tabsModel === 'tab-1'" v-html="story.plan[0].text" class="ql-editor wiki-tab"></div>
+          <!-- NOTES -->
+          <div v-if="tabsModel === 'tab-1'" class="ql-editor notes-tab">
+            <div v-if="story.plan.length > 1">
+              <q-progress :percentage="progress" color="secondary" />
+            </div>
+            <div v-if="story.plan.length > 1" class="row justify-between playlist-pagination">
+              <div class="col-1">
+                <q-btn icon="mdi-menu" dense @click="togglePlaylist()"></q-btn>
+              </div>
+              <div class="col-11 row justify-between ">
+                <q-btn icon="mdi-chevron-left" dense :disable="story.playback.currentVideoIndex === 0" @click="prevPlaylist()">Previous</q-btn>
+                <span>{{ (story.playback.currentVideoIndex + 1) + ' / ' + story.plan.length }}</span>
+                <q-btn icon-right="mdi-chevron-right" dense :disable="story.playback.currentVideoIndex === story.plan.length - 1" @click="nextPlaylist()">Next</q-btn>
+              </div>
+            </div>
+            <div class="playlist-wrapper">
+              <div class="playlist-title"><h3>{{ story.plan[story.playback.currentVideoIndex].title }}</h3></div>
+              <div class="playlist-content" v-html="story.plan[story.playback.currentVideoIndex].text">
+              </div>
+            </div>
+
+          </div>
           <div v-if="tabsModel === 'tab-2'" class="wiki-tab">
             <q-toolbar color="white">
               <div v-shortkey="['enter']" @shortkey="searchWiki()" class="tab-search">
@@ -216,6 +267,7 @@ import * as _ from "lodash";
 import * as axios from "axios";
 import * as blockList from "../../assets/blockList";
 import * as youtubeApi from '../../assets/youtubeApi';
+import uuid from 'uuidv4';
 
 export default {
   name: "Plan",
@@ -248,7 +300,11 @@ export default {
       youtubePagination: {
         next: null,
         prev: null
-      }
+      },
+      showPlaylist: false,
+      showCompleted: false,
+      completeCountDown: 6,
+      completeCountDownTimer: null
     };
   },
   computed: {
@@ -264,25 +320,80 @@ export default {
     story() {
       return this.$store.getters.getStory;
     },
+    activePage() {
+      return this.$store.getters.getPage;
+    },
     pageDimensions() {
       return this.$store.getters.getPageDimensions;
     },
     settings() {
       return this.$store.getters.getSettings;
+    },
+    progress() {
+      if (this.story.plan && this.story.plan.length > 0 && this.story.plan[this.story.playback.currentVideoIndex]) {
+        const currentVideo = this.story.playback.videos.find(vid => {
+          return vid.playlistId === this.story.plan[this.story.playback.currentVideoIndex].uuid;
+        });
+
+        return (currentVideo.playbackPosition / currentVideo.duration) * 100;
+      } else {
+        return 0;
+      }
     }
   },
   mounted() {
     if (
       this.story.plan &&
       this.story.plan.length > 0 &&
-      this.story.plan[0].videoObj &&
-      this.story.plan[0].videoObj.service
+      this.story.plan[this.story.playback.currentVideoIndex].videoObj &&
+      this.story.plan[this.story.playback.currentVideoIndex].videoObj.service
     ) {
       this.videoSet = true;
-      if (this.story.plan[0].videoObj.service === "vimeo") {
+
+      /* Ensure playback is in sync with the plan */
+      const videos = [];
+      if (!this.story.playback.videos || this.story.playback.videos.length !== this.story.plan.length) {
+        this.story.plan.forEach((playlist, index) => {
+          const vid = {
+            index: index,
+            playlistId: playlist.uuid,
+            playbackPosition: 0,
+            complete: false,
+            duration: null
+          };
+          videos.push(vid);
+        });
+
+        const payload = {
+          user: this.user,
+          storyKey: this.$route.params.id,
+          story: {
+            playback: {
+              currentVideoIndex: this.story.playback.currentVideoIndex,
+              videos: videos
+            }
+          }
+        };
+        this.$store.dispatch("updateStory", _.cloneDeep(payload)).then(() => {
+            this.initVideo();
+          });
+      } else {
+        this.initVideo();
+      }
+
+    }
+
+    this.getTextHeight();
+  },
+  methods: {
+    initVideo() {
+      if (this.story.plan[this.story.playback.currentVideoIndex].videoObj.service === "vimeo") {
         var iframe = document.querySelector("#planPlayer");
         this.player = new Player("planPlayer");
         const _this = this;
+        if (this.playbackTimeout) {
+          clearTimeout(this.playbackTimeout);
+        }
         this.player.on("play", function() {
           _this.getPlaybackPosition();
         });
@@ -291,20 +402,86 @@ export default {
           clearTimeout(_this.playbackTimeout);
         });
 
+        this.player.on("ended", this.endPlayer);
+
         this.player.getDuration().then(function(duration) {
           _this.playbackDuration = duration;
         });
 
         this.setPlaybackPosition();
+        if (this.showPlan) {
+          this.player.play();
+        }
       }
-    }
-    this.getTextHeight();
-  },
-  methods: {
+      this.showCompleted = false;
+      this.completeCountDown = 6;
+      this.completeCountDownTimer = null;
+    },
+
     closeModal(type) {
       const newSetting = {};
       newSetting[type] = false;
       this.$store.commit("setSettings", newSetting);
+    },
+
+    togglePlaylist() {
+      this.showPlaylist = !this.showPlaylist;
+    },
+
+    updatePlaylistCompleteness(index, complete) {
+      let videos;
+      if (this.story.playback.videos.length > 0) {
+        /* Update correct video */
+        videos = _.cloneDeep(this.story.playback.videos);
+        videos.forEach((vid, index) => {
+          if (vid.playlistId === this.story.plan[this.story.playback.currentVideoIndex].uuid) {
+            videos[index].complete = complete;
+          }
+        });
+      }
+
+      const payload = {
+        user: this.user,
+        storyKey: this.$route.params.id,
+        story: {
+          playback: {
+            currentVideoIndex: this.story.playback.currentVideoIndex,
+            videos: videos
+          }
+        }
+      };
+      this.$store.dispatch("updateStory", _.cloneDeep(payload));
+    },
+
+    nextPlaylist() {
+      if (this.story.playback.currentVideoIndex < (this.story.plan.length - 1)) {
+        this.changePlaylist(this.story.playback.currentVideoIndex + 1);
+      }
+    },
+
+    prevPlaylist() {
+      if (this.story.playback.currentVideoIndex > 0) {
+        this.changePlaylist(this.story.playback.currentVideoIndex - 1);
+      }
+    },
+
+    changePlaylist(playlistIndex) {
+      this.player.pause();
+      const payload = {
+        user: this.user,
+        storyKey: this.$route.params.id,
+        story: {
+          playback: {...this.story.playback}
+        }
+      }
+      payload.story.playback.currentVideoIndex = playlistIndex;
+      this.$store.dispatch("updateStory", payload).then(() =>{
+          this.initVideo();
+        });
+
+      if (this.story.plan[playlistIndex].pages && !this.story.plan[playlistIndex].pages.includes(this.activePage.id)) {
+        this.$router.push({path: this.story.plan[playlistIndex].pages[0]});
+      }
     },
 
     showEditPlan() {
@@ -325,6 +502,41 @@ export default {
         this.textHeight = this.$refs.planContainer.clientHeight + "px";
       } else {
         this.textHeight = "auto";
+      }
+    },
+
+    endPlayer(playerData) {
+      if (this.story.playback.currentVideoIndex < (this.story.plan.length - 1)) {
+        this.showCompleted = true;
+      }
+
+      if (this.story.playback.currentVideoIndex < (this.story.plan.length - 1)
+        && !this.completeCountDownTimer
+        && this.story.plan[story.playback.currentVideoIndex].hasOwnProperty('autoNext')
+        && this.story.plan[story.playback.currentVideoIndex].autoNext) {
+        /* Check there is another video to play */
+        this.completeCountDown = 6;
+        this.showCompleted = true;
+        this.completedTimer();
+      }
+      updatePlaylistCompleteness(this.story.playback.currentVideoIndex, true);
+    },
+
+    completedTimer() {
+      if (this.completeCountDown === 0) {
+        this.nextPlaylist();
+      } else {
+        this.completeCountDown--;
+        const _this = this;
+        this.completeCountDownTimer = setTimeout(() => {
+          _this.completedTimer();
+        }, 1000);
+      }
+    },
+
+    cancelCompletedTimer() {
+      if (this.completeCountDownTimer) {
+        clearTimeout(this.completeCountDownTimer);
       }
     },
 
@@ -358,21 +570,35 @@ export default {
     getPlaybackPosition() {
       const _this = this;
       this.player.getCurrentTime().then(function(seconds) {
-        const complete = seconds > _this.playbackDuration - 60;
+        const complete = seconds > _this.playbackDuration - 1;
+        let videos;
+        if (_this.story.playback.videos.length > 0) {
+          /* Update correct video */
+          videos = _.cloneDeep(_this.story.playback.videos);
+          console.log('uuid', uuid());
+          if (videos.length === 1 && !videos[0].playlistId) {
+            videos[0].playlistId = _this.story.plan[0].uuid;
+          }
+          videos.forEach((vid, index) => {
+            if (vid.playlistId === _this.story.plan[_this.story.playback.currentVideoIndex].uuid) {
+              videos[index] = {
+                index: vid.index,
+                playbackPosition: seconds,
+                complete: !vid.complete ? complete : vid.complete,
+                duration: _this.playbackDuration,
+                playlistId: vid.playlistId,
+              }
+            }
+          });
+        }
+
         const payload = {
           user: _this.user,
           storyKey: _this.$route.params.id,
           story: {
             playback: {
-              currentVideoIndex: 0,
-              videos: [
-                {
-                  index: 0,
-                  playbackPosition: seconds,
-                  complete: complete,
-                  duration: _this.duration
-                }
-              ]
+              currentVideoIndex: _this.story.playback.currentVideoIndex,
+              videos: videos
             }
           }
         };
@@ -427,18 +653,21 @@ export default {
         this.wikiLoading = true;
         axios.get(url).then(response => {
           this.wikiObj = [];
-          Object.keys(response.data.query.pages).forEach(key => {
-            const titleArr = response.data.query.pages[key].title.split(' ');
-            let clean = true;
-            titleArr.forEach(word => {
-              if (blockList.blockList.includes(word.toLowerCase())) {
-                clean = false;
+          if (response.data.query) {
+            Object.keys(response.data.query.pages).forEach(key => {
+              const titleArr = response.data.query.pages[key].title.split(' ');
+              let clean = true;
+              titleArr.forEach(word => {
+                if (blockList.blockList.includes(word.toLowerCase())) {
+                  clean = false;
+                }
+              })
+              if (clean) {
+                this.wikiObj.push(response.data.query.pages[key]);
               }
-            })
-            if (clean) {
-              this.wikiObj.push(response.data.query.pages[key]);
-            }
-          });
+            });
+          }
+
           this.showWikiPage = false;
           this.showWikiResults = true;
           this.wikiLoading = false;
@@ -582,6 +811,21 @@ export default {
 </script>
 
 <style lang="stylus">
+.completed {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  background: rgba(0, 0, 0, 0.85);
+  color: #fff;
+  z-index: 2001;
+  height: 100%;
+  overflow: auto;
+  padding: 10px;
+  .count-down {
+    font-size: 5em;
+  }
+}
 .tabs-content {
   overflow: auto;
   -webkit-overflow-scrolling: touch;
@@ -593,6 +837,38 @@ export default {
 .tabs-pagination {
   margin-bottom: 10px;
   padding: 10px;
+}
+.playlist-pagination {
+  margin-top: 5px;
+}
+.playlist-wrapper {
+  .playlist-title {
+    h3 {
+      margin-top: 10px;
+      margin-bottom: 10px;
+      font-size: 25px;
+    }
+  }
+  .playlist-content {
+
+  }
+}
+.playlists {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  background: rgba(0, 0, 0, 0.85);
+  color: #fff;
+  z-index: 2001;
+  height: 100%;
+  overflow: auto;
+  padding: 10px;
+  h3 {
+    margin-top: 10px;
+    margin-bottom: 10px;
+    font-size: 25px;
+  }
 }
 .youtube-close {
   position: absolute;
@@ -607,8 +883,10 @@ export default {
   align-self: stretch;
   padding-right: 5px;
 }
-.wiki-tab, .youtube-tab {
+.notes-tab, .wiki-tab, .youtube-tab {
   padding: 10px;
+  position: relative;
+  z-index: 1;
 }
 .wiki-wrapper {
   position: relative;

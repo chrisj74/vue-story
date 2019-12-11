@@ -39,6 +39,18 @@
         Drawing Mode
       </q-tooltip>
     </q-btn>
+    <!-- SHAPE -->
+    <!-- <q-btn
+      icon="mdi-shape"
+      :color="modes.mode === 'shape' ? 'primary' : 'dark'"
+      round
+      :size="$q.screen.lt.sm ? 'sm' : 'md'"
+      @click="setShape()"
+    >
+      <q-tooltip :disable="$q.screen.lt.sm || $q.platform.has.touch" anchor="bottom middle" self="top middle" :offset="[10, 10]">
+        Shape Mode
+      </q-tooltip>
+    </q-btn> -->
     <!-- PAGE -->
     <q-btn
       icon="mdi-file-image"
@@ -155,6 +167,11 @@ export default {
     setDraw() {
       this.$store.commit('setMode', "draw");
       this.$store.commit('setSubMode', "brush");
+    },
+
+    setShape() {
+      this.$store.commit('setMode', "shape");
+      this.$store.commit('setSubMode', "select");
     },
 
     setShape() {

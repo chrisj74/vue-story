@@ -70,6 +70,7 @@ module.exports = function (ctx) {
         'QInput',
         'QField',
         'QItem',
+        'QItemTile',
         'QItemMain',
         'QItemSide',
         'QColor',
@@ -92,6 +93,8 @@ module.exports = function (ctx) {
         'QTabs',
         'QTab',
         'QTabPane',
+        'QProgress',
+        'QCheckbox'
       ],
       directives: [
         'Ripple',

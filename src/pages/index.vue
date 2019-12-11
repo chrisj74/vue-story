@@ -82,6 +82,35 @@
                   <img :src="project.cover" class="project-cover" />
                 </q-card-media>
                 <q-card-title>{{ project.title }}</q-card-title>
+                <q-card-actions>
+                  <q-btn color="primary" @click="showProject(project)">
+                    More
+                  </q-btn>
+                </q-card-actions>
+              </q-card>
+            </div>
+          </template>
+        </carousel>
+      </div>
+    </div>
+
+    <!-- Kids -->
+    <div v-if="kidsProjects && kidsProjects.length > 0">
+      <h2>Kids</h2>
+      <div class="row-wrapper">
+        <carousel :responsive="{0:{items:2,nav:false},600:{items:3,nav:false},1000:{items: 4, nav: false}, 1200:{items: 5, nav: false}}">
+          <template v-for="project in kidsProjects">
+            <div :key="'kids'+project.projectId" class="project-wrapper" @click="showProject(project)">
+              <q-card>
+                <q-card-media>
+                  <img :src="project.cover" class="project-cover" />
+                </q-card-media>
+                <q-card-title>{{ project.title }}</q-card-title>
+                <q-card-actions>
+                  <q-btn color="primary" @click="showProject(project)">
+                    More
+                  </q-btn>
+                </q-card-actions>
               </q-card>
             </div>
           </template>
@@ -135,6 +164,9 @@ export default {
     },
     familyProjects () {
       return this.$store.getters.getPublishedProjectsByCategory('Family');
+    },
+    kidsProjects () {
+      return this.$store.getters.getPublishedProjectsByCategory('Kids');
     },
     projects () {
       return this.$store.getters.getPublishedProjects;

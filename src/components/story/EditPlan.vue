@@ -1,39 +1,72 @@
 <template>
   <div class="plan-container">
+    <div class="plan-thumbs">
+      Thumbs
+      <div id="plan-thumb-wrapper">
+        <draggable class="plan-thumb-draggable" v-model="plan">
+          <div
+            v-for="(lesson, index) of plan"
+            :key="lesson.uuid"
+            class="plan-thumb"
+            :class="{'active-plan-thumb': index === activeLesson}"
+          >
+            <span @click="setLesson(index)">{{ lesson.title ? lesson.title : index }}</span>
+            <span v-if="index !== 0" @click="deleteLesson(index)" class="mdi mdi-trash-can"></span>
+          </div>
+        </draggable>
+      </div>
+      <q-btn @click="addLesson()">Add Lesson</q-btn>
+    </div>
     <div class="plan-form">
       <!-- Title -->
-      <q-input :value="story.plan[0].title" float-label="Title" @input="val => {changeTitle(val)}" />
+      <q-input :value="plan[activeLesson].title" float-label="Title" @input="val => {changeTitle(val)}" />
       <!-- Video -->
-      <q-input :value="story.plan[0].video" float-label="Video Embed URL" placeholder="e.g. https://www.youtube.com/embed/abcdefg_123" @input="val => {changeVideo(val)}" />
+      <q-input :value="plan[activeLesson].video" float-label="Video Embed URL" placeholder="e.g. https://www.youtube.com/embed/abcdefg_123" @input="val => {changeVideo(val)}" />
       <!-- Editor toolbar -->
       <div id="planToolbar">
 
       </div>
       <!-- Editor -->
-      <tinymce-editor
-        v-model="editorContent"
-        class="plan-editor"
-        v-if="editorConfig"
-        api-key="p0igcqysw2jkny4v7wki9qyg6p05lplhpctohfurcbsjc7dp"
-        :init="editorConfig"
-        @onActivate="onEditorReady($event)">
-      </tinymce-editor>
+      <div class="plan-editor">
+        <tinymce-editor
+          v-model="editorContent"
+          v-if="editorConfig"
+          class="editor"
+          api-key="p0igcqysw2jkny4v7wki9qyg6p05lplhpctohfurcbsjc7dp"
+          :init="editorConfig"
+          @onActivate="onEditorReady($event)">
+        </tinymce-editor>
+      </div>
 
     </div>
+    <div>
+      <q-list v-if="plan[activeLesson].pages">
+        <q-list-header>Pages</q-list-header>
+        <q-item tag="label" v-for="(page, index) of this.pages" :key="page.id">
+          <q-item-side>
+            <q-checkbox v-model="plan[activeLesson].pages" :val="page.id" color="primary" @input="(val) => {updatePages(index, val)}" />
+          </q-item-side>
+          <q-item-main>
+            <q-item-tile>{{ page.id }}</q-item-tile>
+            <!-- <q-item-tile sublabel>Notify me about updates to apps or games that I downloaded</q-item-tile> -->
+          </q-item-main>
+        </q-item>
+      </q-list>
+    </div>
     <div class="plan-preview" ref="planPreview">
-      <div v-if="story.plan[0].videoObj && story.plan[0].videoObj.id" class="plan-video" ref="planPreviewVideo">
+      <div v-if="plan[activeLesson].videoObj && plan[activeLesson].videoObj.id" class="plan-video" ref="planPreviewVideo">
         <iframe
           style="width: 100%"
-          :src="'https://www.youtube.com/embed/' + story.plan[0].videoObj.id + '?playsinline=1'"
+          :src="'https://www.youtube.com/embed/' + plan[activeLesson].videoObj.id + '?playsinline=1'"
           frameborder="0"
           allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture"
           allowfullscreen
-          v-if="story.plan[0].videoObj.service === 'youtube'"></iframe>
+          v-if="plan[activeLesson].videoObj.service === 'youtube'"></iframe>
         <iframe
-          :src="'https://player.vimeo.com/video/' + story.plan[0].videoObj.id + '?color=80a998&title=0&byline=0&portrait=0'"
+          :src="'https://player.vimeo.com/video/' + plan[activeLesson].videoObj.id + '?color=80a998&title=0&byline=0&portrait=0'"
           frameborder="0" allow="autoplay; fullscreen"
           allowfullscreen
-          v-if="story.plan[0].videoObj.service === 'vimeo'"></iframe>
+          v-if="plan[activeLesson].videoObj.service === 'vimeo'"></iframe>
       </div>
       <div v-html="previewContent" class="plan-text ql-editor" :style="{maxHeight: textHeight + 'px'}">
 
@@ -46,11 +79,15 @@
 import * as _ from 'lodash';
 import * as getVideoId from 'get-video-id';
 import Editor from '@tinymce/tinymce-vue';
+import draggable from "vuedraggable";
+import uuid from 'uuidv4';
 
 export default {
   name: 'PlanEditor',
   components: {
-    'tinymce-editor': Editor
+    'tinymce-editor': Editor,
+    draggable
+
   },
   data() {
     return {
@@ -60,20 +97,14 @@ export default {
       cursorSelection: null,
       contentSet: false,
       textHeight: 100,
+      activeLesson: 0
     }
   },
   mounted() {
     const _this = this;
     this.$nextTick()
       .then(function () {
-        if (_this.story && _this.story.plan[0].text !== _this.editorContent) {
-          if(_this.story.plan[0].text !== '') {
-            _this.editorContent = _.cloneDeep(_this.story.plan[0].text);
-          } else {
-            _this.editorContent = ' ';
-          }
-          _this.previewContent = _this.editorContent;
-        }
+        _this.initEditor();
 
         _this.editorConfig = {
         plugins: 'wordcount, table, media, emoticons, lists',
@@ -98,8 +129,20 @@ export default {
     loading() {
       return this.$store.getters.loading;
     },
-    story() {
-      return this.$store.getters.getStory;
+    plan: {
+
+      get() {
+        return this.$store.getters.getPlan;
+      },
+      set(value) {
+        const payload = {
+          user: this.user,
+          storyKey: this.$route.params.id,
+          plan: value
+        };
+        this.scrollTop = -1;
+        this.$store.dispatch("updateStory", payload);
+      }
     },
     pages() {
       return this.$store.getters.getPages;
@@ -109,8 +152,65 @@ export default {
     }
   },
   methods: {
+    setLesson(index) {
+      this.activeLesson = index;
+      this.initEditor();
+    },
+
+    initEditor() {
+      if (this.plan && this.plan[this.activeLesson].text !== this.editorContent) {
+        if(this.plan[this.activeLesson].text !== '') {
+          this.editorContent = _.cloneDeep(this.plan[this.activeLesson].text);
+        } else {
+          this.editorContent = ' ';
+        }
+        this.previewContent = this.editorContent;
+        this.setTextHeight();
+      }
+    },
+
+    addLesson() {
+      const plan = _.cloneDeep(this.plan);
+      const newLesson = {
+        text: ' ',
+        title: '',
+        video: '',
+        uuid: uuid(),
+        videoObj: {},
+        pages: []
+      }
+      plan.push(newLesson);
+
+      const payload = {
+        user: this.user,
+        storyKey: this.$route.params.id,
+        plan: plan
+      };
+      this.scrollTop = -1;
+      this.$store.dispatch("updateStory", payload).then(() => {
+        this.activeLesson = plan.length - 1;
+        this.initEditor();
+      });
+    },
+
+    deleteLesson(index) {
+      const plan = _.cloneDeep(this.plan);
+      plan.splice(index, 1);
+
+      const payload = {
+        user: this.user,
+        storyKey: this.$route.params.id,
+        plan: plan
+      };
+      this.scrollTop = -1;
+      this.$store.dispatch("updateStory", payload).then(() => {
+        this.activeLesson = plan.length - 1;
+        this.initEditor();
+      });
+    },
+
     setTextHeight() {
-      this.textHeight = this.$refs.planPreviewVideo ? (this.$refs.planPreview.clientHeight - (this.$refs.planPreviewVideo.clientHeight + 10)) : 100;
+      this.textHeight = this.$refs.planPreviewVideo ? (this.$refs.planPreview.clientHeight - (this.$refs.planPreviewVideo.clientHeight + 10)) : this.$refs.planPreview.clientHeight;
     },
 
     onEditorReady() {
@@ -121,27 +221,35 @@ export default {
       const payload = {
           user: this.user,
           storyKey: this.$route.params.id,
-          planIndex: 0,
+          planIndex: this.activeLesson,
           plan: {
-            title: this.story.plan[0].title,
+            title: this.plan[this.activeLesson].title,
             video: videoPath,
             videoObj: getVideoId(videoPath),
-            text: this.story.plan[0].text,
+            text: this.plan[this.activeLesson].text,
+            pages: this.plan[this.activeLesson].pages,
+            uuid: this.plan[this.activeLesson].uuid ? this.plan[this.activeLesson].uuid : uuid()
           }
       };
       this.$store.dispatch('updateStory', payload);
+    },
+
+    updatePages (index, val) {
+      console.log('val=', val);
     },
 
     changeTitle(title) {
       const payload = {
           user: this.user,
           storyKey: this.$route.params.id,
-          planIndex: 0,
+          planIndex: this.activeLesson,
           plan: {
             title: title,
-            video: this.story.plan[0].video,
-            videoObj: this.story.plan[0].videoObj,
-            text: this.story.plan[0].text,
+            video: this.plan[this.activeLesson].video,
+            videoObj: this.plan[this.activeLesson].videoObj,
+            text: this.plan[this.activeLesson].text,
+            pages: this.plan[this.activeLesson].pages,
+            uuid: this.plan[this.activeLesson].uuid ? this.plan[this.activeLesson].uuid : uuid()
           }
       };
       this.$store.dispatch('updateStory', payload);
@@ -153,15 +261,18 @@ export default {
         const payload = {
               user: this.user,
               storyKey: this.$route.params.id,
-              planIndex: 0,
+              planIndex: this.activeLesson,
               plan: {
-                title: this.story.plan[0].title,
-                video: this.story.plan[0].video,
-                videoObj: this.story.plan[0].videoObj,
+                title: this.plan[this.activeLesson].title,
+                video: this.plan[this.activeLesson].video,
+                videoObj: this.plan[this.activeLesson].videoObj,
                 text: this.editorContent,
+                pages: this.plan[this.activeLesson].pages,
+                uuid: this.plan[this.activeLesson].uuid ? this.plan[this.activeLesson].uuid : uuid(),
               }
           };
           this.$store.dispatch('updateStory', payload);
+          this.previewContent = this.editorContent;
       }, 1000)
     },
 
@@ -169,7 +280,8 @@ export default {
       handler: function(to, from) {
 
         this.setTextHeight();
-        this.editorContent = _.cloneDeep(this.story.plan[0].text);
+        this.editorContent = _.cloneDeep(this.plan[this.activeLesson].text);
+        this.previewContent = this.editorContent;
       },
       deep: true
     },
@@ -186,6 +298,33 @@ export default {
   justify-content: space-between;
   padding: 10px;
   height: 100%
+  .plan-thumbs {
+    width: 100px;
+    padding: 5px;
+    #plan-thumb-wrapper {
+      margin-top: 5px;
+      padding-top: 3px;
+      max-height: calc(100vh - 190px);
+      max-height: calc((var(--vh, 1vh) * 100) - 190px);
+      overflow: auto;
+
+      .plan-thumb-draggable {
+        display: flex;
+        flex-direction: column;
+        justify-content: flex-end;
+        align-items: center;
+      }
+      .plan-thumb.active-plan-thumb {
+        border: solid 3px $primary;
+      }
+      .plan-thumb {
+        padding: 2px;
+        max-width: 100%;
+        overflow: hidden;
+        border: solid 3px #aeaeae;
+      }
+    }
+  }
   .tox-statusbar__branding {
     display: none;
   }
@@ -198,13 +337,15 @@ export default {
     .plan-editor {
       min-height: 200px;
       width: 100%;
-      max-height: 100%;
+      height: calc(100% - 130px);
+      position: relative;
     }
   }
   .plan-preview {
     min-width: 200px;
-    width: 50%;
+    width: 20%;
     box-shadow: 0 1px 5px rgba(0,0,0,0.2), 0 2px 2px rgba(0,0,0,0.14), 0 3px 1px -2px rgba(0,0,0,0.12);
+    padding: 10px;
   }
 }
 

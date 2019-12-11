@@ -92,6 +92,7 @@ export default {
       const page = {
         commit: 0,
         photoLayer: {},
+        shapeLayer: {},
         drawingLayer: {},
         textLayer: [
 

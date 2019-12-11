@@ -86,6 +86,8 @@
 
 <script>
 import AddImage from "./PixabaySearch";
+import uuid from 'uuidv4';
+
 export default {
   name: 'AddStory',
   components: { AddImage},
@@ -207,13 +209,16 @@ export default {
             modified: new Date(),
             profile: this.profileId,
             commit: 0,
+            playback: {
+              currentVideoIndex: 0
+            },
             plan: [{
               video: '',
               videoObj: {},
               text: '',
               title: '',
-              delta: [],
-              range: {}
+              uuid: uuid(),
+              pages: []
             }],
             thumb: this.coverImage ? this.coverImage : '',
           },

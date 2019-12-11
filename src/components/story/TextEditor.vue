@@ -106,7 +106,7 @@ export default {
         draggable_modal: true,
         toolbar: ' alignleft aligncenter alignright | styleselect | bold italic emoticons | table media | bullist numlist | fontsizeselect fontselect | forecolor',
         toolbar_drawer: 'floating',
-        font_formats: 'Handwriding=Schoolbell; Arial=arial,helvetica,sans-serif; Arial Black=arial black, sans-serif; Courier New=courier new,courier,monospace',
+        font_formats: 'Handwriting=Schoolbell; Arial=arial,helvetica,sans-serif; Arial Black=arial black, sans-serif; Courier New=courier new,courier,monospace',
         fontsize_formats: '9px 11px 12px 14px 16px 18px 20px 24px 36px 48px 56px',
         contextmenu: 'inserttable | cell row column deletetable',
         mobile: {
