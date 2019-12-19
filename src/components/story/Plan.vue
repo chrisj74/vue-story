@@ -60,7 +60,6 @@
             </q-item-side>
             <q-item-main>
               <q-item-tile link><span @click="changePlaylist(index)">{{ playlist.title }}</span></q-item-tile>
-              <!-- <q-item-tile sublabel>Notify me about updates to apps or games that I downloaded</q-item-tile> -->
             </q-item-main>
           </q-item>
         </q-list>
@@ -89,6 +88,13 @@
               icon="mdi-youtube"
               label="Video"
             />
+            <q-tab
+              slot="title"
+              name="tab-4"
+              :default="!story.plan || story.plan.length === 0"
+              icon="mdi-earth"
+              label="Web"
+            />
           </q-tabs>
         </div>
         <div clss="tabs-content" style="overflow: auto;" ref="tabContent">
@@ -108,12 +114,15 @@
               </div>
             </div>
             <div class="playlist-wrapper">
-              <div class="playlist-title"><h3>{{ story.plan[story.playback.currentVideoIndex].title }}</h3></div>
-              <div class="playlist-content" v-html="story.plan[story.playback.currentVideoIndex].text">
+              <div class="playlist-content">
+                <div class="playlist-title"><h1>{{ story.plan[story.playback.currentVideoIndex].title }}</h1></div>
+                <div @click="handleWikiClick" v-html="story.plan[story.playback.currentVideoIndex].text">
+                </div>
               </div>
             </div>
 
           </div>
+          <!-- WIKIPEDIA -->
           <div v-if="tabsModel === 'tab-2'" class="wiki-tab">
             <q-toolbar color="white">
               <div v-shortkey="['enter']" @shortkey="searchWiki()" class="tab-search">
@@ -123,7 +132,7 @@
                   autofocus
                   inverted-light
                   color="secondary"
-                  v-model="searchStr"
+                  v-model="wikiSearchStr"
                   placeholder="Search wikipedia"
                   :after="[
                     {
@@ -168,7 +177,7 @@
               </div>
             </div>
           </div>
-          <!-- Youtube -->
+          <!-- YOUTUBE -->
           <div v-if="tabsModel === 'tab-3'" class="youtube-tab">
             <q-toolbar color="white">
               <div v-shortkey="['enter']" @shortkey="searchYoutube()" class="tab-search">
@@ -224,8 +233,70 @@
               </div>
             </div>
           </div>
+          <!-- WEB -->
+          <div v-if="tabsModel === 'tab-4'" class="web-tab">
+            <q-toolbar color="white">
+              <q-btn icon="mdi-chevron-left" color="primary" @click="webSearchBack()" :disable="!showWebPage"></q-btn>
+              <div v-shortkey="['enter']" @shortkey="searchWeb()" class="tab-search">
+                <q-search
+                  :debounce="0"
+                  no-icon
+                  autofocus
+                  inverted-light
+                  color="primary"
+                  v-model="webSearchStr"
+                  placeholder="Search The Web"
+                  :after="[
+                    {
+                      icon: 'mdi-magnify',
+                      error: false,
+                      handler () {
+                        searchWeb()
+                      }
+                    }
+                  ]"
+                />
+              </div>
+            </q-toolbar>
+            <!-- Search content -->
+            <div class="web-wrapper">
+              <!-- Web results -->
+              <div v-if="showWebResults" class="web-content">
+                <div v-if="webObj && webObj.length > 0">
+                  <div
+                    v-for="(result, index) in webObj"
+                    :key="index"
+                    @click="viewWeb(result.url)"
+                    class="result-card"
+                  >
+                    <q-card>
+                      <q-card-main>
+                        <h3 v-html="result.name"></h3>
+                        <p class="text-body-1" v-html="result.snippet"></p>
+                        <p>{{ result.url }}</p>
+                      </q-card-main>
+                    </q-card>
+                  </div>
+                </div>
+                <div v-else>
+                  <h2>Sorry... no results, check your spelling :)</h2>
+                </div>
+              </div>
+              <!-- Web page -->
+              <div @click="handleWebClick" class="web-content" :class="{'no-images' : noImages}" v-if="showWebPage">
+                <h1 v-if="webSearchResponse.title">{{ webSearchResponse.title }}</h1>
+                <div v-html="webSearchResponse.html" v-if="webSearchResponse.html"></div>
+                <div class="web-attribution" v-if="webSearchResponse.html && webSearchResponse.html.length > 50">
+                  <p>This article uses material from ({{ webSearchResponse.pageUrl}}).</p>
+                </div>
+                <div class="web-attribution" v-else>
+                  <p>The page we had problems loading was {{ webSearchResponse.pageUrl}}.</p>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
-        <div v-show="wikiLoading && tabsModel === 'tab-2'" class="wiki-loading-box">
+        <div v-show="(wikiLoading && tabsModel === 'tab-2') || webLoading && tabsModel === 'tab-4'" class="wiki-loading-box">
           <q-spinner-bars color="primary" :size="50" />
         </div>
       </div>
@@ -268,6 +339,7 @@ import * as axios from "axios";
 import * as blockList from "../../assets/blockList";
 import * as youtubeApi from '../../assets/youtubeApi';
 import uuid from 'uuidv4';
+import * as firebase from "firebase";
 
 export default {
   name: "Plan",
@@ -280,18 +352,31 @@ export default {
       playbackDuration: null,
       player: null,
       videoSource: null,
+      tabsModel: null,
       wikipediaResponse: {
         html: '',
         title: '',
         pageId: ''
       },
       wikiObj: null,
-      searchStr: '',
+      wikiSearchStr: '',
       showWikiResults: false,
       showWikiPage: false,
-      tabsModel: null,
       wikiImage: null,
       wikiLoading: false,
+
+      webSearchResponse: {
+        html: '',
+        title: '',
+        pageUrl:  ''
+      },
+      webObj: null,
+      webSearchStr: '',
+      showWebResults: false,
+      showWebPage: false,
+      webImage: null,
+      webLoading: false,
+
       noImages: false,
       youtubeSearchStr: '',
       youtubeObj: null,
@@ -479,8 +564,11 @@ export default {
           this.initVideo();
         });
 
-      if (this.story.plan[playlistIndex].pages && !this.story.plan[playlistIndex].pages.includes(this.activePage.id)) {
-        this.$router.push({path: this.story.plan[playlistIndex].pages[0]});
+      if (this.story.plan[playlistIndex].pages
+        && this.story.plan[playlistIndex].pages.length > 0
+        && !this.story.plan[playlistIndex].pages.includes(this.activePage.id)
+      ) {
+        this.$router.push({path: '/project/' + this.$route.params.id + '/' + this.story.plan[playlistIndex].pages[0]});
       }
     },
 
@@ -518,6 +606,7 @@ export default {
         this.completeCountDown = 6;
         this.showCompleted = true;
         this.completedTimer();
+        this.getPlaybackPosition();
       }
       updatePlaylistCompleteness(this.story.playback.currentVideoIndex, true);
     },
@@ -575,7 +664,6 @@ export default {
         if (_this.story.playback.videos.length > 0) {
           /* Update correct video */
           videos = _.cloneDeep(_this.story.playback.videos);
-          console.log('uuid', uuid());
           if (videos.length === 1 && !videos[0].playlistId) {
             videos[0].playlistId = _this.story.plan[0].uuid;
           }
@@ -609,6 +697,136 @@ export default {
       });
     },
 
+    /* WEB */
+    handleWebClick(e) {
+      e.preventDefault();
+      if (e.target.matches("img")) {
+        let imageStr = e.target.getAttribute("src");
+        this.wikiImage = imageStr;
+        this.$store.commit("setMode", "photo");
+        const newSetting = {
+          showPlanModal: true
+        };
+        this.$store.commit("setSettings", newSetting);
+      }
+      if (e.target.matches("a")) {
+        if (e.target.getAttribute("href")) {
+          const pageRef = e.target.getAttribute("href");
+          this.viewWeb(pageRef);
+        }
+      }
+    },
+
+    webSearchBack() {
+      this.showWebResults = true;
+      this.showWebPage = false;
+    },
+
+    searchWeb() {
+      if (!blockList.blockList.includes(this.webSearchStr.toLowerCase()) && this.webSearchStr.length > 0) {
+        this.webLoading = true;
+
+        const search = firebase.functions().httpsCallable('search');
+        search({'q': encodeURI(this.webSearchStr)})
+        .then(response => {
+          this.webObj = [];
+          if (response.data.webPages && response.data.webPages.value) {
+            response.data.webPages.value.forEach(result => {
+              /* strip HTML from title before splitting */
+              const regex = /(&nbsp;|<([^>]+)>)/ig,
+              title = result.name.replace(regex, '');
+              const titleArr = title.split(' ');
+              const bodyArr = result.snippet.split(' ');
+              const contentArr = titleArr.concat(bodyArr)
+              let clean = true;
+              contentArr.forEach(word => {
+                if (blockList.blockList.includes(word.toLowerCase())) {
+                  clean = false;
+                }
+              });
+              if (clean) {
+                this.webObj.push(result);
+              } else {
+                console.log('Naughty response');
+              }
+            });
+          }
+
+          this.showWebPage = false;
+          this.showWebResults = true;
+          this.webLoading = false;
+        })
+        .catch(err => {
+          console.error(err);
+          this.webObj = [];
+          this.showWebPage = false;
+          this.showWebResults = true;
+          this.webLoading = false;
+        });
+      } else {
+        this.webObj = [];
+        console.log("Naughty search");
+        this.showWebPage = false;
+        this.showWebResults = true;
+        this.$nextTick(() => {
+          this.$refs.tabContent.scrollTop = 0;
+        });
+      }
+    },
+
+    viewWeb(pageUrl) {
+      this.tabsModel = 'tab-4';
+      this.webLoading = true;
+      const webViewer = firebase.functions().httpsCallable('webViewer');
+      webViewer({'url': pageUrl}).then((result) => {
+        // Read result of the Cloud Function.
+        this.noImages = false;
+        this.webSearchResponse = {
+            html: '',
+            title: 'Sorry, there was a problem fetching this page',
+            pageUrl:  pageUrl,
+          };
+        if (result.data) {
+          const titleArr = result.data.title.split(' ');
+          titleArr.forEach(word => {
+            if (blockList.blockList.includes(word.toLowerCase())) {
+              this.noImages = true
+            }
+          });
+
+          this.webSearchResponse = {
+            html: result.data.content,
+            title: result.data.title,
+            pageUrl:  result.data.url,
+          };
+        }
+
+        this.showWebPage = true;
+        this.showWebResults = false;
+        this.webLoading = false;
+        this.$nextTick(() => {
+          this.$refs.tabContent.scrollTop = 0;
+        });
+      })
+      .catch(error => {
+        console.error(error)
+
+        this.webSearchResponse = {
+          html: '',
+          title: 'Sorry, there was a problem fetching this page',
+          pageUrl:  pageUrl,
+        };
+
+        this.showWebPage = true;
+        this.showWebResults = false;
+        this.webLoading = false;
+        this.$nextTick(() => {
+          this.$refs.tabContent.scrollTop = 0;
+        });
+      });
+    },
+
+    /* WIKI */
     handleWikiClick(e) {
       e.preventDefault();
       if (e.target.matches("img")) {
@@ -636,10 +854,14 @@ export default {
         if (e.target.getAttribute("href").startsWith("/wiki")) {
           const pageRef = e.target.getAttribute("href").replace("/wiki/", "");
           this.viewWiki(pageRef);
+          if (this.tabsModel !== 'tab-2') {
+            this.tabsModel = 'tab-2';
+          }
         } else if (e.target.getAttribute("href").startsWith("#")) {
           this.$refs.tabContent.scrollTo(e.target.getAttribute("href"));
-        } else {
+        } else if (e.target.getAttribute("href")) {
           console.log("external link");
+          this.viewWeb(e.target.getAttribute("href"))
         }
       }
     },
@@ -647,9 +869,9 @@ export default {
     searchWiki() {
       const url =
         "https://simple.wikipedia.org/w/api.php?action=query&generator=search&gsrnamespace=0&exsentences=1&exintro&explaintext&exlimit=max&prop=extracts&gsrlimit=10&gsrsearch=" +
-        encodeURI(this.searchStr) +
+        encodeURI(this.wikiSearchStr) +
         "&format=json&origin=*";
-      if (!blockList.blockList.includes(this.searchStr.toLowerCase())) {
+      if (!blockList.blockList.includes(this.wikiSearchStr.toLowerCase()) && this.wikiSearchStr.length > 0) {
         this.wikiLoading = true;
         axios.get(url).then(response => {
           this.wikiObj = [];
@@ -719,7 +941,7 @@ export default {
       });
     },
 
-    /* Youtube */
+    /* YOUTUBE */
     searchYoutube(dir) {
       let dirStr = '';
       if (dir) {
@@ -781,15 +1003,6 @@ export default {
     story: {
       handler(newStory, oldStory) {
         this.getTextHeight();
-        /* if (this.story.plan && this.story.plan[0].video && !this.videoSet) {
-          this.videoSet = true;
-          var iframe = document.getElementById("planPlayer");
-          this.player = new Player("planPlayer");
-          var _this = this;
-          this.player.on("play", function() {
-            _this.setPlaybackPosition();
-          });
-        } */
       },
       deep: true
     },
@@ -833,6 +1046,7 @@ export default {
 }
 .tab-search {
   width: 100%;
+  padding-left: 10px;
 }
 .tabs-pagination {
   margin-bottom: 10px;
@@ -883,15 +1097,15 @@ export default {
   align-self: stretch;
   padding-right: 5px;
 }
-.notes-tab, .wiki-tab, .youtube-tab {
+.notes-tab, .wiki-tab, .youtube-tab, .web-tab {
   padding: 10px;
   position: relative;
   z-index: 1;
 }
-.wiki-wrapper {
+.wiki-wrapper, .web-wrapper {
   position: relative;
 }
-.wiki-attribution {
+.wiki-attribution, .web-attribution {
   padding: 10px;
   margin-bottom: 10px;
   background: #ccc;
@@ -910,27 +1124,39 @@ export default {
   background: rgba(255,255,255, .8);
 }
 
-.wiki-content, .youtube-content {
+.wiki-content, .youtube-content, .web-content, .playlist-content {
+  font-family: Gerogia, Cambria, "Times New Roman", Times, serif;
+  line-height: 1.5
+  font-size: 21px;
+  letter-spacing: .2px;
+  padding: 10px;
+  font-weight: 400;
   &.no-images {
     img, .image {
       display: none;
     }
   }
   h1 {
-    font-size: 25px;
+    font-size: 40px;
     margin: 5px 0 10px 0;
     font-weight: bold;
   }
 
   h2 {
-    font-size: 20px;
+    font-size: 32px;
     margin: 5px 0 10px 0;
     font-weight: bold;
   }
 
   h3 {
-    font-size: 18px;
+    font-size: 26px;
+    line-height: 1.2em;
     margin: 5px 0 10px 0;
+    font-weight: bold;
+  }
+
+  img {
+    max-width: 100%;
   }
 
   #toc {

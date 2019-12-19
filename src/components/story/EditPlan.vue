@@ -38,20 +38,22 @@
         </tinymce-editor>
       </div>
 
-    </div>
-    <div>
-      <q-list v-if="plan[activeLesson].pages">
-        <q-list-header>Pages</q-list-header>
-        <q-item tag="label" v-for="(page, index) of this.pages" :key="page.id">
-          <q-item-side>
-            <q-checkbox v-model="plan[activeLesson].pages" :val="page.id" color="primary" @input="(val) => {updatePages(index, val)}" />
-          </q-item-side>
-          <q-item-main>
-            <q-item-tile>{{ page.id }}</q-item-tile>
-            <!-- <q-item-tile sublabel>Notify me about updates to apps or games that I downloaded</q-item-tile> -->
-          </q-item-main>
-        </q-item>
-      </q-list>
+      <!-- PAGES -->
+      <div>
+        <q-list v-if="plan[activeLesson].pages">
+          <q-list-header>Pages</q-list-header>
+          <q-item tag="label" v-for="(page, index) of this.pages" :key="page.id">
+            <q-item-side>
+              <q-checkbox v-model="plan[activeLesson].pages" :val="page.id" color="primary" @input="(val) => {updatePages(index, val)}" />
+            </q-item-side>
+            <q-item-main>
+              <q-item-tile>{{ page.id }}</q-item-tile>
+              <!-- <q-item-tile sublabel>Notify me about updates to apps or games that I downloaded</q-item-tile> -->
+            </q-item-main>
+          </q-item>
+        </q-list>
+      </div>
+
     </div>
     <div class="plan-preview" ref="planPreview">
       <div v-if="plan[activeLesson].videoObj && plan[activeLesson].videoObj.id" class="plan-video" ref="planPreviewVideo">
@@ -107,17 +109,20 @@ export default {
         _this.initEditor();
 
         _this.editorConfig = {
-        plugins: 'wordcount, table, media, emoticons, lists',
+        plugins: 'wordcount, table, media, emoticons, lists, link, code, image',
         inline: false,
-        fixed_toolbar_container: '#planToolbar',
-        menubar: false,
+        // fixed_toolbar_container: '#planToolbar',
+        menubar: true,
         draggable_modal: true,
-        toolbar: ' alignleft aligncenter alignright | styleselect | bold italic emoticons',
+        toolbar: 'alignleft aligncenter alignright | styleselect | bold italic emoticons | table media image | link',
+        contextmenu: "link image imagetools table",
         mobile: {
           theme: 'mobile',
           plugins: 'lists, autolink',
           toolbar: 'undo, bold, italic, styleselect'
-        }
+        },
+        relative_urls : false,
+        remove_script_host : true,
       };
     });
   },

@@ -58,7 +58,7 @@
             <q-item-side icon="mdi-bullhorn"></q-item-side>
             <q-item-main>
               <span @click="openFeedback()">
-                <bruit-io :config.prop="bruitConfig">FEEDBACK</bruit-io>
+                <!-- <bruit-io :config.prop="bruitConfig">FEEDBACK</bruit-io> -->
               </span>
             </q-item-main>
           </q-item>
