@@ -47,7 +47,6 @@
             :width="sizes[selectedIndex].w"
             :show-loading="false"
             :prevent-white-space="false"
-            :initial-image="selectedImage"
             v-model="croppa"
             disable-click-to-choose
             placeholder="click button on the right :)"
@@ -58,6 +57,7 @@
             @new-image-drawn="onNewImage"
             @zoom="onZoom">
             <div class="croppa-spinner" v-if="croppa && croppa.loading"><q-spinner-bars color="primary" :size="50" /></div>
+            <img slot="initial" :src="selectedImage" v-if="selectedImage" />
           </croppa>
 
         </div>
@@ -325,6 +325,27 @@ export default {
         this.selectedImage = null;
         this.$store.dispatch('addImage', imgObj);
         this.searchString = '';
+        let payload = {
+          showImageModal: false,
+          showUploadModal: false,
+          showPlanModal: false,
+        };
+        this.$store.commit('setSettings', payload);
+        payload = {
+          avatarModal: false
+        }
+        this.$store.commit('setProfileSettings', payload);
+      })
+      .catch(err => {
+        this.$store.commit('setLoading', false);
+        this.$q
+        .dialog({
+          title: "Oops",
+          message: "You aren't allowed to use this image.",
+          ok: "OK",
+        })
+        this.croppa.remove();
+        this.selectedImage = null;
         let payload = {
           showImageModal: false,
           showUploadModal: false,
