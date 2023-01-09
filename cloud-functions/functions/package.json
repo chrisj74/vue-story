@@ -8,8 +8,8 @@
     "cookie-parser": "^1.4.3",
     "cors": "^2.8.1",
     "express": "^4.14.1",
-    "firebase-admin": "~7.1.1",
-    "firebase-functions": "^3.3.0",
+    "firebase-admin": "~11.4.1",
+    "firebase-functions": "^3.24.1",
     "glob": "^7.1.6",
     "mkdirp": "^0.5.1",
     "mkdirp-promise": "^4.0.0"
